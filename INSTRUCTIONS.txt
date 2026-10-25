@@ -1,0 +1,9 @@
+Topdown racing game 
+
+Developed with index.html (singlepage)
+main.js (code)
+p5js library (fetch it from internet)
+
+control car with wasd drive, maybe a break also, drive around a track, have drifting and traction, acceleration, make it realistic, collision with hard borders, have apex on the track and run off area ( different types) drift marks
+
+fetch textures or assets from the internet, try to get a similar art style

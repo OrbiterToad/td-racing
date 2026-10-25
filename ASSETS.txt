@@ -1,0 +1,26 @@
+APEX / The Circuit Collection
+
+Car and overhead tree art: Kenney Racing Pack, by Kenney Vleugels.
+Source: https://kenney.nl/assets/racing-pack
+Download: https://opengameart.org/content/racing-pack
+License: Creative Commons Zero (CC0 / public domain).
+Original license: assets/kenney/License.txt
+Used files: PNG/Objects/tree_large.png and car styles 1 (Clubsport R),
+5 (Sprint GT), and 4 (Offroad) in red, blue, green, yellow, and black,
+from PNG/Cars/. Sprites remain local; no asset service is required at runtime.
+All scenery is drawn from directly overhead; there are no side-view assets.
+
+Road, gravel, grass, curbs, tire marks, roof planes, and UI: original procedural art.
+Desert Canyon sand, sandstone contour formations, boulders, and overhead
+cactus crowns: original procedural art drawn in main.js.
+Alpine snow, overhead pine crowns, mountain contours, ice patches, oil
+slicks, sand drifts, selection previews, and garage UI: original procedural art.
+
+p5.js 1.11.3, LGPL-2.1, https://p5js.org/
+CDN: https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.min.js
+Local fallback: assets/p5.min.js
+
+Barlow and Barlow Condensed: Google Fonts / Jeremy Tribby, SIL Open Font License.
+https://fonts.google.com/specimen/Barlow
+https://fonts.google.com/specimen/Barlow+Condensed
+System font fallbacks are included for offline use.

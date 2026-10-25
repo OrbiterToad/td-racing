@@ -1,0 +1,63 @@
+APEX / The Circuit Collection
+
+Click the track name in the header to open the circuit picker. Preview
+cards show the route, biome, challenge, hazards, and best time for your car.
+Changing circuits resets the run, tire marks, and vehicle position.
+
+Juniper Raceway: the original technical esses and infield hairpin, with
+three oil slicks just before demanding corners. Oil leaves the tires
+slippery for about 1.15 seconds; grip recovers progressively after leaving.
+
+Desert Canyon: a distinct, tighter route with two narrow rock-wall passes,
+dusty asphalt, heavy sand runoff, and four visible sand drifts on the road.
+The drifts slow the car and leave space for an avoidance line.
+
+Alpine Pass: three reversing mountain switchbacks linked by deep winding
+traverses and an outside descent. Exactly three visible ice patches cover
+a small portion of the road and reduce both steering and braking traction.
+Snowy pine crowns and mountain contours are seen directly from above.
+
+Ridgeway Rallycross mixes asphalt and two flowing dirt sections. Dirt
+reduces traction and adds rolling resistance; Offroad handles it better.
+
+Four sector times and comparisons against your best lap appear in the HUD.
+Oil, sand, and ice have irregular outlines matching their physics areas.
+The camera follows smoothly with no screen shake. Tire marks are batched
+and track lookups use a spatial grid to keep sliding on gravel responsive.
+
+GARAGE
+Clubsport R: balanced rear-wheel drive, approximately 158 km/h.
+Sprint GT: more power, approximately 177 km/h, demands earlier braking.
+Offroad: Kenney car 4, all-wheel drive, more grip and less off-road drag,
+approximately 150 km/h.
+Paint: Ember, Ocean, Forest, Sunburst, or Graphite.
+Changing car starts a fresh run and loads that car's record. Changing only
+paint preserves the lap. Canceling either picker preserves your run.
+
+The selected track, car, paint, and each track/car best time are saved
+locally. Revised routes and hazards have separate records; earlier
+versions' records remain under their old browser storage keys.
+
+Open this folder in a terminal and run:
+  python -m http.server 8000
+Then open http://localhost:8000
+
+W / Up: accelerate
+S / Down: brake; hold at rest to reverse
+A / D or Left / Right: steer
+Space: handbrake (hold while steering to initiate a slide)
+R: recover to the nearest track point (invalidates the current lap)
+Escape / P: pause
+
+Cross all three sector gates in order, on the asphalt, then cross the
+start/finish line in the forward direction to record a lap.
+The personal best is stored in this browser. Recovering invalidates the
+current lap; crossing the finish line begins a fresh valid lap.
+The game pauses when the window loses focus or is hidden.
+
+Physics runs at 120 Hz. Canvas rendering uses p5.js. All game code is in
+main.js and all page layout/style is in index.html. No build step is needed.
+Internet is used for the p5.js CDN and fonts; the downloaded p5.js fallback
+and local sprites allow play if those remote resources are unavailable.
+
+See ASSETS.txt for asset sources and licenses.
