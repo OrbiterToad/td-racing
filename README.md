@@ -69,6 +69,16 @@ then small props and trees fill the remaining space without overlapping.
 Ground details render below props, rooftops, and tree canopies. City park
 paths and the fountain stay clear, as does the monkey’s perch in Amazonas.
 
+Homes, cabins, village buildings, and cafés have paved driveways or gravel
+access paths where a clear route to the roadside verge is available. Paths
+start at the frontage, go around roofs, and reserve space before trees are
+placed. These are scenery paths; the circuit and drivable pit routes keep
+their existing layout.
+
+Each paddock has two color-matched team areas with neighboring garages, a
+transporter, canopy, and tool trolley. Marked service pads and short access
+walks tie the equipment together; shared supplies sit at the apron edges.
+
 The pack loads once into a reusable raster cache. Static scenery remains
 baked into the world canvas, so the new detail does not add per-frame SVG
 rendering. Regenerate the assets with `python3 tools/build-scenery-assets.py`.

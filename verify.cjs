@@ -7,8 +7,8 @@ const node = id => {if(!nodes.has(id)) nodes.set(id,{style:{},classList:{add(){}
 const storage = new Map();
 const sandbox = {window:{},document:{getElementById:node},console,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null}};
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout,SCENERY_LAYERS,sceneryScene,sceneryBuildings,sceneryTrees,sceneryDetailLayer};',sandbox);
-const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout,SCENERY_LAYERS,sceneryScene,sceneryBuildings,sceneryTrees,sceneryDetailLayer}=sandbox.window.test;
+vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout,SCENERY_LAYERS,sceneryScene,sceneryBuildings,sceneryTrees,sceneryDetailLayer,sceneryAccess,sceneryAccessDistance,sceneryEntrance,paddockTeamLayout};',sandbox);
+const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout,SCENERY_LAYERS,sceneryScene,sceneryBuildings,sceneryTrees,sceneryDetailLayer,sceneryAccess,sceneryAccessDistance,sceneryEntrance,paddockTeamLayout}=sandbox.window.test;
 function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,crossedStart:false,countdown:0,goTime:0,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
 function step(seconds){for(let i=0;i<seconds/CFG.step;i++)simulate(CFG.step);}
 function speed(){return Math.hypot(car.vx,car.vy);}
@@ -510,3 +510,43 @@ for(const id of Object.keys(MAPS)){
 }
 for(const key of ['greenhouse','shed-garden','cafe-terrace','service-transporter','tool-trolley','water-tank','spectator-stand','garden-bed','rock-moss','tree-willow'])assert(usedSceneryKeys.has(key),'New asset must actually appear in a map: '+key);
 console.log('PASS: shared footprint reservations, rotated sprite bounds, deterministic placement, park/monkey clearance, layered draw order, and new asset coverage across all seven maps.');
+
+
+// Access paths are reserved before trees and must connect a real porch to a
+// roadside verge without clipping another building or crossing a driving rail.
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);
+  if(id!=='rallycross')assert(sceneryAccess.length>=10,'Maps with homes and cabins need meaningful access paths: '+id);
+  if(id==='city')assert(sceneryAccess.filter(a=>a.owner.kind==='home').length>=15,'Suburban homes need visible driveways');
+  if(id==='city'||id==='coast')assert(sceneryAccess.some(a=>a.owner.kind==='cafe-terrace'),'Cafés need a pedestrian approach');
+  for(const access of sceneryAccess){
+    assert.equal(access.layer,SCENERY_LAYERS.ground,'Paths belong below all props and roofs');
+    assert(sceneryScene.includes(access.owner),'A path must belong to a placed building');
+    const entrance=sceneryEntrance(access.owner),first=access.points[0],last=access.points[access.points.length-1],n=nearest(last.x,last.y);
+    assert(Math.hypot(first.x-entrance.x,first.y-entrance.y)<entrance.h/2,'Access must begin at the building frontage');
+    assert(Math.abs(n.distance-widthAt('wall',n.progress)-access.width/2-10)<1,'Access must end at the outside verge');
+    for(const home of sceneryBuildings)if(home.kind==='home')assert(sceneryAccessDistance(access,home.x+60,home.y+55)>=36*.85+access.width/2+1.9,'Driveways must clear garden trees, including the owner’s tree');
+    for(const prop of sceneryScene)if(prop!==access.owner)assert(sceneryAccessDistance(access,prop.x,prop.y)>=prop.radius+access.width/2+1.9,'Paths and their edges must clear other buildings, props, and trees');
+    for(let i=1;i<access.points.length;i++){
+      const a=access.points[i-1],b=access.points[i],steps=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/4));
+      for(let j=0;j<=steps;j++){
+        const x=a.x+(b.x-a.x)*j/steps,y=a.y+(b.y-a.y)*j/steps,m=nearest(x,y);
+        assert(m.distance>widthAt('wall',m.progress)+access.width/2+2,'Paths must stay outside the main barriers');
+        assert(nearestPit(x,y).distance>pitLane.wall+access.width/2+2,'Paths must stay outside pit barriers');
+        const dx=x-entrance.x,dy=y-entrance.y,lx=dx*Math.cos(entrance.angle)+dy*Math.sin(entrance.angle),ly=-dx*Math.sin(entrance.angle)+dy*Math.cos(entrance.angle);
+        assert(!(Math.abs(lx)<entrance.w/2&&ly<entrance.h*.39&&ly>-entrance.h/2),'Access must go around roofs, never across them');
+      }
+    }
+  }
+  const snapshot=JSON.stringify(sceneryAccess);configureTrack(id);assert.equal(JSON.stringify(sceneryAccess),snapshot,'Access routes must remain stable across track switches');
+  const props=paddockAssetLayout(),teams=paddockTeamLayout();assert.equal(teams.length,2,'Every paddock needs two coherent team areas');
+  for(const team of teams){
+    const members=props.filter(p=>p.team===team.id);
+    assert.equal(members.filter(p=>p.bay).length,2,'Each team has two neighboring garages');
+    for(const key of ['service-transporter','service-tent-'+team.id,'tool-trolley'])assert(members.some(p=>p.key===key),'Each team has matching transporter, canopy and tools');
+  }
+  for(let i=0;i<props.length;i++)for(let j=0;j<i;j++){
+    const a=props[i],b=props[j];assert(Math.abs(a.x-b.x)>=(a.w+b.w)/2||Math.abs(a.y-b.y)>=(a.h+b.h)/2,'Team equipment must not overlap garages or other props');
+  }
+}
+console.log('PASS: porch-to-verge access routes, café paths, clear roofs/roads/pits/vegetation, stable reservations, and two complete non-overlapping paddock teams on every map.');
