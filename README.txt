@@ -38,9 +38,14 @@ ENTRY before the finish, drive past the garages, and rejoin at PIT EXIT.
 Both openings are drivable; the pit lane has its own finish timing line.
 
 LAP GHOST
-A new personal best records a translucent ghost for that map and car. It
-replays at your lap time, including through the pit lane. Ghosts are saved
-locally with the best record; older records need a new best to add a ghost.
+Your first clean lap records a ghost for that map and car, even if an older
+personal best has no recorded path. Faster recorded laps replace the ghost;
+your historic personal best stays separate. The cyan outline and GHOST label
+remain visible when the cars overlap. A cyan minimap dot tracks the ghost
+when it is outside the camera view. Its status and target time appear in
+the timing panel. Ghosts save locally and replay on subsequent laps,
+including through the pit lane. LIVE TO GHOST shows time gained (green) or
+lost (red) at your current position along the recorded route.
 
 GARAGE
 Clubsport R: balanced rear-wheel drive, approximately 158 km/h.
@@ -62,10 +67,15 @@ Then open http://localhost:8000
 Before driving, click a grid box to choose your starting position. Grid
 boxes follow the local curve and face the direction of travel.
 
+A 3–2–1–GO countdown holds the car before each fresh run. Choosing another
+grid box restarts the countdown. Click Restart or press N to begin a fresh
+run from your chosen grid spot while preserving saved times and ghosts.
+
 W / Up: accelerate
 S / Down: brake; hold at rest to reverse
 A / D or Left / Right: steer
 Space: handbrake (hold while steering to initiate a slide)
+N: quick restart with countdown
 R: recover to the nearest track point (invalidates the current lap)
 Escape / P: pause
 
