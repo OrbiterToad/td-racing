@@ -36,6 +36,13 @@ const MAPS = {
     [900,1000],[1000,1700],[400,1900],[50,1300],[-550,1500],[-850,1000],
     [-450,550],[-1200,450],[-1500,0],[-1000,-350],[-1700,-550]
   ].map((p,i,points)=>p.map((v,k)=>v*.8+(points[(i+points.length-1)%points.length][k]+points[(i+1)%points.length][k])*.1))},
+  coast:{id:'coast',name:'Costa Azul',label:'COAST / SEASIDE RHYTHM',subtitle:'Chase the waves. Link the curves.',description:'Lighthouse bends, village hairpins and beachside esses. Two small sand drifts; a marina pit lane.',temperature:'27°C',gripLabel:'DRY / BEACH SAND',bestKey:'apex-costa-azul-v1',accent:'#88e4ee',road:68,runoff:94,wall:122,patches:[{progress:.73,lateral:-24,length:58,width:30,type:'SAND PATCH'},{progress:.84,lateral:23,length:62,width:30,type:'SAND PATCH'}],points:[
+    [-1500,1050],[-1000,450],[-1900,300],[-2000,-300],[-1300,-450],
+    [-1500,-950],[-950,-1300],[-600,-900],[-300,-1500],[200,-1650],
+    [400,-1100],[950,-1250],[1500,-950],[1450,-450],[950,-250],
+    [1300,200],[1050,650],[1500,1000],[1200,1450],[800,1050],
+    [400,1600],[100,1100],[-350,1500],[-650,850],[-1100,1450]
+  ].map((p,i,points)=>p.map((v,k)=>v*.8+(points[(i+points.length-1)%points.length][k]+points[(i+1)%points.length][k])*.1))},
   rallycross:{id:'rallycross',name:'Ridgeway Rallycross',label:'RALLYCROSS / MIXED SURFACE',subtitle:'Grip, slide, grip. Find the rhythm.',description:'Packed dirt, fast asphalt, and a technical infield. Built for the Offroad.',temperature:'19°C',gripLabel:'ASPHALT / DIRT',bestKey:'apex-ridgeway-rallycross-v1',accent:'#efce89',road:82,runoff:108,wall:132,patches:[],points:[
     [-650,650],[50,650],[650,400],[850,-100],[500,-450],[50,-300],
     [-150,-600],[200,-950],[700,-1000],[900,-1400],[400,-1650],
@@ -96,7 +103,7 @@ function configureTrack(id){
   if(!Object.hasOwn(MAPS,id))return false;
   activeMap=MAPS[id];controlPoints=activeMap.points;BEST_KEY=bestKeyFor();
   for(const key of ['road','runoff','wall'])CFG[key]=activeMap[key];
-  race.crossedStart=false;race.countdown=0;race.goTime=0;makeTrack();lapGhost.best=null;resetGhostRecording();jungle.cooldown=0;jungle.throwTime=0;jungle.flowTime=0;jungle.coconuts.length=0;car.coconutSlip=0;return true;
+  race.crossedStart=false;race.countdown=0;race.goTime=0;coast.time=0;makeTrack();lapGhost.best=null;resetGhostRecording();jungle.cooldown=0;jungle.throwTime=0;jungle.flowTime=0;jungle.coconuts.length=0;car.coconutSlip=0;return true;
 }
 function changeTrack(id,announce=true){
   if(!configureTrack(id))return;
@@ -106,8 +113,8 @@ function changeTrack(id,announce=true){
   buildWorld();camera.x=car.x;camera.y=car.y;camera.zoom=desiredZoom();
   $('open-tracks').textContent=activeMap.name+' ▾';$('track-label').textContent=activeMap.label;$('track-title').textContent=activeMap.name;$('track-subtitle').textContent=activeMap.subtitle;
   $('temperature').textContent=activeMap.temperature;$('grip-label').textContent=activeMap.gripLabel;
-  document.documentElement.style.setProperty('--lime',activeMap.accent);$('game').style.background=activeMap.id==='canyon'?'#d5a36d':activeMap.id==='alpine'?'#dbe6e3':activeMap.id==='amazonas'?'#28523b':'#8ba274';
-  $('hint').style.opacity='1';$('hint').textContent=activeMap.id==='amazonas'?'W to drive · Two shallow river crossings. Slow for the water; watch for coconuts.':activeMap.id==='canyon'?'W to drive · Brake early. Avoid the sand drifts. Mind the narrow passes.':activeMap.id==='alpine'?'W to drive · Three ice patches. Ease off and keep steering smooth.':activeMap.id==='rallycross'?'W to drive · Dirt needs a slide. Asphalt needs a clean exit.':'W to drive · Find your apex. Avoid the dark oil slicks.';
+  document.documentElement.style.setProperty('--lime',activeMap.accent);$('game').style.background=activeMap.id==='canyon'?'#d5a36d':activeMap.id==='alpine'?'#dbe6e3':activeMap.id==='amazonas'?'#28523b':activeMap.id==='coast'?'#288f9c':'#8ba274';
+  $('hint').style.opacity='1';$('hint').textContent=activeMap.id==='coast'?'W to drive · Short coastal curves. Avoid the two beach sand drifts.':activeMap.id==='amazonas'?'W to drive · Two shallow river crossings. Slow for the water; watch for coconuts.':activeMap.id==='canyon'?'W to drive · Brake early. Avoid the sand drifts. Mind the narrow passes.':activeMap.id==='alpine'?'W to drive · Three ice patches. Ease off and keep steering smooth.':activeMap.id==='rallycross'?'W to drive · Dirt needs a slide. Asphalt needs a clean exit.':'W to drive · Find your apex. Avoid the dark oil slicks.';
   try{localStorage.setItem('apex-selected-track',id);}catch(_){}
   startCountdown();setPaused(false);updateHUD();drawMinimap();if(announce)notify(activeMap.name.toUpperCase()+' · '+(id==='canyon'?'EXPERT CIRCUIT':'FLOW CIRCUIT'));
 }
@@ -137,9 +144,9 @@ function makeTrack() {
   buildSpatialIndex();buildStartingGrid();
   const xs=track.map(p=>p.x),ys=track.map(p=>p.y);
   trackBounds={left:Math.min(...xs),right:Math.max(...xs),top:Math.min(...ys),bottom:Math.max(...ys)};
-  const margin=600;
+  const margin=activeMap.id==='coast'?850:600;
   worldBounds={x:Math.floor(trackBounds.left-margin),y:Math.floor(trackBounds.top-margin),width:Math.ceil(trackBounds.right-trackBounds.left+margin*2),height:Math.ceil(trackBounds.bottom-trackBounds.top+margin*2)};
-  paddock=findPaddockPlacement();buildPitLane();
+  paddock=findPaddockPlacement();buildPitLane();buildSceneryDetails();
 }
 
 const pitLane={points:[],road:36,runoff:44,wall:52,entry:0,exit:0,totalLength:0};
@@ -214,12 +221,13 @@ function findPaddockPlacement(){
   const start=track[0];let best=null,bestClearance=-Infinity;
   // Check the whole apron, including room around its edges, against every
   // nearby track section. A fixed screen offset can land on the next bend.
-  for(const offset of [300,380,460,560,680])for(const side of [1,-1])for(const along of [0,180,-180,360,-360,540,-540]){
+  for(const offset of [300,380,460,560,680])for(const side of (activeMap.id==='coast'?[-1,1]:[1,-1]))for(const along of [0,180,-180,360,-360,540,-540]){
     const placement={side,x:start.x+start.nx*side*offset+start.tx*along,y:start.y+start.ny*side*offset+start.ty*along,tx:start.tx,ty:start.ty};
     let clearance=Infinity;
     for(let x=-390;x<=410;x+=25)for(let y=side===1?-210:-75;y<=(side===1?125:245);y+=25){
       const p=paddockPoint(x,y,placement),n=nearest(p.x,p.y);
       clearance=Math.min(clearance,n.distance-widthAt('wall',n.progress)-30,p.x-worldBounds.x-20,worldBounds.x+worldBounds.width-p.x-20,p.y-worldBounds.y-20,worldBounds.y+worldBounds.height-p.y-20);
+      if(activeMap.id==='coast')clearance=Math.min(clearance,coastLandDistance(p.x,p.y)-70);
       if(activeMap.id==='amazonas')clearance=Math.min(clearance,amazonRiverDistance(p.x,p.y)-145);
     }
     if(clearance>=0)return placement;
@@ -256,6 +264,7 @@ function surfaceAt(n,x=n.x,y=n.y) {
   if(n.distance<widthAt('runoff',n.progress)) return 'RUNOFF';
   if(activeMap.id==='canyon')return 'SAND';
   if(activeMap.id==='alpine')return 'SNOW';
+  if(activeMap.id==='coast')return 'SAND';
   // Gravel at the outer edge of fast turns; grass covers the remaining verge.
   return ((n.progress>.12&&n.progress<.38)||(n.progress>.51&&n.progress<.77)) ? 'GRAVEL' : 'GRASS';
 }
@@ -293,7 +302,7 @@ function renderPicker(){
     $('picker-content').innerHTML='<div class="choice-grid">'+Object.values(MAPS).map((map,i)=>{
       let best=null;try{const value=JSON.parse(localStorage.getItem(bestKeyFor(map,activeCar)));if(typeof value==='number'&&value>0&&Number.isFinite(value))best=value;}catch(_){}
       const selected=map.id===pendingTrack;
-      return '<button class="track-choice '+(selected?'selected':'')+'" data-track="'+map.id+'" aria-label="Choose '+map.name+'" aria-pressed="'+selected+'" style="--card-accent:'+map.accent+'"><span class="choice-number">0'+(i+1)+' / '+(map.id==='amazonas'?'JUNGLE':map.id==='juniper'?'WOODLAND':map.id==='canyon'?'DESERT':map.id==='rallycross'?'RALLYCROSS':'ALPINE')+'</span><span class="choice-check">'+(selected?'✓':'↗')+'</span><canvas id="preview-'+map.id+'" width="480" height="270" aria-label="'+map.name+' track layout"></canvas><span class="choice-body"><span class="choice-tag">'+map.label+'</span><strong>'+map.name+'</strong><span class="choice-description">'+map.description+'</span><span class="choice-details"><span>'+map.temperature+' · '+(map.id==='amazonas'?'2 FORDS + COCONUTS':map.id==='canyon'?'NARROW PASSES':map.id==='alpine'?'3 ICE PATCHES':map.id==='rallycross'?'ASPHALT + DIRT':'3 OIL SLICKS')+'</span><span class="choice-best">BEST '+formatTime(best)+'</span></span></span></button>';
+      return '<button class="track-choice '+(selected?'selected':'')+'" data-track="'+map.id+'" aria-label="Choose '+map.name+'" aria-pressed="'+selected+'" style="--card-accent:'+map.accent+'"><span class="choice-number">0'+(i+1)+' / '+(map.id==='coast'?'COAST':map.id==='amazonas'?'JUNGLE':map.id==='juniper'?'WOODLAND':map.id==='canyon'?'DESERT':map.id==='rallycross'?'RALLYCROSS':'ALPINE')+'</span><span class="choice-check">'+(selected?'✓':'↗')+'</span><canvas id="preview-'+map.id+'" width="480" height="270" aria-label="'+map.name+' track layout"></canvas><span class="choice-body"><span class="choice-tag">'+map.label+'</span><strong>'+map.name+'</strong><span class="choice-description">'+map.description+'</span><span class="choice-details"><span>'+map.temperature+' · '+(map.id==='coast'?'2 SAND DRIFTS':map.id==='amazonas'?'2 FORDS + COCONUTS':map.id==='canyon'?'NARROW PASSES':map.id==='alpine'?'3 ICE PATCHES':map.id==='rallycross'?'ASPHALT + DIRT':'3 OIL SLICKS')+'</span><span class="choice-best">BEST '+formatTime(best)+'</span></span></span></button>';
     }).join('')+'</div>';
     for(const map of Object.values(MAPS)){drawTrackPreview($('preview-'+map.id),map);document.querySelector('[data-track="'+map.id+'"]').onclick=()=>{pendingTrack=map.id;renderPicker();document.querySelector('[data-track="'+map.id+'"]').focus();};}
   }else{
@@ -316,10 +325,11 @@ function applyPicker(){
 }
 function drawTrackPreview(canvas,map){
   const c=canvas.getContext('2d'),points=sampleCurve(map.points,16),xs=points.map(p=>p.x),ys=points.map(p=>p.y),left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys),scale=Math.min(380/(right-left),205/(bottom-top));
-  c.fillStyle=map.id==='amazonas'?'#214735':map.id==='canyon'?'#694a37':map.id==='alpine'?'#52686e':map.id==='rallycross'?'#5b5b3e':'#354b3d';c.fillRect(0,0,480,270);
+  c.fillStyle=map.id==='coast'?'#287f92':map.id==='amazonas'?'#214735':map.id==='canyon'?'#694a37':map.id==='alpine'?'#52686e':map.id==='rallycross'?'#5b5b3e':'#354b3d';c.fillRect(0,0,480,270);
   const rand=seededRandom(map.id==='canyon'?513:map.id==='alpine'?719:318);
   for(let i=0;i<24;i++){c.fillStyle=map.id==='canyon'?'#bf80572b':map.id==='alpine'?'#d6ebe324':'#a5c78516';c.beginPath();c.ellipse(rand()*480,rand()*270,10+rand()*45,8+rand()*30,rand()*6.28,0,6.28);c.fill();}
   c.save();c.translate(240,135);c.scale(scale,scale);c.translate(-(left+right)/2,-(top+bottom)/2);
+  if(map.id==='coast'){paintCoastGround(c,{x:left-600,y:top-600,width:right-left+1200,height:bottom-top+1200},false);c.fillStyle='#f4e6ce';c.beginPath();c.arc(coast.lighthouse.x,coast.lighthouse.y,38,0,Math.PI*2);c.fill();c.fillStyle='#d47f61';c.beginPath();c.arc(coast.lighthouse.x,coast.lighthouse.y,20,0,Math.PI*2);c.fill();}
   if(map.id==='amazonas')paintAmazonRiver(c,false);
   ribbon(c,'#12202166',20/scale,points);ribbon(c,map.accent,9/scale,points);ribbon(c,'#243435',5/scale,points);
   if(map.id==='amazonas'){c.save();c.globalAlpha=.8;paintAmazonRiver(c,false);c.restore();}
@@ -469,7 +479,7 @@ function windowResized(){const h=$('game');resizeCanvas(h.clientWidth,h.clientHe
 
 function simulate(dt) {
   lapGhost.previous=[car.x,car.y,car.angle];
-  updateJungle(dt);
+  updateJungle(dt);if(activeMap.id==='coast')coast.time+=dt;
   if(race.countdown>0){race.countdown=Math.max(0,race.countdown-dt);car.vx=0;car.vy=0;car.yaw=0;car.throttle=keys.has('KeyW')||keys.has('ArrowUp')?1:0;if(race.countdown===0)race.goTime=.8;return;}
   race.goTime=Math.max(0,race.goTime-dt);
   feedback.impact*=Math.exp(-7*dt);feedback.impactCooldown=Math.max(0,feedback.impactCooldown-dt);timing.flashTime=Math.max(0,timing.flashTime-dt);
@@ -589,10 +599,10 @@ function draw() {
   const smoothing=1-Math.exp(-4.5*elapsed);
   camera.x=lerpTo(camera.x,car.x+car.vx*.42,smoothing);camera.y=lerpTo(camera.y,car.y+car.vy*.42,smoothing);
   camera.zoom=lerpTo(camera.zoom,desiredZoom()*(1-clamp(Math.hypot(car.vx,car.vy)/1700,0,.19)),smoothing);
-  ctx.save();ctx.setTransform(pixelDensity(),0,0,pixelDensity(),0,0);ctx.fillStyle=activeMap.id==='canyon'?'#d5a36d':activeMap.id==='alpine'?'#dbe6e3':activeMap.id==='amazonas'?'#28523b':'#8ba274';ctx.fillRect(0,0,width,height);
+  ctx.save();ctx.setTransform(pixelDensity(),0,0,pixelDensity(),0,0);ctx.fillStyle=activeMap.id==='canyon'?'#d5a36d':activeMap.id==='alpine'?'#dbe6e3':activeMap.id==='amazonas'?'#28523b':activeMap.id==='coast'?'#288f9c':'#8ba274';ctx.fillRect(0,0,width,height);
   ctx.translate(width/2,height*.54);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);
   ctx.drawImage(worldCanvas,worldBounds.x,worldBounds.y);
-  drawRiverCurrent(ctx);drawSkidmarks(ctx);drawStartingGridSelection(ctx);
+  drawCoastWaves(ctx);drawRiverCurrent(ctx);drawSkidmarks(ctx);drawStartingGridSelection(ctx);
   for(const p of particles){ctx.globalAlpha=p.life/p.max*.35;ctx.fillStyle=p.type==='water'?'#b7f3ee':p.type==='dust'?'#dfca9b':p.type==='spark'?'#ffdf85':'#f0e9da';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
   drawPatchHighlights(ctx,millis()/1000);drawCar(ctx);drawLapGhost(ctx);drawJungle(ctx);ctx.restore();
   if(feedback.impact>.03){ctx.save();ctx.fillStyle='rgba(247,130,92,'+feedback.impact*.065+')';ctx.fillRect(0,0,width,height);ctx.restore();}
@@ -744,23 +754,147 @@ function drawJungle(c){
   }
 }
 
+// A continuous shoreline keeps the sea outside the road and pit barriers.
+const coast={time:0,shore:sampleCurve([
+  [-5000,-1400],[-2350,-1500],[-1750,-1700],[-1150,-1700],[-800,-1850],
+  [-550,-1750],[-350,-2100],[200,-2250],[650,-2000],[800,-1650],
+  [1450,-1600],[1850,-1200],[1850,-750],[1750,-350],[1900,150],
+  [1650,600],[1900,1050],[1700,1600],[1100,1850],[750,1770],
+  [300,2030],[-200,1830],[-800,1820],[-1300,1700],[-1900,1500],[-5000,1700]
+],12),lighthouse:{x:100,y:-1780}};
+function coastShoreFrame(x,y){
+  let best=null,distance=Infinity;const points=coast.shore;
+  for(let i=0;i<points.length;i++){const p=points[i],q=points[(i+1)%points.length],dx=q.x-p.x,dy=q.y-p.y,length=dx*dx+dy*dy,t=clamp(((x-p.x)*dx+(y-p.y)*dy)/length,0,1),px=p.x+dx*t,py=p.y+dy*t,d=Math.hypot(x-px,y-py);if(d<distance){distance=d;const size=Math.sqrt(length);best={x:px,y:py,tx:dx/size,ty:dy/size,distance:d};}}
+  return best;
+}
+function coastOnLand(x,y){
+  let inside=false;const points=coast.shore;
+  for(let i=0,j=points.length-1;i<points.length;j=i++){const p=points[i],q=points[j];if((p.y>y)!==(q.y>y)&&x<(q.x-p.x)*(y-p.y)/(q.y-p.y)+p.x)inside=!inside;}
+  return inside;
+}
+function coastLandDistance(x,y){const distance=coastShoreFrame(x,y).distance;return coastOnLand(x,y)?distance:-distance;}
+function paintCoastGround(c,bounds,detail=true){
+  const rand=seededRandom(6845),{x,y,width,height}=bounds,sea=c.createLinearGradient(x,y,x+width,y+height);
+  sea.addColorStop(0,'#246f8d');sea.addColorStop(.55,'#288f9c');sea.addColorStop(1,'#2a8999');c.fillStyle=sea;c.fillRect(x,y,width,height);
+  path(c,coast.shore);c.fillStyle='#a8b88a';c.fill();
+  // Shore bands are clipped to the sea, so shallows never spill onto the road.
+  c.save();c.beginPath();c.rect(x,y,width,height);coast.shore.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();c.clip('evenodd');
+  for(const [color,width] of [['#42aeb0',310],['#68c8be',200],['#91d8c5',120],['#e7d6a7',48]]){path(c,coast.shore);c.strokeStyle=color;c.lineWidth=width;c.lineJoin='round';c.stroke();}c.restore();
+  c.save();path(c,coast.shore);c.clip();path(c,coast.shore);c.strokeStyle='#ead5a3';c.lineWidth=125;c.stroke();
+  if(detail){
+    for(let i=0;i<170;i++){const px=x+rand()*width,py=y+rand()*height;c.fillStyle=i%2?'#b6c49155':'#8ba27755';c.beginPath();c.ellipse(px,py,40+rand()*100,30+rand()*70,rand()*6.28,0,Math.PI*2);c.fill();}
+    for(let i=0;i<18000;i++){c.fillStyle=i%2?'#657b4c20':'#e4d6a52a';c.fillRect(x+rand()*width,y+rand()*height,1.5,1.5);}
+  }c.restore();
+}
+function paintCoastBuilding(c,x,y,w,h,angle,roof='#c77d58'){
+  c.save();c.translate(x,y);c.rotate(angle);c.fillStyle='#56644a30';roundedRect(c,-w/2+4,-h/2+5,w,h,4);c.fill();c.fillStyle='#f4e4c5';roundedRect(c,-w/2-4,-h/2-4,w+8,h+8,3);c.fill();c.fillStyle=roof;roundedRect(c,-w/2,-h/2,w,h,2);c.fill();
+  c.strokeStyle='#f2c09270';c.lineWidth=2;for(let i=-h/2+6;i<h/2;i+=8){c.beginPath();c.moveTo(-w/2+2,i);c.lineTo(w/2-2,i);c.stroke();}c.strokeStyle='#9d5c43';c.lineWidth=3;c.beginPath();c.moveTo(0,-h/2);c.lineTo(0,h/2);c.stroke();c.fillStyle='#e6ceac';c.fillRect(w*.2,-h*.3,9,11);c.restore();
+}
+function paintCoastPalm(c,x,y,size,rand){
+  c.save();c.translate(x,y);c.rotate(rand()*6.28);c.fillStyle='#566b4330';c.beginPath();c.ellipse(5,6,size*.48,size*.4,0,0,Math.PI*2);c.fill();
+  for(let i=0;i<7;i++){c.save();c.rotate(i*Math.PI*2/7);c.fillStyle=i%2?'#688e55':'#457d50';c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(size*.2,-size*.22,size*.55,-size*.06);c.quadraticCurveTo(size*.2,size*.1,0,0);c.fill();c.strokeStyle='#a3b86b99';c.lineWidth=1;c.beginPath();c.moveTo(0,0);c.lineTo(size*.47,-size*.05);c.stroke();c.restore();}c.restore();
+}
+function paintCoastBoat(c,x,y,angle,color){
+  c.save();c.translate(x,y);c.rotate(angle);c.fillStyle='#15516a44';c.beginPath();c.ellipse(3,4,31,11,0,0,Math.PI*2);c.fill();c.fillStyle='#edf0db';c.beginPath();c.moveTo(33,0);c.quadraticCurveTo(10,-15,-24,-10);c.lineTo(-24,10);c.quadraticCurveTo(10,15,33,0);c.fill();c.fillStyle=color;roundedRect(c,-18,-7,35,14,3);c.fill();c.fillStyle='#bdd8d9';c.fillRect(-4,-6,11,12);c.strokeStyle='#eee4c5';c.lineWidth=2;c.beginPath();c.moveTo(9,0);c.lineTo(25,0);c.stroke();c.restore();
+}
+function paintCoastLandmarks(c){
+  const l=coast.lighthouse;c.save();c.translate(l.x,l.y);
+  c.fillStyle='#dbd5b4';c.beginPath();c.arc(0,0,86,0,Math.PI*2);c.fill();c.strokeStyle='#f7efd4';c.lineWidth=5;c.stroke();
+  for(let i=0;i<16;i++){const a=i*Math.PI/8;c.strokeStyle='#aaa889';c.lineWidth=2;c.beginPath();c.moveTo(Math.cos(a)*53,Math.sin(a)*53);c.lineTo(Math.cos(a)*83,Math.sin(a)*83);c.stroke();}
+  c.fillStyle='#70806e40';c.beginPath();c.arc(6,7,43,0,Math.PI*2);c.fill();c.fillStyle='#fff1d7';c.beginPath();c.arc(0,0,43,0,Math.PI*2);c.fill();c.strokeStyle='#c46e55';c.lineWidth=9;c.stroke();c.fillStyle='#d97858';c.beginPath();c.arc(0,0,29,0,Math.PI*2);c.fill();c.fillStyle='#a8dfe0';c.beginPath();c.arc(0,0,16,0,Math.PI*2);c.fill();c.strokeStyle='#f7e7bd';c.lineWidth=3;c.stroke();c.fillStyle='#f4ebc9';c.font='600 13px Arial';c.textAlign='center';c.fillText('FAROL',0,112);c.restore();
+  const harbor=coastShoreFrame(paddock.x,paddock.y),nx=harbor.ty,ny=-harbor.tx;
+  c.save();c.translate(harbor.x,harbor.y);c.rotate(Math.atan2(ny,nx));
+  c.fillStyle='#c5b691';roundedRect(c,-45,-145,65,290,5);c.fill();
+  for(let i=-1;i<=1;i++){
+    c.fillStyle='#b69d72';roundedRect(c,-15,i*96-8,235,16,3);c.fill();c.strokeStyle='#7f7759';c.lineWidth=1;for(let k=0;k<225;k+=12){c.beginPath();c.moveTo(k,i*96-7);c.lineTo(k,i*96+7);c.stroke();}
+    for(const side of [-1,1])paintCoastBoat(c,105+(i%2)*30,i*96+side*29,0,side===1?'#5a9da8':'#c98262');
+  }
+  c.restore();c.save();c.translate(harbor.x-nx*85,harbor.y-ny*85);c.fillStyle='#f3ecd4';c.font='bold 18px Arial';c.textAlign='center';c.fillText('MARINA AZUL',0,0);c.restore();
+  paintCoastBoat(c,2050,-450,.7,'#c98262');paintCoastBoat(c,2110,850,-.4,'#5a9da8');
+  // Village roofs stay on land, away from both driving corridors.
+  const rand=seededRandom(891);for(let i=0;i<48;i++){
+    const x=-2200+rand()*1200,y=-900+rand()*1450,w=45+rand()*45,h=42+rand()*35;
+    if(coastLandDistance(x,y)<110||nearest(x,y).distance<CFG.wall+100||nearestPit(x,y).distance<pitLane.wall+100||Math.hypot(x-paddock.x,y-paddock.y)<370)continue;
+    paintCoastBuilding(c,x,y,w,h,rand()*.6-.3,i%3?'#c7835d':'#dba575');
+  }
+}
+function drawCoastWaves(c){
+  if(activeMap.id!=='coast')return;c.save();c.lineCap='round';
+  for(let i=0;i<coast.shore.length;i+=3){const p=coast.shore[i],q=coast.shore[(i+1)%coast.shore.length],length=Math.hypot(q.x-p.x,q.y-p.y),tx=(q.x-p.x)/length,ty=(q.y-p.y)/length,offset=135-((coast.time*13+i*11)%100),x=p.x+ty*offset,y=p.y-tx*offset;
+    c.globalAlpha=Math.sin((offset-35)/100*Math.PI)*.48;c.strokeStyle='#e5f7e4';c.lineWidth=2.5;c.beginPath();c.moveTo(x-tx*15,y-ty*15);c.quadraticCurveTo(x+ty*4,y-tx*4,x+tx*15,y+ty*15);c.stroke();
+  }c.restore();
+}
+
+const sceneryDetails=[];
+function sceneryClear(x,y,radius){
+  const n=nearest(x,y),pit=nearestPit(x,y);if(n.distance<widthAt('wall',n.progress)+radius+24||pit.distance<pitLane.wall+radius+24)return false;
+  const dx=x-paddock.x,dy=y-paddock.y,px=dx*paddock.tx+dy*paddock.ty,py=-dx*paddock.ty+dy*paddock.tx;
+  if(px>-265-radius&&px<305+radius&&py>-75-radius&&py<125+radius)return false;
+  if(activeMap.id==='amazonas'&&amazonRiverDistance(x,y)<125+radius)return false;
+  if(activeMap.id==='coast'&&(coastLandDistance(x,y)<90+radius||Math.hypot(x-coast.lighthouse.x,y-coast.lighthouse.y)<130+radius))return false;
+  return true;
+}
+function buildSceneryDetails(){
+  sceneryDetails.length=0;const rand=seededRandom(5600+Object.keys(MAPS).indexOf(activeMap.id)*271),kinds={juniper:['rock','log','fern','flowers'],canyon:['rock','cactus','drygrass'],alpine:['rock','pine','snowdrift'],amazonas:['fern','flowers','log','rock'],rallycross:['tires','canopy','servicecar','rock'],coast:['umbrella','flowers','rock','villa']}[activeMap.id];
+  for(let i=0;i<180;i++){
+    const p=track[Math.floor(rand()*track.length)],size=22+rand()*32,radius=size*1.3+8,side=rand()<.5?-1:1,d=widthAt('wall',p.s/track.totalLength)+radius+60+rand()*240,x=p.x+p.nx*d*side,y=p.y+p.ny*d*side;
+    if(!sceneryClear(x,y,radius))continue;
+    sceneryDetails.push({x,y,size,radius,angle:rand()*Math.PI*2,kind:kinds[Math.floor(rand()*kinds.length)],seed:Math.floor(rand()*100000)});
+  }
+}
+function paintSceneryRock(c,size,rand){
+  const desert=activeMap.id==='canyon',snow=activeMap.id==='alpine';c.fillStyle='#203b2c25';c.beginPath();c.ellipse(5,6,size*.7,size*.47,0,0,Math.PI*2);c.fill();
+  c.beginPath();for(let i=0;i<7;i++){const a=i*Math.PI*2/7,r=size*(.43+rand()*.17);const x=Math.cos(a)*r,y=Math.sin(a)*r*.75;i?c.lineTo(x,y):c.moveTo(x,y);}c.closePath();c.fillStyle=desert?'#ba8662':snow?'#a0b6b7':'#9b9d83';c.fill();
+  c.fillStyle=desert?'#dfb48a':snow?'#e7f0e8':'#bcc0a3';c.beginPath();c.moveTo(-size*.42,-size*.1);c.lineTo(-size*.1,-size*.35);c.lineTo(size*.28,-size*.19);c.lineTo(size*.1,size*.04);c.closePath();c.fill();
+}
+function paintSceneryDetails(c){
+  for(const prop of sceneryDetails){
+    const {x,y,size,angle,kind}=prop,rand=seededRandom(prop.seed);c.save();c.translate(x,y);c.rotate(angle);
+    if(kind==='rock')paintSceneryRock(c,size,rand);
+    else if(kind==='log'){
+      c.strokeStyle='#394b302b';c.lineWidth=size*.35;c.lineCap='round';c.beginPath();c.moveTo(-size*.55,5);c.lineTo(size*.55,5);c.stroke();c.strokeStyle='#836344';c.lineWidth=size*.28;c.beginPath();c.moveTo(-size*.6,0);c.lineTo(size*.6,0);c.stroke();c.strokeStyle='#bea67a';c.lineWidth=2;c.beginPath();c.moveTo(-size*.48,-size*.04);c.lineTo(size*.48,-size*.04);c.stroke();
+      for(const side of [-1,1]){c.fillStyle='#d4be8d';c.beginPath();c.ellipse(side*size*.6,0,size*.06,size*.13,0,0,Math.PI*2);c.fill();}
+    }else if(kind==='fern'||kind==='flowers'){
+      for(let i=0;i<9;i++){c.save();c.rotate(i*Math.PI*2/9);c.fillStyle=kind==='fern'?'#4c8b55':'#729055';c.beginPath();c.ellipse(size*.21,0,size*.27,size*.06,.1,0,Math.PI*2);c.fill();c.restore();}
+      if(kind==='flowers')for(let i=0;i<8;i++){c.fillStyle=['#f1d990','#e7af9e','#d5d49b'][i%3];c.beginPath();c.arc((rand()-.5)*size,(rand()-.5)*size,2.2,0,Math.PI*2);c.fill();}
+    }else if(kind==='cactus')paintDesertProp(c,0,0,size,rand);
+    else if(kind==='pine')paintAlpineProp(c,0,0,size*1.2,rand);
+    else if(kind==='snowdrift'){
+      c.fillStyle='#edf4ed';c.beginPath();c.ellipse(0,0,size*.75,size*.25,0,0,Math.PI*2);c.fill();c.strokeStyle='#bdcfce88';c.lineWidth=2;c.beginPath();c.ellipse(2,5,size*.65,size*.17,0,0,Math.PI);c.stroke();
+    }else if(kind==='drygrass'){
+      c.strokeStyle='#bd995f';c.lineWidth=2;for(let i=0;i<12;i++){const a=rand()*6.28;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a)*size*.42,Math.sin(a)*size*.42);c.stroke();}
+    }else if(kind==='tires'){
+      for(let i=0;i<3;i++)for(let j=0;j<2;j++){c.fillStyle='#263532';c.beginPath();c.arc((i-1)*12,(j-.5)*12,7,0,Math.PI*2);c.fill();c.strokeStyle='#758175';c.lineWidth=2;c.beginPath();c.arc((i-1)*12,(j-.5)*12,3,0,Math.PI*2);c.stroke();}
+    }else if(kind==='canopy'){
+      c.fillStyle='#253f3025';c.fillRect(-size*.65+5,-size*.45+5,size*1.3,size*.9);c.fillStyle=prop.seed%2?'#d5c08b':'#b8765a';roundedRect(c,-size*.65,-size*.45,size*1.3,size*.9,3);c.fill();c.strokeStyle='#f0e4bd';c.lineWidth=2;c.stroke();c.beginPath();c.moveTo(-size*.65,-size*.45);c.lineTo(size*.65,size*.45);c.moveTo(-size*.65,size*.45);c.lineTo(size*.65,-size*.45);c.stroke();
+    }else if(kind==='servicecar'){
+      c.fillStyle='#d6d8bf';roundedRect(c,-23,-12,46,24,4);c.fill();c.fillStyle='#607d7c';c.fillRect(6,-9,8,18);c.fillStyle='#9b987b';c.fillRect(-19,-8,20,16);c.fillStyle='#283c36';for(const side of [-1,1]){c.fillRect(-17,side*11-2,8,4);c.fillRect(10,side*11-2,8,4);}
+    }else if(kind==='umbrella'){
+      c.fillStyle='#d9c59c';c.fillRect(-size*.35,size*.35,size*.7,size*.28);c.fillStyle='#f4e6c8';c.fillRect(-size*.32,size*.35,size*.64,size*.1);
+      for(let i=0;i<8;i++){c.fillStyle=i%2?'#eee6c6':prop.seed%2?'#77b3b8':'#d48c6c';c.beginPath();c.moveTo(0,0);c.arc(0,0,size*.42,i*Math.PI/4,(i+1)*Math.PI/4);c.closePath();c.fill();}c.fillStyle='#e7d8ad';c.beginPath();c.arc(0,0,3,0,Math.PI*2);c.fill();
+    }else if(kind==='villa')paintCoastBuilding(c,0,0,size*1.2,size*.9,0,prop.seed%2?'#cb865e':'#d89d77');
+    c.restore();
+  }
+}
+
 function buildWorld() {
   worldCanvas=document.createElement('canvas');worldCanvas.width=worldBounds.width;worldCanvas.height=worldBounds.height;worldCtx=worldCanvas.getContext('2d');
-  const desert=activeMap.id==='canyon',alpine=activeMap.id==='alpine',amazon=activeMap.id==='amazonas',c=worldCtx,rand=seededRandom(desert?4081:alpine?6327:amazon?9241:879),w=worldBounds.width,h=worldBounds.height;c.fillStyle=desert?'#d5a36d':alpine?'#dbe6e3':amazon?'#28523b':'#8ba274';c.fillRect(0,0,w,h);c.translate(-worldBounds.x,-worldBounds.y);
+  const desert=activeMap.id==='canyon',alpine=activeMap.id==='alpine',amazon=activeMap.id==='amazonas',seaside=activeMap.id==='coast',c=worldCtx,rand=seededRandom(desert?4081:alpine?6327:amazon?9241:seaside?6845:879),w=worldBounds.width,h=worldBounds.height;c.fillStyle=desert?'#d5a36d':alpine?'#dbe6e3':amazon?'#28523b':'#8ba274';c.fillRect(0,0,w,h);c.translate(-worldBounds.x,-worldBounds.y);
   // All scenery is orthographic: tree crowns, roof planes, and flat ground markings.
   for(let i=0;i<140;i++){c.fillStyle=desert?(i%2?'#dfb780':'#c59160'):alpine?(i%2?'#eff5ee':'#c7d5d3'):amazon?(i%2?'#315e40':'#204832'):(i%2?'#91a97c':'#849d6e');c.beginPath();c.ellipse(rand()*w+worldBounds.x,rand()*h+worldBounds.y,70+rand()*200,60+rand()*150,rand()*6.28,0,Math.PI*2);c.fill();}
   for(let i=0;i<32000;i++){c.fillStyle=desert?(i%2?'#84543825':'#ffe2ab40'):alpine?(i%2?'#90aeb326':'#ffffff5a'):(i%2?'#6f8a5b30':'#b4c28d35');const x=rand()*w+worldBounds.x,y=rand()*h+worldBounds.y;c.fillRect(x,y,1+rand()*2,1+rand()*2);}
+  if(seaside)paintCoastGround(c,worldBounds);
   if(amazon)paintAmazonRiver(c);
   if(desert)paintCanyonMesas(c,rand,w,h);
   if(alpine)paintAlpineRidges(c,rand,w,h);
   paintPitRoad(c);
-  ribbon(c,desert?'#a96549':alpine?'#b7c9cb':'#71895e',p=>widthAt('wall',p)*2+25);ribbon(c,desert?'#ddb27b':alpine?'#edf2e9':'#a3ac87',p=>widthAt('wall',p)*2);
+  ribbon(c,desert?'#a96549':alpine?'#b7c9cb':seaside?'#bead85':'#71895e',p=>widthAt('wall',p)*2+25);ribbon(c,desert?'#ddb27b':alpine?'#edf2e9':seaside?'#e1cf9f':'#a3ac87',p=>widthAt('wall',p)*2);
   for(const [from,to]of [[.12,.38],[.51,.77]]){
     const section=track.slice(Math.floor(from*track.length),Math.ceil(to*track.length));
-    if(!desert&&!alpine){c.beginPath();section.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.strokeStyle='#cbb88f';c.lineWidth=(CFG.wall-4)*2;c.lineCap='butt';c.stroke();}
+    if(!desert&&!alpine&&!seaside){c.beginPath();section.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.strokeStyle='#cbb88f';c.lineWidth=(CFG.wall-4)*2;c.lineCap='butt';c.stroke();}
   }
   // Scatter actual gravel grains on the trap areas, outside the paved runoff.
-  for(let i=0;i<17000;i++){if(alpine)break;const index=Math.floor(rand()*track.length),p=track[index],progress=index/track.length;const side=rand()<.5?-1:1,offset=(widthAt('runoff',progress)+1+rand()*(widthAt('wall',progress)-widthAt('runoff',progress)-5))*side;if(!desert&&!((progress>.12&&progress<.38)||(progress>.51&&progress<.77)))continue;c.fillStyle=desert?(i%2?'#915b3b55':'#ffe4aa6c'):(i%2?'#ae9c793f':'#e2d3b55c');c.fillRect(p.x+p.nx*offset,p.y+p.ny*offset,1.5,1.5);}
+  for(let i=0;i<17000;i++){if(alpine||seaside)break;const index=Math.floor(rand()*track.length),p=track[index],progress=index/track.length;const side=rand()<.5?-1:1,offset=(widthAt('runoff',progress)+1+rand()*(widthAt('wall',progress)-widthAt('runoff',progress)-5))*side;if(!desert&&!((progress>.12&&progress<.38)||(progress>.51&&progress<.77)))continue;c.fillStyle=desert?(i%2?'#915b3b55':'#ffe4aa6c'):(i%2?'#ae9c793f':'#e2d3b55c');c.fillRect(p.x+p.nx*offset,p.y+p.ny*offset,1.5,1.5);}
   ribbon(c,desert?'#a28c74':alpine?'#95a8ae':'#757e76',p=>widthAt('runoff',p)*2);ribbon(c,desert?'#8c8170':alpine?'#81969c':'#6a746e',p=>widthAt('road',p)*2+24);ribbon(c,desert?'#f5d5a0':alpine?'#eaf4ef':'#e4e5ca',p=>widthAt('road',p)*2+5);ribbon(c,desert?'#4f5150':alpine?'#46555c':'#424d50',p=>widthAt('road',p)*2);
   // Seeded asphalt grain avoids photographic perspective and repeats cleanly.
   c.save();path(c,track);c.lineWidth=CFG.road*2;c.strokeStyle='#424d50';
@@ -777,7 +911,7 @@ function buildWorld() {
     const side=turn>0?1:-1;
     const wp=widthAt('road',i/track.length)+4,wq=widthAt('road',((i+1)%track.length)/track.length)+4;
     if(nearestPit(p.x+p.nx*wp*side,p.y+p.ny*wp*side).distance<pitLane.road+10)continue;
-    c.beginPath();c.moveTo(p.x+p.nx*wp*side,p.y+p.ny*wp*side);c.lineTo(q.x+q.nx*wq*side,q.y+q.ny*wq*side);c.strokeStyle=Math.floor(i/2)%2?(desert?'#f9ddb0':'#e3dfcd'):(desert?'#d98449':alpine?'#759fb3':'#d86f58');c.lineWidth=14;c.lineCap='butt';c.stroke();
+    c.beginPath();c.moveTo(p.x+p.nx*wp*side,p.y+p.ny*wp*side);c.lineTo(q.x+q.nx*wq*side,q.y+q.ny*wq*side);c.strokeStyle=Math.floor(i/2)%2?(desert?'#f9ddb0':'#e3dfcd'):(desert?'#d98449':alpine?'#759fb3':seaside?'#54a7b9':'#d86f58');c.lineWidth=14;c.lineCap='butt';c.stroke();
   }
   // Continuous rail follows the exact boundary used by collision detection.
   for(const side of [-1,1]){
@@ -795,12 +929,13 @@ function buildWorld() {
   for(const slot of startingGrid){c.save();c.translate(slot.x,slot.y);c.rotate(Math.atan2(slot.ty,slot.tx));c.strokeStyle='#d8e4d278';c.lineWidth=1.5;roundedRect(c,-26,-14,52,28,4);c.stroke();c.restore();}
   // Top-down paddock roofs; deliberately no building facades or side-view sprites.
   c.save();c.translate(paddock.x,paddock.y);c.rotate(Math.atan2(paddock.ty,paddock.tx));c.fillStyle=desert?'#ac835f':alpine?'#8da6a8':'#627557';roundedRect(c,-240,-50,520,135,7);c.fill();
-  for(let i=0;i<6;i++){c.fillStyle=i%2?'#d3ccad':'#e1d7b7';c.fillRect(-216+i*79,-35,69,80);c.strokeStyle='#b7af92';c.lineWidth=2;c.strokeRect(-211+i*79,-30,59,70);c.fillStyle='#7d8f82';c.fillRect(-196+i*79,-21,28,18);}c.restore();
+  for(let i=0;i<6;i++){c.fillStyle=seaside?(i%2?'#ca825f':'#d79870'):(i%2?'#d3ccad':'#e1d7b7');c.fillRect(-216+i*79,-35,69,80);c.strokeStyle='#b7af92';c.lineWidth=2;c.strokeRect(-211+i*79,-30,59,70);c.fillStyle='#7d8f82';c.fillRect(-196+i*79,-21,28,18);}c.restore();
   // Circuit lettering is on the grass, read from directly overhead.
-  c.save();c.translate(alpine?-350:-500,alpine?840:-220);c.fillStyle=desert?'#ffe0a77a':alpine?'#829ea77a':'#d1ddba70';c.font='italic 900 92px Barlow Condensed, Impact, sans-serif';c.textAlign='center';c.fillText('APEX /',0,0);c.font='600 14px Barlow, sans-serif';c.fillText(desert?'D E S E R T   C A N Y O N':alpine?'A L P I N E   P A S S':amazon?'A M A Z O N A S':activeMap.id==='rallycross'?'R I D G E W A Y   R X':'J U N I P E R   R A C E W A Y',0,30);c.restore();
-  for(let i=0;i<(amazon?1900:280);i++){
-    const x=rand()*w+worldBounds.x,y=rand()*h+worldBounds.y,n=nearest(x,y);if(n.distance<CFG.wall+50||nearestPit(x,y).distance<pitLane.wall+70)continue;const dx=x-paddock.x,dy=y-paddock.y,px=dx*paddock.tx+dy*paddock.ty,py=-dx*paddock.ty+dy*paddock.tx;if(px>-330&&px<370&&py>-140&&py<175)continue;
-    const size=amazon?65+rand()*65:35+rand()*48;
+  c.save();c.translate(alpine?-350:-500,alpine?840:-220);c.fillStyle=desert?'#ffe0a77a':alpine?'#829ea77a':'#d1ddba70';c.font='italic 900 92px Barlow Condensed, Impact, sans-serif';c.textAlign='center';c.fillText('APEX /',0,0);c.font='600 14px Barlow, sans-serif';c.fillText(seaside?'C O S T A   A Z U L':desert?'D E S E R T   C A N Y O N':alpine?'A L P I N E   P A S S':amazon?'A M A Z O N A S':activeMap.id==='rallycross'?'R I D G E W A Y   R X':'J U N I P E R   R A C E W A Y',0,30);c.restore();
+  if(seaside)paintCoastLandmarks(c);
+  for(let i=0;i<(amazon?2200:seaside?720:680);i++){
+    const x=rand()*w+worldBounds.x,y=rand()*h+worldBounds.y,size=amazon?65+rand()*65:35+rand()*48;if(!sceneryClear(x,y,size*.65))continue;const dx=x-paddock.x,dy=y-paddock.y,px=dx*paddock.tx+dy*paddock.ty,py=-dx*paddock.ty+dy*paddock.tx;if(px>-330&&px<370&&py>-140&&py<175)continue;
+    if(seaside){if(coastLandDistance(x,y)<100+size*.5||Math.hypot(x-coast.lighthouse.x,y-coast.lighthouse.y)<150)continue;paintCoastPalm(c,x,y,size,rand);continue;}
     if(amazon){if(amazonRiverDistance(x,y)<120+size*.5||Math.abs(x+500)<180&&Math.abs(y+220)<110)continue;paintJungleTree(c,x,y,size,rand);continue;}
     if(desert){paintDesertProp(c,x,y,size,rand);continue;}
     if(alpine){paintAlpineProp(c,x,y,size,rand);continue;}
@@ -809,6 +944,7 @@ function buildWorld() {
     if(treeArt&&treeArt.complete&&treeArt.naturalWidth){c.globalAlpha=.85;c.drawImage(treeArt,-size/2,-size/2,size,size);c.globalCompositeOperation='source-atop';}
     else{c.fillStyle='#52734c';for(let k=0;k<6;k++){c.beginPath();c.arc(Math.cos(k)*size*.17,Math.sin(k)*size*.17,size*.27,0,Math.PI*2);c.fill();}c.fillStyle='#658457';c.beginPath();c.arc(-3,-3,size*.29,0,Math.PI*2);c.fill();}c.restore();
   }
+  paintSceneryDetails(c);
   // Direction arrows and numbered apex boards are flat markings.
   for(let i=30;i<track.length;i+=65){const p=track[i];c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.strokeStyle='#e4e7ca25';c.lineWidth=3;c.beginPath();c.moveTo(-13,-9);c.lineTo(0,0);c.lineTo(-13,9);c.stroke();c.restore();}
   // Braking references sit on the apron before the infield hairpin.
@@ -926,7 +1062,7 @@ function updateHUD(){
   $('sector-status').textContent=timing.best.length?'Comparing with your best lap sectors.':'Complete a clean lap to set sector references.';
 }
 
-function drawMinimap(){if(!mapCtx)return;const c=mapCtx,b=pitLane.bounds,scale=Math.min(280/(b.right-b.left),225/(b.bottom-b.top));c.clearRect(0,0,320,266);c.save();c.translate(160,132);c.scale(scale,scale);c.translate(-(b.left+b.right)/2,-(b.top+b.bottom)/2);if(activeMap.id==='amazonas')paintAmazonRiver(c,false);path(c,pitLane.points,0,false);c.strokeStyle='#c2b98c';c.lineWidth=2/scale;c.stroke();ribbon(c,'#536258',9/scale);ribbon(c,'#abbca2',3/scale);if(activeMap.id==='amazonas'){c.save();c.globalAlpha=.75;paintAmazonRiver(c,false);c.restore();}const p=track[0];c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.fillStyle=activeMap.accent;c.fillRect(-1/scale,-5/scale,2/scale,10/scale);c.restore();const ghost=visibleGhostPose();if(ghost){c.save();c.translate(ghost.x,ghost.y);c.fillStyle='#91e1ff';c.strokeStyle='#e4faff';c.lineWidth=1/scale;c.beginPath();c.arc(0,0,4/scale,0,Math.PI*2);c.fill();c.stroke();c.restore();}c.save();c.translate(car.x,car.y);c.rotate(car.angle);c.scale(1/scale,1/scale);c.fillStyle=activeMap.accent;c.beginPath();c.moveTo(5,0);c.lineTo(-3.5,-3.5);c.lineTo(-2,0);c.lineTo(-3.5,3.5);c.closePath();c.fill();c.restore();c.restore();}
+function drawMinimap(){if(!mapCtx)return;const c=mapCtx,b=pitLane.bounds,scale=Math.min(280/(b.right-b.left),225/(b.bottom-b.top));c.clearRect(0,0,320,266);c.save();c.translate(160,132);c.scale(scale,scale);c.translate(-(b.left+b.right)/2,-(b.top+b.bottom)/2);if(activeMap.id==='coast'){c.save();c.globalAlpha=.3;path(c,coast.shore);c.fillStyle='#c8c99c';c.fill();c.restore();}if(activeMap.id==='amazonas')paintAmazonRiver(c,false);path(c,pitLane.points,0,false);c.strokeStyle='#c2b98c';c.lineWidth=2/scale;c.stroke();ribbon(c,'#536258',9/scale);ribbon(c,'#abbca2',3/scale);if(activeMap.id==='amazonas'){c.save();c.globalAlpha=.75;paintAmazonRiver(c,false);c.restore();}const p=track[0];c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.fillStyle=activeMap.accent;c.fillRect(-1/scale,-5/scale,2/scale,10/scale);c.restore();const ghost=visibleGhostPose();if(ghost){c.save();c.translate(ghost.x,ghost.y);c.fillStyle='#91e1ff';c.strokeStyle='#e4faff';c.lineWidth=1/scale;c.beginPath();c.arc(0,0,4/scale,0,Math.PI*2);c.fill();c.stroke();c.restore();}c.save();c.translate(car.x,car.y);c.rotate(car.angle);c.scale(1/scale,1/scale);c.fillStyle=activeMap.accent;c.beginPath();c.moveTo(5,0);c.lineTo(-3.5,-3.5);c.lineTo(-2,0);c.lineTo(-3.5,3.5);c.closePath();c.fill();c.restore();c.restore();}
 
 function toggleSound(){
   soundEnabled=!soundEnabled;

@@ -27,6 +27,16 @@ floating leaves flow southeast, and the current gently nudges the car. Dense pal
 the banks. A trackside monkey throws coconuts at passing cars;
 dodge the toss or briefly lose grip. Look for the COCONUTS warning board.
 
+Costa Azul: short coastal bends, a fishing-village hairpin, beachside
+esses and two avoidable sand drifts. A lighthouse overlooks the northern
+headland; turquoise surf, fishing boats, terracotta roofs and palms frame
+the circuit. The marina pit lane connects before and after the finish.
+
+Every landscape has denser scenery outside the barriers: woodland logs
+and ferns, desert rock and cactus clusters, mountain pines and snowdrifts,
+jungle flowers and fallen timber, rally team canopies and service vehicles,
+and coastal villas, parasols and rock gardens.
+
 Four sector times and comparisons against your best lap appear in the HUD.
 Oil, sand, and ice have irregular outlines matching their physics areas.
 The camera follows smoothly with no screen shake. Tire marks are batched

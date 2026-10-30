@@ -7,8 +7,8 @@ const node = id => {if(!nodes.has(id)) nodes.set(id,{style:{},classList:{add(){}
 const storage = new Map();
 const sandbox = {window:{},document:{getElementById:node},console,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null}};
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose};',sandbox);
-const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose}=sandbox.window.test;
+vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear};',sandbox);
+const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear}=sandbox.window.test;
 function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,crossedStart:false,countdown:0,goTime:0,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
 function step(seconds){for(let i=0;i<seconds/CFG.step;i++)simulate(CFG.step);}
 function speed(){return Math.hypot(car.vx,car.vy);}
@@ -252,7 +252,7 @@ for(const id of Object.keys(MAPS)){
     if(id==='amazonas'){let riverDistance=Infinity;for(const q of amazonRiver)riverDistance=Math.min(riverDistance,Math.hypot(p.x-q.x,p.y-q.y));assert(riverDistance>130,'Paddock must stay clear of the river and banks');}
   }
 }
-console.log('PASS: all five paddocks align with the circuit, clear every road/barrier, and avoid the river.');
+console.log('PASS: all circuit paddocks align with the circuit, clear every road/barrier, and avoid the river.');
 
 for(const id of Object.keys(MAPS)){
   configureTrack(id);reset();race.started=true;
@@ -364,3 +364,32 @@ for(const id of Object.keys(MAPS)){
   configureTrack(id);lapGhost.best={time:10,frames:[[0,p.x,p.y,0],[10,p.x+100,p.y,0]]};assert.equal(visibleGhostPose(),null,'A fresh run must hide the saved ghost again');
 }
 console.log('PASS: ghost car, minimap visibility, and live delta wait for a forward start crossing and reset on a fresh run on every map.');
+
+configureTrack('coast');configureCar('clubsport','red');
+assert.equal(MAPS.coast.name,'Costa Azul');assert.equal(MAPS.coast.patches.length,2,'The beach must have exactly two avoidable sand drifts');
+let coastRadius=Infinity,coastRun=0,coastLongest=0;
+for(let k=0;k<track.length*2;k++){
+  const i=k%track.length,a=track[(i+track.length-1)%track.length],b=track[i],c=track[(i+1)%track.length],cross=Math.abs((b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x)),radius=Math.hypot(b.x-a.x,b.y-a.y)*Math.hypot(c.x-b.x,c.y-b.y)*Math.hypot(c.x-a.x,c.y-a.y)/(2*cross);
+  coastRadius=Math.min(coastRadius,radius);coastRun=radius>1000?coastRun+Math.hypot(c.x-b.x,c.y-b.y):0;coastLongest=Math.max(coastLongest,coastRun);
+  if(k<track.length&&i%4===0){
+    for(const side of [-1,1]){const x=b.x+b.nx*(CFG.wall+12)*side,y=b.y+b.ny*(CFG.wall+12)*side;assert(coastLandDistance(x,y)>150,'Sea and waves must stay outside both main-track barriers');}
+    for(let j=i+4;j<track.length;j+=4){const q=track[j],arc=Math.min(q.s-b.s,track.totalLength-(q.s-b.s));if(arc>CFG.wall*3)assert(Math.hypot(q.x-b.x,q.y-b.y)>CFG.wall*2+10,'Coastal bends must leave space for both barriers');}
+  }
+}
+assert(coastRadius>CFG.wall+10,'Coastal corner radii must fit the barriers');assert(coastLongest<400,'Costa Azul must have short links rather than long straights');
+for(const p of pitLane.points)assert(coastLandDistance(p.x,p.y)>pitLane.wall+150,'The marina pit lane must stay on dry land');
+assert(coastLandDistance(coast.lighthouse.x,coast.lighthouse.y)>100,'The lighthouse must stand on a dry headland');
+for(const patch of MAPS.coast.patches){
+  const p=patchFrame(patch);assert.equal(surfaceAt(nearest(p.x,p.y)),'SAND PATCH');
+  const n=track[Math.floor(patch.progress*track.length)],offset=patch.lateral>0?-32:32;assert.equal(surfaceAt(nearest(n.x+n.nx*offset,n.y+n.ny*offset)),'ASPHALT','Each sand drift must leave an avoidance line');
+}
+console.log('PASS: Costa Azul short curves and barrier spacing, dry shoreline clearance, lighthouse, marina pit lane, and two avoidable sand drifts.');
+
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);assert(sceneryDetails.length>25,'Each map must gain meaningful roadside detail');
+  for(const prop of sceneryDetails)assert(sceneryClear(prop.x,prop.y,prop.radius),'Scenery must clear the main road, pits, paddock and water on '+id);
+  const p=track[0];assert.equal(sceneryClear(p.x,p.y,30),false,'Scenery placement must reject the road');
+  const pit=pitLane.points[Math.floor(pitLane.points.length/2)];assert.equal(sceneryClear(pit.x,pit.y,30),false,'Scenery placement must reject the pit road');
+  const pad=getPaddock();assert.equal(sceneryClear(pad.x,pad.y,30),false,'Scenery placement must reject the paddock');
+}
+console.log('PASS: extra biome-specific scenery on every map stays clear of all driving corridors, paddocks, and water.');
