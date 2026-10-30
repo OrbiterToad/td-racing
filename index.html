@@ -1,42 +1,1337 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#161e21">
-  <title>APEX — The Circuit Collection</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
-    :root{--ink:#edf0e8;--muted:#95a49f;--lime:#d5f578;--panel:#182123ec;--line:#ffffff18}
-    *{box-sizing:border-box}body{margin:0;background:#172022;color:var(--ink);font-family:Barlow,Arial,sans-serif;overflow:hidden}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var(--lime);outline-offset:5px}
-    header{height:78px;display:flex;align-items:center;justify-content:space-between;padding:0 34px;border-bottom:1px solid var(--line);background:#182123;position:relative;z-index:3}.identity{display:flex;align-items:center;gap:17px}.brand{font-family:'Barlow Condensed',Impact,sans-serif;font-style:italic;font-size:37px;font-weight:800;letter-spacing:-1px}.brand em{color:var(--lime);font-style:normal}.divider{height:25px;width:1px;background:#ffffff25}.edition{color:#9caaa4;letter-spacing:2px;font-size:10px;font-weight:700;line-height:1.7}.session{display:flex;gap:24px;align-items:center;font-size:11px;letter-spacing:1.4px;font-weight:600}.live{display:flex;gap:8px;align-items:center}.dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 14px #d5f55666}.tag{border:1px solid #ffffff26;border-radius:4px;padding:7px 10px;color:#bac5bf}
-    #game{position:absolute;top:78px;bottom:43px;left:0;right:0;overflow:hidden;background:#8eaa78}canvas{display:block}#game>canvas{width:100%;height:100%}.overlay{position:absolute;pointer-events:none;z-index:2}.top-left{top:25px;left:30px}.eyebrow{font-size:10px;font-weight:700;letter-spacing:2.2px;color:var(--lime)}h1{font-family:'Barlow Condensed',Impact,sans-serif;font-size:36px;margin:3px 0 4px;font-weight:700;line-height:1}.sub{font-size:11px;color:#c8d1bf;letter-spacing:.4px}.circuit-label{background:#182123e8;padding:18px 21px;border-left:3px solid var(--lime);box-shadow:0 6px 20px #15201720}.conditions{display:flex;gap:15px;margin-top:13px;padding-top:11px;border-top:1px solid var(--line);font-size:10px;color:#b8c8ba}.conditions b{color:#e7ebdf;font-weight:500}.timing{right:30px;top:25px;width:226px;background:var(--panel);padding:18px 20px;border:1px solid var(--line);border-radius:5px}.timing-title{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1.7px;color:#a7b7ae}.lap{color:var(--lime)}.clock{font-size:40px;font-family:'Barlow Condensed',Impact,sans-serif;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:1px;margin:7px 0 13px}.time-row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding:10px 0 0;margin-top:9px;font-size:11px;color:#aebbb2}.time-row b{font-weight:500;color:#ecf1e8;font-variant-numeric:tabular-nums}.best b{color:var(--lime)}#sector{margin-top:13px;display:flex;gap:5px}#sector i{flex:1;height:3px;background:#ffffff20}#sector i.passed{background:var(--lime)}
-    .bottom-left{left:30px;bottom:25px;display:flex;gap:12px;align-items:flex-end}.map-card{width:192px;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:13px 15px 10px}.map-title{font-size:9px;color:#a6b7ab;letter-spacing:1.7px;display:flex;justify-content:space-between}.map-title b{font-weight:500;color:var(--lime)}#minimap{width:160px;height:133px;display:block;margin-top:6px}.surface-chip{font-size:10px;letter-spacing:1.1px;background:var(--panel);border:1px solid var(--line);padding:10px 13px;border-radius:4px;color:var(--lime);margin-bottom:0}.bottom-right{right:30px;bottom:25px;display:flex;gap:13px;align-items:flex-end}.speed-panel{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:16px 20px;width:207px}.speed-head{font-size:9px;letter-spacing:1.7px;color:#a7b8ad;display:flex;justify-content:space-between}.speed-number{font-size:69px;font-family:'Barlow Condensed',Impact,sans-serif;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}.speed-line{display:flex;align-items:baseline;gap:8px;margin:6px 0 11px}.unit{color:#aab9ad;font-size:10px;letter-spacing:1px}.gear{margin-left:auto;color:var(--lime);font-family:'Barlow Condensed',Impact,sans-serif;font-size:33px}.rpm{height:4px;background:#ffffff1a;border-radius:2px;overflow:hidden}.rpm i{display:block;width:0%;height:100%;background:var(--lime);transition:width .08s}.pedals{display:flex;gap:12px;font-size:8px;letter-spacing:1px;color:#a6b6aa;margin-top:12px}.pedal{flex:1}.pedal span{display:block;height:3px;background:#ffffff18;margin-top:5px}.pedal i{display:block;width:0;height:100%;background:var(--lime)}.pedal:last-child i{background:#fb8a6d}
-    #toast{left:50%;top:26px;transform:translateX(-50%);background:#172123ed;border:1px solid #d5f57866;padding:13px 22px;border-radius:4px;font-size:12px;letter-spacing:1px;color:var(--lime);opacity:0;transition:opacity .3s;text-align:center}#toast.visible{opacity:1}.hint{bottom:28px;left:50%;transform:translateX(-50%);background:#172123df;padding:11px 17px;border-radius:4px;font-size:11px;color:#d2ddca;white-space:nowrap;transition:opacity 1s}.hint b{color:var(--lime)}footer{height:43px;position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font-size:10px;color:#98aaa0;background:#182123;z-index:4}.controls{display:flex;gap:20px;align-items:center}.control{display:flex;gap:7px;align-items:center}kbd{font-family:Barlow,Arial,sans-serif;font-size:9px;background:#ffffff09;border:1px solid #ffffff29;border-bottom:2px solid #ffffff40;border-radius:3px;padding:3px 5px;color:#e5ece0}.actions{display:flex;gap:16px;align-items:center}.action{border:0;color:#c4d0c4;background:none;font-size:10px;padding:5px 0}.action:hover{color:var(--lime)}.sound-on{color:var(--lime)}
-    #pause-screen{display:none;position:absolute;inset:0;z-index:5;background:#12201cc4;backdrop-filter:blur(7px);align-items:center;justify-content:center;text-align:center}#pause-screen.open{display:flex}.pause-box{padding:32px;width:330px;background:#182123;border:1px solid #ffffff22;border-radius:8px}.pause-box h2{font:700 48px 'Barlow Condensed',Impact,sans-serif;margin:8px 0}.pause-box p{font-size:12px;color:#acbcb1;line-height:1.7}.primary{background:var(--lime);border:0;padding:13px 25px;border-radius:4px;color:#182123;font-size:12px;font-weight:700;margin-top:14px}.credits{font-size:10px;color:#93a89a;text-decoration:none}
-    @media(max-width:850px){header{height:65px;padding:0 18px}#game{top:65px}.session .tag,.edition,.divider{display:none}.top-left{left:15px;top:15px}.circuit-label{padding:12px 14px}h1{font-size:27px}.conditions{display:none}.timing{top:15px;right:15px;width:175px;padding:13px}.clock{font-size:32px}.bottom-left{left:15px;bottom:15px}.map-card{width:146px;padding:10px}#minimap{width:124px;height:100px}.bottom-right{right:15px;bottom:15px}.speed-panel{width:165px;padding:13px}.speed-number{font-size:55px}.surface-chip{display:none}footer{padding:0 15px}.controls{gap:10px}.control:nth-child(n+3){display:none}.hint{bottom:200px;font-size:10px}.session{font-size:9px}#toast{top:180px;max-width:80%;white-space:nowrap}}
-    @media(max-width:850px){.hint{top:145px;bottom:auto;max-width:calc(100% - 400px);white-space:normal;text-align:center;line-height:1.5}}@media(max-width:560px){.hint{display:none}}
-    .track-picker{display:flex;gap:9px;align-items:center;font-size:9px;letter-spacing:1.5px;color:#a5b5aa}.track-picker select{font:600 12px Barlow,Arial,sans-serif;color:var(--ink);background:#263235;border:1px solid #ffffff30;border-radius:4px;padding:9px 28px 9px 10px;cursor:pointer;max-width:215px}.track-picker select:focus-visible{outline:2px solid var(--lime);outline-offset:3px}.track-picker option{background:#263235;color:#edf0e8}@media(max-width:1050px){.edition,.divider{display:none}}@media(max-width:650px){.session{display:none}.track-picker select{max-width:205px}.track-picker{letter-spacing:1px}}
-    .header-actions{display:flex;gap:8px}.header-choice{border:1px solid #ffffff27;color:#e7ece2;background:#263235;border-radius:4px;padding:10px 13px;font-size:11px;font-weight:600}.header-choice:hover{border-color:var(--lime);color:var(--lime)}dialog{padding:0;border:1px solid #ffffff26;border-radius:12px;background:#192326;color:var(--ink);width:min(900px,calc(100vw - 36px));max-height:calc(100vh - 36px);box-shadow:0 35px 100px #0007}dialog::backdrop{background:#10201be0;backdrop-filter:blur(7px)}.choosing #pause-screen{visibility:hidden}.picker-head{padding:24px 26px 18px;position:relative}.picker-head h2{font:700 41px/1 'Barlow Condensed',Impact,sans-serif;margin:8px 0 9px}.picker-head p{font-size:12px;color:#aebeb2;margin:0;max-width:85%;line-height:1.5}.picker-close{position:absolute;right:20px;top:20px;border:1px solid #ffffff25;background:#ffffff08;color:#cad5c9;border-radius:50%;width:31px;height:31px;font-size:21px}.picker-content{padding:0 24px 20px;max-height:calc(100vh - 265px);overflow:auto}.choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.track-choice,.car-choice{display:block;padding:0;text-align:left;position:relative;border:1px solid #ffffff22;border-radius:7px;background:#233033;color:#eef1e8;overflow:hidden;transition:transform .15s,border-color .15s}.track-choice:hover,.car-choice:hover{transform:translateY(-2px);border-color:#ffffff60}.track-choice.selected{border-color:var(--card-accent);box-shadow:inset 0 0 0 1px var(--card-accent)}.car-choice.selected{border-color:var(--lime);box-shadow:inset 0 0 0 1px var(--lime)}.choice-number{position:absolute;left:12px;top:12px;font-size:8px;letter-spacing:1.5px;font-weight:600;color:#edf0e0}.choice-check{position:absolute;right:12px;top:10px;font-size:16px;color:var(--card-accent,var(--lime));z-index:1}.track-choice canvas{display:block;width:100%;height:145px;object-fit:cover}.choice-body{display:flex;flex-direction:column;padding:15px 14px 13px;gap:7px}.choice-tag{font-size:8px;letter-spacing:1.1px;font-weight:700;color:var(--card-accent,var(--lime))}.choice-body strong{font:700 27px/1.1 'Barlow Condensed',Impact,sans-serif}.choice-description{font-size:11px;line-height:1.5;color:#b0c0b4;min-height:50px}.choice-details{border-top:1px solid #ffffff15;padding-top:11px;display:flex;flex-direction:column;gap:8px;font-size:8px;letter-spacing:.5px;color:#b7c5b8}.choice-best{color:var(--card-accent,var(--lime));font-size:10px;font-variant-numeric:tabular-nums}.picker-bottom{display:flex;gap:20px;align-items:center;justify-content:space-between;padding:15px 25px 20px;border-top:1px solid #ffffff15}.picker-bottom p{margin:0;font-size:10px;line-height:1.5;color:#a1b5a6;max-width:48%}.picker-bottom .primary{margin:0;white-space:nowrap;font-size:10px;padding:13px 19px}.car-platform{height:115px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#5c706a66 0%,#35474488 35%,#1c292b 70%)}.car-platform img{height:88px;max-width:80%;object-fit:contain;transform:rotate(65deg);filter:drop-shadow(5px 6px 1px #0004)}.car-stats{display:flex;flex-direction:column;gap:8px;font-size:8px;letter-spacing:.8px;color:#adbdaf}.car-stats>span{display:flex;align-items:center;justify-content:space-between;gap:8px}.car-stats i{height:4px;width:55%;background:#ffffff17;display:block}.car-stats b{display:block;height:100%;background:var(--lime)}.paint-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 2px 0;font-size:10px;letter-spacing:1px;color:#a9bcb0}.paint-row b{color:#e1e9df}.swatches{display:flex;gap:9px}.swatch{width:30px;height:30px;border:2px solid transparent;background:var(--paint);border-radius:50%;color:white;font-weight:700;box-shadow:inset 0 0 0 3px #192326}.swatch.selected{border-color:#edf0df}.swatch:hover{transform:scale(1.1)}@media(max-width:760px){.header-choice{font-size:10px;padding:9px 10px}.picker-head{padding:20px}.picker-head h2{font-size:34px}.picker-content{padding:0 16px 15px}.choice-grid{gap:8px}.choice-body{padding:12px 10px}.choice-body strong{font-size:25px}.choice-description{font-size:10px;min-height:62px}.track-choice canvas{height:125px}.picker-bottom{padding:14px 18px}.session .live{display:none}}@media(max-width:560px){.choice-grid{grid-template-columns:1fr}.track-choice{display:grid;grid-template-columns:40% 60%}.track-choice canvas{height:100%;min-height:190px}.choice-number{font-size:7px;left:8px}.choice-description{min-height:0}.garage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.garage-grid .choice-body{padding:9px 7px}.garage-grid .choice-body strong{font-size:21px}.garage-grid .choice-description{display:none}.garage-grid .choice-tag{font-size:7px;letter-spacing:0}.car-platform{height:90px}.car-platform img{height:65px}.car-stats{font-size:7px;letter-spacing:0}.paint-row{flex-direction:column;align-items:flex-start}.picker-bottom p{display:none}.picker-bottom{justify-content:flex-end}.picker-head p{font-size:10px}.picker-content{max-height:calc(100vh - 240px)}}
-    .sector-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}.sector-cell{background:#ffffff06;border:1px solid #ffffff10;border-radius:3px;padding:6px 8px;display:grid;grid-template-columns:auto 1fr;gap:4px;font-size:8px;color:#a7b9ad}.sector-cell b{font-size:12px;text-align:right;color:#e5ede2;font-weight:500;font-variant-numeric:tabular-nums}.sector-cell small{grid-column:1/3;font-size:8px;min-height:10px;text-align:right}.live-delta{display:flex;justify-content:space-between;align-items:center;font-size:8px;letter-spacing:.7px;color:#9fb2a6;margin-bottom:8px}.live-delta b{font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:0}.split-flash{font-size:9px;color:var(--lime);min-height:12px;margin-top:8px}.sector-status{font-size:8px;color:#9eb1a5;margin-top:5px;line-height:1.4}.surface-readout{top:180px;left:30px;padding:8px 11px;background:#172123db;border:1px solid #ffffff16;border-radius:4px;font-size:9px;letter-spacing:.8px;color:var(--lime)}.choice-grid:not(.garage-grid){grid-template-columns:repeat(2,minmax(0,1fr))}.track-choice{display:grid;grid-template-columns:38% 62%}.track-choice canvas{height:100%;min-height:195px}.track-choice .choice-body{gap:6px}.track-choice .choice-description{min-height:0}.track-choice .choice-number{font-size:7px;letter-spacing:.5px;left:8px}.track-choice .choice-details{padding-top:7px;gap:5px}@media(max-width:850px){.surface-readout{top:116px;left:15px;font-size:8px}.sector-cell{padding:4px 6px}.sector-cell b{font-size:11px}.timing .clock{margin-bottom:8px}.timing .time-row{padding-top:7px;margin-top:7px}.sector-grid{gap:4px;margin-top:8px}.track-choice .choice-body strong{font-size:23px}.track-choice .choice-body{padding:11px 9px}}@media(max-width:560px){.choice-grid:not(.garage-grid){grid-template-columns:1fr}.surface-readout{max-width:160px}.track-choice canvas{min-height:170px}.actions{gap:10px}}
-    .ghost-status{font-size:9px;line-height:1.5;color:#a4dff1;margin-top:9px;padding-top:8px;border-top:1px solid #ffffff18}
-    .ghost-delta{margin:8px 0 0}.start-countdown{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font:900 110px/1 'Barlow Condensed',Impact,sans-serif;color:var(--lime);text-shadow:0 4px 18px #10201be6;pointer-events:none;z-index:4}.start-countdown:empty{display:none}@media(max-width:560px){.start-countdown{font-size:80px}}
-  </style>
-</head>
-<body>
-  <header><div class="identity"><div class="brand">APEX<em> /</em></div><span class="divider"></span><div class="edition">THE DRIVING CLUB<br>TOP DOWN. FLAT OUT.</div></div><div class="header-actions"><button class="header-choice" id="open-tracks" aria-haspopup="dialog">Juniper Raceway ▾</button><button class="header-choice" id="open-garage" aria-haspopup="dialog">Garage ◇</button></div><div class="session"><span class="live"><i class="dot"></i> FREE PRACTICE</span><span class="tag">01 DRIVER · NO LIMITS</span></div></header>
-  <main id="game" aria-label="Top-down racing circuit. Use WASD to drive and Space to handbrake.">
-    <div class="overlay top-left circuit-label"><div class="eyebrow" id="track-label">FLOW CIRCUIT / 04</div><h1 id="track-title">Juniper Raceway</h1><div class="sub" id="track-subtitle">Commit to the esses.</div><div class="conditions"><span>☀ <b id="temperature">24°C</b></span><span>TRACK <b>DRY</b></span><span>GRIP <b id="grip-label">OPTIMAL</b></span></div></div>
-    <div class="overlay timing"><div class="timing-title"><span>CURRENT LAP</span><span class="lap" id="lap">01</span></div><div class="clock" id="clock">00:00.000</div><div class="live-delta"><span>LAST SECTOR TO BEST</span><b id="lap-delta">—</b></div><div class="time-row best"><span>PERSONAL BEST</span><b id="best">— — : — —</b></div><div class="time-row"><span>LAST LAP</span><b id="last">— — : — —</b></div><div class="ghost-status" id="ghost-status" role="status">GHOST · Complete a clean lap to record</div><div class="live-delta ghost-delta"><span>LIVE TO GHOST</span><b id="ghost-delta">—</b></div><div id="sector"><i></i><i></i><i></i><i></i></div><div class="sector-grid"><div class="sector-cell">S1 <b id="sector-time-0">—</b><small id="sector-diff-0"></small></div><div class="sector-cell">S2 <b id="sector-time-1">—</b><small id="sector-diff-1"></small></div><div class="sector-cell">S3 <b id="sector-time-2">—</b><small id="sector-diff-2"></small></div><div class="sector-cell">S4 <b id="sector-time-3">—</b><small id="sector-diff-3"></small></div></div><div class="split-flash" id="split-flash"></div><div class="sector-status" id="sector-status">Complete a clean lap to set sector references.</div></div>
-    <div class="overlay surface-readout" id="grip-status">ASPHALT · READY</div>
-    <div class="overlay bottom-left"><div class="map-card"><div class="map-title">CIRCUIT MAP <b>↗</b></div><canvas id="minimap" width="320" height="266" aria-label="Track map and car position"></canvas></div><div class="surface-chip" id="surface">● &nbsp; ASPHALT</div></div>
-    <div class="overlay bottom-right"><div class="speed-panel"><div class="speed-head"><span id="car-name">CLUBSPORT R</span><span id="car-drive">RWD</span></div><div class="speed-line"><span class="speed-number" id="speed">0</span><span class="unit">KM/H</span><span class="gear" id="gear">N</span></div><div class="rpm"><i id="rpm"></i></div><div class="pedals"><div class="pedal">THROTTLE<span><i id="throttle"></i></span></div><div class="pedal">BRAKE<span><i id="brake"></i></span></div></div></div></div>
-    <div class="start-countdown" id="start-countdown" role="status" aria-live="polite" aria-atomic="true"></div><div class="overlay" id="toast" role="status"></div><div class="overlay hint" id="hint"><b>W</b> to get rolling. Brake before the bend. Find your apex.</div>
-    <div id="pause-screen"><div class="pause-box"><div class="eyebrow">TAKE A BREATHER</div><h2>In the pits.</h2><p>W / S · Accelerate & brake<br>A / D · Steer &nbsp; Space · Handbrake<br>R · Recover car &nbsp; N · Restart<br>Esc · Pause<br>Complete a clean lap to set your best time.</p><button class="primary" id="resume">BACK ON TRACK →</button><p><a class="credits" href="ASSETS.txt" target="_blank" rel="noopener">Asset credits ↗</a></p></div></div>
-  </main>
-  <dialog id="selection-dialog" aria-labelledby="picker-title"><div class="picker-head"><div class="eyebrow" id="picker-eyebrow">THE CIRCUIT COLLECTION</div><h2 id="picker-title">Find your next apex.</h2><p id="picker-description"></p><button class="picker-close" id="picker-close" aria-label="Close selection">×</button></div><div class="picker-content" id="picker-content"></div><div class="picker-bottom"><p id="picker-footnote"></p><button class="primary" id="picker-apply">DRIVE →</button></div></dialog>
-  <footer><div class="controls"><span class="control"><kbd>W A S D</kbd> Drive</span><span class="control"><kbd>SPACE</kbd> Handbrake</span><span class="control"><kbd>R</kbd> Recover</span><span class="control"><kbd>ESC</kbd> Pause</span></div><div class="actions"><button class="action" id="restart" title="N · Restart from your chosen grid spot">↻ Restart</button><button class="action" id="sound" aria-pressed="false">♪ Sound off</button><button class="action" id="pause">Ⅱ Pause</button></div></footer>
-  <script src="assets/p5.min.js"></script>
-  <script src="main.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#161e21" />
+    <title>APEX — The Circuit Collection</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
+      :root {
+        --ink: #edf0e8;
+        --muted: #95a49f;
+        --lime: #d5f578;
+        --panel: #182123ec;
+        --line: #ffffff18;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #172022;
+        color: var(--ink);
+        font-family: Barlow, Arial, sans-serif;
+        overflow: hidden;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid var(--lime);
+        outline-offset: 5px;
+      }
+      header {
+        height: 78px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 34px;
+        border-bottom: 1px solid var(--line);
+        background: #182123;
+        position: relative;
+        z-index: 3;
+      }
+      .identity {
+        display: flex;
+        align-items: center;
+        gap: 17px;
+      }
+      .brand {
+        font-family: 'Barlow Condensed', Impact, sans-serif;
+        font-style: italic;
+        font-size: 37px;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+      .brand em {
+        color: var(--lime);
+        font-style: normal;
+      }
+      .divider {
+        height: 25px;
+        width: 1px;
+        background: #ffffff25;
+      }
+      .edition {
+        color: #9caaa4;
+        letter-spacing: 2px;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.7;
+      }
+      .session {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+        font-size: 11px;
+        letter-spacing: 1.4px;
+        font-weight: 600;
+      }
+      .live {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--lime);
+        box-shadow: 0 0 14px #d5f55666;
+      }
+      .tag {
+        border: 1px solid #ffffff26;
+        border-radius: 4px;
+        padding: 7px 10px;
+        color: #bac5bf;
+      }
+      #game {
+        position: absolute;
+        top: 78px;
+        bottom: 43px;
+        left: 0;
+        right: 0;
+        overflow: hidden;
+        background: #8eaa78;
+      }
+      canvas {
+        display: block;
+      }
+      #game > canvas {
+        width: 100%;
+        height: 100%;
+      }
+      .overlay {
+        position: absolute;
+        pointer-events: none;
+        z-index: 2;
+      }
+      .top-left {
+        top: 25px;
+        left: 30px;
+      }
+      .eyebrow {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 2.2px;
+        color: var(--lime);
+      }
+      h1 {
+        font-family: 'Barlow Condensed', Impact, sans-serif;
+        font-size: 36px;
+        margin: 3px 0 4px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .sub {
+        font-size: 11px;
+        color: #c8d1bf;
+        letter-spacing: 0.4px;
+      }
+      .circuit-label {
+        background: #182123e8;
+        padding: 18px 21px;
+        border-left: 3px solid var(--lime);
+        box-shadow: 0 6px 20px #15201720;
+      }
+      .conditions {
+        display: flex;
+        gap: 15px;
+        margin-top: 13px;
+        padding-top: 11px;
+        border-top: 1px solid var(--line);
+        font-size: 10px;
+        color: #b8c8ba;
+      }
+      .conditions b {
+        color: #e7ebdf;
+        font-weight: 500;
+      }
+      .timing {
+        right: 30px;
+        top: 25px;
+        width: 226px;
+        background: var(--panel);
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+      }
+      .timing-title {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        letter-spacing: 1.7px;
+        color: #a7b7ae;
+      }
+      .lap {
+        color: var(--lime);
+      }
+      .clock {
+        font-size: 40px;
+        font-family: 'Barlow Condensed', Impact, sans-serif;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 1px;
+        margin: 7px 0 13px;
+      }
+      .time-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid var(--line);
+        padding: 10px 0 0;
+        margin-top: 9px;
+        font-size: 11px;
+        color: #aebbb2;
+      }
+      .time-row b {
+        font-weight: 500;
+        color: #ecf1e8;
+        font-variant-numeric: tabular-nums;
+      }
+      .best b {
+        color: var(--lime);
+      }
+      #sector {
+        margin-top: 13px;
+        display: flex;
+        gap: 5px;
+      }
+      #sector i {
+        flex: 1;
+        height: 3px;
+        background: #ffffff20;
+      }
+      #sector i.passed {
+        background: var(--lime);
+      }
+      .bottom-left {
+        left: 30px;
+        bottom: 25px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+      }
+      .map-card {
+        width: 192px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 13px 15px 10px;
+      }
+      .map-title {
+        font-size: 9px;
+        color: #a6b7ab;
+        letter-spacing: 1.7px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .map-title b {
+        font-weight: 500;
+        color: var(--lime);
+      }
+      #minimap {
+        width: 160px;
+        height: 133px;
+        display: block;
+        margin-top: 6px;
+      }
+      .surface-chip {
+        font-size: 10px;
+        letter-spacing: 1.1px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 10px 13px;
+        border-radius: 4px;
+        color: var(--lime);
+        margin-bottom: 0;
+      }
+      .bottom-right {
+        right: 30px;
+        bottom: 25px;
+        display: flex;
+        gap: 13px;
+        align-items: flex-end;
+      }
+      .speed-panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 16px 20px;
+        width: 207px;
+      }
+      .speed-head {
+        font-size: 9px;
+        letter-spacing: 1.7px;
+        color: #a7b8ad;
+        display: flex;
+        justify-content: space-between;
+      }
+      .speed-number {
+        font-size: 69px;
+        font-family: 'Barlow Condensed', Impact, sans-serif;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -1px;
+        font-variant-numeric: tabular-nums;
+      }
+      .speed-line {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin: 6px 0 11px;
+      }
+      .unit {
+        color: #aab9ad;
+        font-size: 10px;
+        letter-spacing: 1px;
+      }
+      .gear {
+        margin-left: auto;
+        color: var(--lime);
+        font-family: 'Barlow Condensed', Impact, sans-serif;
+        font-size: 33px;
+      }
+      .rpm {
+        height: 4px;
+        background: #ffffff1a;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .rpm i {
+        display: block;
+        width: 0%;
+        height: 100%;
+        background: var(--lime);
+        transition: width 0.08s;
+      }
+      .pedals {
+        display: flex;
+        gap: 12px;
+        font-size: 8px;
+        letter-spacing: 1px;
+        color: #a6b6aa;
+        margin-top: 12px;
+      }
+      .pedal {
+        flex: 1;
+      }
+      .pedal span {
+        display: block;
+        height: 3px;
+        background: #ffffff18;
+        margin-top: 5px;
+      }
+      .pedal i {
+        display: block;
+        width: 0;
+        height: 100%;
+        background: var(--lime);
+      }
+      .pedal:last-child i {
+        background: #fb8a6d;
+      }
+      #toast {
+        left: 50%;
+        top: 26px;
+        transform: translateX(-50%);
+        background: #172123ed;
+        border: 1px solid #d5f57866;
+        padding: 13px 22px;
+        border-radius: 4px;
+        font-size: 12px;
+        letter-spacing: 1px;
+        color: var(--lime);
+        opacity: 0;
+        transition: opacity 0.3s;
+        text-align: center;
+      }
+      #toast.visible {
+        opacity: 1;
+      }
+      .hint {
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #172123df;
+        padding: 11px 17px;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #d2ddca;
+        white-space: nowrap;
+        transition: opacity 1s;
+      }
+      .hint b {
+        color: var(--lime);
+      }
+      footer {
+        height: 43px;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 30px;
+        font-size: 10px;
+        color: #98aaa0;
+        background: #182123;
+        z-index: 4;
+      }
+      .controls {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+      .control {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+      kbd {
+        font-family: Barlow, Arial, sans-serif;
+        font-size: 9px;
+        background: #ffffff09;
+        border: 1px solid #ffffff29;
+        border-bottom: 2px solid #ffffff40;
+        border-radius: 3px;
+        padding: 3px 5px;
+        color: #e5ece0;
+      }
+      .actions {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .action {
+        border: 0;
+        color: #c4d0c4;
+        background: none;
+        font-size: 10px;
+        padding: 5px 0;
+      }
+      .action:hover {
+        color: var(--lime);
+      }
+      .sound-on {
+        color: var(--lime);
+      }
+      #pause-screen {
+        display: none;
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        background: #12201cc4;
+        backdrop-filter: blur(7px);
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      #pause-screen.open {
+        display: flex;
+      }
+      .pause-box {
+        padding: 32px;
+        width: 330px;
+        background: #182123;
+        border: 1px solid #ffffff22;
+        border-radius: 8px;
+      }
+      .pause-box h2 {
+        font:
+          700 48px 'Barlow Condensed',
+          Impact,
+          sans-serif;
+        margin: 8px 0;
+      }
+      .pause-box p {
+        font-size: 12px;
+        color: #acbcb1;
+        line-height: 1.7;
+      }
+      .primary {
+        background: var(--lime);
+        border: 0;
+        padding: 13px 25px;
+        border-radius: 4px;
+        color: #182123;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 14px;
+      }
+      .credits {
+        font-size: 10px;
+        color: #93a89a;
+        text-decoration: none;
+      }
+      @media (max-width: 850px) {
+        header {
+          height: 65px;
+          padding: 0 18px;
+        }
+        #game {
+          top: 65px;
+        }
+        .session .tag,
+        .edition,
+        .divider {
+          display: none;
+        }
+        .top-left {
+          left: 15px;
+          top: 15px;
+        }
+        .circuit-label {
+          padding: 12px 14px;
+        }
+        h1 {
+          font-size: 27px;
+        }
+        .conditions {
+          display: none;
+        }
+        .timing {
+          top: 15px;
+          right: 15px;
+          width: 175px;
+          padding: 13px;
+        }
+        .clock {
+          font-size: 32px;
+        }
+        .bottom-left {
+          left: 15px;
+          bottom: 15px;
+        }
+        .map-card {
+          width: 146px;
+          padding: 10px;
+        }
+        #minimap {
+          width: 124px;
+          height: 100px;
+        }
+        .bottom-right {
+          right: 15px;
+          bottom: 15px;
+        }
+        .speed-panel {
+          width: 165px;
+          padding: 13px;
+        }
+        .speed-number {
+          font-size: 55px;
+        }
+        .surface-chip {
+          display: none;
+        }
+        footer {
+          padding: 0 15px;
+        }
+        .controls {
+          gap: 10px;
+        }
+        .control:nth-child(n + 3) {
+          display: none;
+        }
+        .hint {
+          bottom: 200px;
+          font-size: 10px;
+        }
+        .session {
+          font-size: 9px;
+        }
+        #toast {
+          top: 180px;
+          max-width: 80%;
+          white-space: nowrap;
+        }
+      }
+      @media (max-width: 850px) {
+        .hint {
+          top: 145px;
+          bottom: auto;
+          max-width: calc(100% - 400px);
+          white-space: normal;
+          text-align: center;
+          line-height: 1.5;
+        }
+      }
+      @media (max-width: 560px) {
+        .hint {
+          display: none;
+        }
+      }
+      .track-picker {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        font-size: 9px;
+        letter-spacing: 1.5px;
+        color: #a5b5aa;
+      }
+      .track-picker select {
+        font:
+          600 12px Barlow,
+          Arial,
+          sans-serif;
+        color: var(--ink);
+        background: #263235;
+        border: 1px solid #ffffff30;
+        border-radius: 4px;
+        padding: 9px 28px 9px 10px;
+        cursor: pointer;
+        max-width: 215px;
+      }
+      .track-picker select:focus-visible {
+        outline: 2px solid var(--lime);
+        outline-offset: 3px;
+      }
+      .track-picker option {
+        background: #263235;
+        color: #edf0e8;
+      }
+      @media (max-width: 1050px) {
+        .edition,
+        .divider {
+          display: none;
+        }
+      }
+      @media (max-width: 650px) {
+        .session {
+          display: none;
+        }
+        .track-picker select {
+          max-width: 205px;
+        }
+        .track-picker {
+          letter-spacing: 1px;
+        }
+      }
+      .header-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .header-choice {
+        border: 1px solid #ffffff27;
+        color: #e7ece2;
+        background: #263235;
+        border-radius: 4px;
+        padding: 10px 13px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .header-choice:hover {
+        border-color: var(--lime);
+        color: var(--lime);
+      }
+      dialog {
+        padding: 0;
+        border: 1px solid #ffffff26;
+        border-radius: 12px;
+        background: #192326;
+        color: var(--ink);
+        width: min(900px, calc(100vw - 36px));
+        max-height: calc(100vh - 36px);
+        box-shadow: 0 35px 100px #0007;
+      }
+      dialog::backdrop {
+        background: #10201be0;
+        backdrop-filter: blur(7px);
+      }
+      .choosing #pause-screen {
+        visibility: hidden;
+      }
+      .picker-head {
+        padding: 24px 26px 18px;
+        position: relative;
+      }
+      .picker-head h2 {
+        font:
+          700 41px/1 'Barlow Condensed',
+          Impact,
+          sans-serif;
+        margin: 8px 0 9px;
+      }
+      .picker-head p {
+        font-size: 12px;
+        color: #aebeb2;
+        margin: 0;
+        max-width: 85%;
+        line-height: 1.5;
+      }
+      .picker-close {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        border: 1px solid #ffffff25;
+        background: #ffffff08;
+        color: #cad5c9;
+        border-radius: 50%;
+        width: 31px;
+        height: 31px;
+        font-size: 21px;
+      }
+      .picker-content {
+        padding: 0 24px 20px;
+        max-height: calc(100vh - 265px);
+        overflow: auto;
+      }
+      .choice-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .track-choice,
+      .car-choice {
+        display: block;
+        padding: 0;
+        text-align: left;
+        position: relative;
+        border: 1px solid #ffffff22;
+        border-radius: 7px;
+        background: #233033;
+        color: #eef1e8;
+        overflow: hidden;
+        transition:
+          transform 0.15s,
+          border-color 0.15s;
+      }
+      .track-choice:hover,
+      .car-choice:hover {
+        transform: translateY(-2px);
+        border-color: #ffffff60;
+      }
+      .track-choice.selected {
+        border-color: var(--card-accent);
+        box-shadow: inset 0 0 0 1px var(--card-accent);
+      }
+      .car-choice.selected {
+        border-color: var(--lime);
+        box-shadow: inset 0 0 0 1px var(--lime);
+      }
+      .choice-number {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        font-size: 8px;
+        letter-spacing: 1.5px;
+        font-weight: 600;
+        color: #edf0e0;
+      }
+      .choice-check {
+        position: absolute;
+        right: 12px;
+        top: 10px;
+        font-size: 16px;
+        color: var(--card-accent, var(--lime));
+        z-index: 1;
+      }
+      .track-choice canvas {
+        display: block;
+        width: 100%;
+        height: 145px;
+        object-fit: cover;
+      }
+      .choice-body {
+        display: flex;
+        flex-direction: column;
+        padding: 15px 14px 13px;
+        gap: 7px;
+      }
+      .choice-tag {
+        font-size: 8px;
+        letter-spacing: 1.1px;
+        font-weight: 700;
+        color: var(--card-accent, var(--lime));
+      }
+      .choice-body strong {
+        font:
+          700 27px/1.1 'Barlow Condensed',
+          Impact,
+          sans-serif;
+      }
+      .choice-description {
+        font-size: 11px;
+        line-height: 1.5;
+        color: #b0c0b4;
+        min-height: 50px;
+      }
+      .choice-details {
+        border-top: 1px solid #ffffff15;
+        padding-top: 11px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 8px;
+        letter-spacing: 0.5px;
+        color: #b7c5b8;
+      }
+      .choice-best {
+        color: var(--card-accent, var(--lime));
+        font-size: 10px;
+        font-variant-numeric: tabular-nums;
+      }
+      .picker-bottom {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px 25px 20px;
+        border-top: 1px solid #ffffff15;
+      }
+      .picker-bottom p {
+        margin: 0;
+        font-size: 10px;
+        line-height: 1.5;
+        color: #a1b5a6;
+        max-width: 48%;
+      }
+      .picker-bottom .primary {
+        margin: 0;
+        white-space: nowrap;
+        font-size: 10px;
+        padding: 13px 19px;
+      }
+      .car-platform {
+        height: 115px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(
+          ellipse at center,
+          #5c706a66 0%,
+          #35474488 35%,
+          #1c292b 70%
+        );
+      }
+      .car-platform img {
+        height: 88px;
+        max-width: 80%;
+        object-fit: contain;
+        transform: rotate(65deg);
+        filter: drop-shadow(5px 6px 1px #0004);
+      }
+      .car-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 8px;
+        letter-spacing: 0.8px;
+        color: #adbdaf;
+      }
+      .car-stats > span {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .car-stats i {
+        height: 4px;
+        width: 55%;
+        background: #ffffff17;
+        display: block;
+      }
+      .car-stats b {
+        display: block;
+        height: 100%;
+        background: var(--lime);
+      }
+      .paint-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 18px 2px 0;
+        font-size: 10px;
+        letter-spacing: 1px;
+        color: #a9bcb0;
+      }
+      .paint-row b {
+        color: #e1e9df;
+      }
+      .swatches {
+        display: flex;
+        gap: 9px;
+      }
+      .swatch {
+        width: 30px;
+        height: 30px;
+        border: 2px solid transparent;
+        background: var(--paint);
+        border-radius: 50%;
+        color: white;
+        font-weight: 700;
+        box-shadow: inset 0 0 0 3px #192326;
+      }
+      .swatch.selected {
+        border-color: #edf0df;
+      }
+      .swatch:hover {
+        transform: scale(1.1);
+      }
+      @media (max-width: 760px) {
+        .header-choice {
+          font-size: 10px;
+          padding: 9px 10px;
+        }
+        .picker-head {
+          padding: 20px;
+        }
+        .picker-head h2 {
+          font-size: 34px;
+        }
+        .picker-content {
+          padding: 0 16px 15px;
+        }
+        .choice-grid {
+          gap: 8px;
+        }
+        .choice-body {
+          padding: 12px 10px;
+        }
+        .choice-body strong {
+          font-size: 25px;
+        }
+        .choice-description {
+          font-size: 10px;
+          min-height: 62px;
+        }
+        .track-choice canvas {
+          height: 125px;
+        }
+        .picker-bottom {
+          padding: 14px 18px;
+        }
+        .session .live {
+          display: none;
+        }
+      }
+      @media (max-width: 560px) {
+        .choice-grid {
+          grid-template-columns: 1fr;
+        }
+        .track-choice {
+          display: grid;
+          grid-template-columns: 40% 60%;
+        }
+        .track-choice canvas {
+          height: 100%;
+          min-height: 190px;
+        }
+        .choice-number {
+          font-size: 7px;
+          left: 8px;
+        }
+        .choice-description {
+          min-height: 0;
+        }
+        .garage-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .garage-grid .choice-body {
+          padding: 9px 7px;
+        }
+        .garage-grid .choice-body strong {
+          font-size: 21px;
+        }
+        .garage-grid .choice-description {
+          display: none;
+        }
+        .garage-grid .choice-tag {
+          font-size: 7px;
+          letter-spacing: 0;
+        }
+        .car-platform {
+          height: 90px;
+        }
+        .car-platform img {
+          height: 65px;
+        }
+        .car-stats {
+          font-size: 7px;
+          letter-spacing: 0;
+        }
+        .paint-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .picker-bottom p {
+          display: none;
+        }
+        .picker-bottom {
+          justify-content: flex-end;
+        }
+        .picker-head p {
+          font-size: 10px;
+        }
+        .picker-content {
+          max-height: calc(100vh - 240px);
+        }
+      }
+      .sector-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-top: 12px;
+      }
+      .sector-cell {
+        background: #ffffff06;
+        border: 1px solid #ffffff10;
+        border-radius: 3px;
+        padding: 6px 8px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px;
+        font-size: 8px;
+        color: #a7b9ad;
+      }
+      .sector-cell b {
+        font-size: 12px;
+        text-align: right;
+        color: #e5ede2;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+      }
+      .sector-cell small {
+        grid-column: 1/3;
+        font-size: 8px;
+        min-height: 10px;
+        text-align: right;
+      }
+      .live-delta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 8px;
+        letter-spacing: 0.7px;
+        color: #9fb2a6;
+        margin-bottom: 8px;
+      }
+      .live-delta b {
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0;
+      }
+      .split-flash {
+        font-size: 9px;
+        color: var(--lime);
+        min-height: 12px;
+        margin-top: 8px;
+      }
+      .sector-status {
+        font-size: 8px;
+        color: #9eb1a5;
+        margin-top: 5px;
+        line-height: 1.4;
+      }
+      .surface-readout {
+        top: 180px;
+        left: 30px;
+        padding: 8px 11px;
+        background: #172123db;
+        border: 1px solid #ffffff16;
+        border-radius: 4px;
+        font-size: 9px;
+        letter-spacing: 0.8px;
+        color: var(--lime);
+      }
+      .choice-grid:not(.garage-grid) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .track-choice {
+        display: grid;
+        grid-template-columns: 38% 62%;
+      }
+      .track-choice canvas {
+        height: 100%;
+        min-height: 195px;
+      }
+      .track-choice .choice-body {
+        gap: 6px;
+      }
+      .track-choice .choice-description {
+        min-height: 0;
+      }
+      .track-choice .choice-number {
+        font-size: 7px;
+        letter-spacing: 0.5px;
+        left: 8px;
+      }
+      .track-choice .choice-details {
+        padding-top: 7px;
+        gap: 5px;
+      }
+      @media (max-width: 850px) {
+        .surface-readout {
+          top: 116px;
+          left: 15px;
+          font-size: 8px;
+        }
+        .sector-cell {
+          padding: 4px 6px;
+        }
+        .sector-cell b {
+          font-size: 11px;
+        }
+        .timing .clock {
+          margin-bottom: 8px;
+        }
+        .timing .time-row {
+          padding-top: 7px;
+          margin-top: 7px;
+        }
+        .sector-grid {
+          gap: 4px;
+          margin-top: 8px;
+        }
+        .track-choice .choice-body strong {
+          font-size: 23px;
+        }
+        .track-choice .choice-body {
+          padding: 11px 9px;
+        }
+      }
+      @media (max-width: 560px) {
+        .choice-grid:not(.garage-grid) {
+          grid-template-columns: 1fr;
+        }
+        .surface-readout {
+          max-width: 160px;
+        }
+        .track-choice canvas {
+          min-height: 170px;
+        }
+        .actions {
+          gap: 10px;
+        }
+      }
+      .ghost-status {
+        font-size: 9px;
+        line-height: 1.5;
+        color: #a4dff1;
+        margin-top: 9px;
+        padding-top: 8px;
+        border-top: 1px solid #ffffff18;
+      }
+      .ghost-delta {
+        margin: 8px 0 0;
+      }
+      .start-countdown {
+        position: absolute;
+        left: 50%;
+        top: 42%;
+        transform: translate(-50%, -50%);
+        font:
+          900 110px/1 'Barlow Condensed',
+          Impact,
+          sans-serif;
+        color: var(--lime);
+        text-shadow: 0 4px 18px #10201be6;
+        pointer-events: none;
+        z-index: 4;
+      }
+      .start-countdown:empty {
+        display: none;
+      }
+      @media (max-width: 560px) {
+        .start-countdown {
+          font-size: 80px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="identity">
+        <div class="brand">APEX<em> /</em></div>
+        <span class="divider"></span>
+        <div class="edition">THE DRIVING CLUB<br />TOP DOWN. FLAT OUT.</div>
+      </div>
+      <div class="header-actions">
+        <button class="header-choice" id="open-tracks" aria-haspopup="dialog">
+          Juniper Raceway ▾</button
+        ><button class="header-choice" id="open-garage" aria-haspopup="dialog">
+          Garage ◇
+        </button>
+      </div>
+      <div class="session">
+        <span class="live"><i class="dot"></i> FREE PRACTICE</span
+        ><span class="tag">01 DRIVER · NO LIMITS</span>
+      </div>
+    </header>
+    <main
+      id="game"
+      aria-label="Top-down racing circuit. Use WASD to drive and Space to handbrake."
+    >
+      <div class="overlay top-left circuit-label">
+        <div class="eyebrow" id="track-label">FLOW CIRCUIT / 04</div>
+        <h1 id="track-title">Juniper Raceway</h1>
+        <div class="sub" id="track-subtitle">Commit to the esses.</div>
+        <div class="conditions">
+          <span>☀ <b id="temperature">24°C</b></span
+          ><span>TRACK <b>DRY</b></span
+          ><span>GRIP <b id="grip-label">OPTIMAL</b></span>
+        </div>
+      </div>
+      <div class="overlay timing">
+        <div class="timing-title">
+          <span>CURRENT LAP</span><span class="lap" id="lap">01</span>
+        </div>
+        <div class="clock" id="clock">00:00.000</div>
+        <div class="live-delta">
+          <span>LAST SECTOR TO BEST</span><b id="lap-delta">—</b>
+        </div>
+        <div class="time-row best">
+          <span>PERSONAL BEST</span><b id="best">— — : — —</b>
+        </div>
+        <div class="time-row">
+          <span>LAST LAP</span><b id="last">— — : — —</b>
+        </div>
+        <div class="ghost-status" id="ghost-status" role="status">
+          GHOST · Complete a clean lap to record
+        </div>
+        <div class="live-delta ghost-delta">
+          <span>LIVE TO GHOST</span><b id="ghost-delta">—</b>
+        </div>
+        <div id="sector"><i></i><i></i><i></i><i></i></div>
+        <div class="sector-grid">
+          <div class="sector-cell">
+            S1 <b id="sector-time-0">—</b><small id="sector-diff-0"></small>
+          </div>
+          <div class="sector-cell">
+            S2 <b id="sector-time-1">—</b><small id="sector-diff-1"></small>
+          </div>
+          <div class="sector-cell">
+            S3 <b id="sector-time-2">—</b><small id="sector-diff-2"></small>
+          </div>
+          <div class="sector-cell">
+            S4 <b id="sector-time-3">—</b><small id="sector-diff-3"></small>
+          </div>
+        </div>
+        <div class="split-flash" id="split-flash"></div>
+        <div class="sector-status" id="sector-status">
+          Complete a clean lap to set sector references.
+        </div>
+      </div>
+      <div class="overlay surface-readout" id="grip-status">
+        ASPHALT · READY
+      </div>
+      <div class="overlay bottom-left">
+        <div class="map-card">
+          <div class="map-title">CIRCUIT MAP <b>↗</b></div>
+          <canvas
+            id="minimap"
+            width="320"
+            height="266"
+            aria-label="Track map and car position"
+          ></canvas>
+        </div>
+        <div class="surface-chip" id="surface">● &nbsp; ASPHALT</div>
+      </div>
+      <div class="overlay bottom-right">
+        <div class="speed-panel">
+          <div class="speed-head">
+            <span id="car-name">CLUBSPORT R</span
+            ><span id="car-drive">RWD</span>
+          </div>
+          <div class="speed-line">
+            <span class="speed-number" id="speed">0</span
+            ><span class="unit">KM/H</span><span class="gear" id="gear">N</span>
+          </div>
+          <div class="rpm"><i id="rpm"></i></div>
+          <div class="pedals">
+            <div class="pedal">
+              THROTTLE<span><i id="throttle"></i></span>
+            </div>
+            <div class="pedal">
+              BRAKE<span><i id="brake"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="start-countdown"
+        id="start-countdown"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      ></div>
+      <div class="overlay" id="toast" role="status"></div>
+      <div class="overlay hint" id="hint">
+        <b>W</b> to get rolling. Brake before the bend. Find your apex.
+      </div>
+      <div id="pause-screen">
+        <div class="pause-box">
+          <div class="eyebrow">TAKE A BREATHER</div>
+          <h2>In the pits.</h2>
+          <p>
+            W / S · Accelerate & brake<br />A / D · Steer &nbsp; Space ·
+            Handbrake<br />R · Recover car &nbsp; N · Restart<br />Esc ·
+            Pause<br />Complete a clean lap to set your best time.
+          </p>
+          <button class="primary" id="resume">BACK ON TRACK →</button>
+          <p>
+            <a class="credits" href="ASSETS.txt" target="_blank" rel="noopener"
+              >Asset credits ↗</a
+            >
+          </p>
+        </div>
+      </div>
+    </main>
+    <dialog id="selection-dialog" aria-labelledby="picker-title">
+      <div class="picker-head">
+        <div class="eyebrow" id="picker-eyebrow">THE CIRCUIT COLLECTION</div>
+        <h2 id="picker-title">Find your next apex.</h2>
+        <p id="picker-description"></p>
+        <button
+          class="picker-close"
+          id="picker-close"
+          aria-label="Close selection"
+        >
+          ×
+        </button>
+      </div>
+      <div class="picker-content" id="picker-content"></div>
+      <div class="picker-bottom">
+        <p id="picker-footnote"></p>
+        <button class="primary" id="picker-apply">DRIVE →</button>
+      </div>
+    </dialog>
+    <footer>
+      <div class="controls">
+        <span class="control"><kbd>W A S D</kbd> Drive</span
+        ><span class="control"><kbd>SPACE</kbd> Handbrake</span
+        ><span class="control"><kbd>R</kbd> Recover</span
+        ><span class="control"><kbd>ESC</kbd> Pause</span>
+      </div>
+      <div class="actions">
+        <button
+          class="action"
+          id="restart"
+          title="N · Restart from your chosen grid spot"
+        >
+          ↻ Restart</button
+        ><button class="action" id="sound" aria-pressed="false">
+          ♪ Sound off</button
+        ><button class="action" id="pause">Ⅱ Pause</button>
+      </div>
+    </footer>
+    <script src="assets/p5.min.js"></script>
+    <script src="main.js"></script>
+  </body>
 </html>

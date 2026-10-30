@@ -1,3 +1,101 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><title>APEX — Surface effect visual check</title><style>body{margin:0;padding:30px;background:#172124;color:#eaf0e5;font:14px Arial}h1{font-size:25px;margin:0 0 8px}p{color:#a7b8ac;margin:0 0 24px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}article{background:#233134;border:1px solid #ffffff22;border-radius:8px;overflow:hidden}canvas{width:100%;display:block}h2{font-size:16px;margin:16px}small{display:block;color:#a9beb3;margin:0 16px 20px;line-height:1.5}@media(max-width:600px){.grid{grid-template-columns:1fr}}</style>
-<h1>APEX / Surface effects</h1><p>Actual game artwork at close range. Irregular boundaries use the same geometry as the grip effects.</p><div class="grid"><article><canvas id="oil" width="500" height="400"></canvas><h2>Oil</h2><small>Dark fluid edges, flowing rainbow film, reflected light.</small></article><article><canvas id="sand" width="500" height="400"></canvas><h2>Sand</h2><small>Wind ripples, granular banks, pebbles, and tire furrows.</small></article><article><canvas id="ice" width="500" height="400"></canvas><h2>Ice</h2><small>Glassy facets, branching cracks, and a frosted perimeter.</small></article></div>
-<script src="../main.js"></script><script>['oil','sand','ice'].forEach((id,i)=>{const c=document.getElementById(id).getContext('2d'),rand=seededRandom(39);c.fillStyle='#424d50';c.fillRect(0,0,500,400);for(let j=0;j<5000;j++){c.fillStyle=j%2?'#ffffff13':'#111a211d';c.fillRect(rand()*500,rand()*400,1,1);}c.fillStyle='#eee5c84a';c.fillRect(0,20,500,3);c.fillRect(0,375,500,3);c.translate(250,200);c.scale(2.5,2.5);paintPatch(c,{length:72,width:47,type:['OIL','SAND PATCH','ICE'][i],progress:.2+i*.3},i);});</script></html>
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><title>APEX — Surface effect visual check</title
+  ><style>
+    body {
+      margin: 0;
+      padding: 30px;
+      background: #172124;
+      color: #eaf0e5;
+      font: 14px Arial;
+    }
+    h1 {
+      font-size: 25px;
+      margin: 0 0 8px;
+    }
+    p {
+      color: #a7b8ac;
+      margin: 0 0 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    article {
+      background: #233134;
+      border: 1px solid #ffffff22;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      display: block;
+    }
+    h2 {
+      font-size: 16px;
+      margin: 16px;
+    }
+    small {
+      display: block;
+      color: #a9beb3;
+      margin: 0 16px 20px;
+      line-height: 1.5;
+    }
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <h1>APEX / Surface effects</h1>
+  <p>
+    Actual game artwork at close range. Irregular boundaries use the same
+    geometry as the grip effects.
+  </p>
+  <div class="grid">
+    <article>
+      <canvas id="oil" width="500" height="400"></canvas>
+      <h2>Oil</h2>
+      <small>Dark fluid edges, flowing rainbow film, reflected light.</small>
+    </article>
+    <article>
+      <canvas id="sand" width="500" height="400"></canvas>
+      <h2>Sand</h2>
+      <small>Wind ripples, granular banks, pebbles, and tire furrows.</small>
+    </article>
+    <article>
+      <canvas id="ice" width="500" height="400"></canvas>
+      <h2>Ice</h2>
+      <small>Glassy facets, branching cracks, and a frosted perimeter.</small>
+    </article>
+  </div>
+  <script src="../main.js"></script>
+  <script>
+    ['oil', 'sand', 'ice'].forEach((id, i) => {
+      const c = document.getElementById(id).getContext('2d'),
+        rand = seededRandom(39);
+      c.fillStyle = '#424d50';
+      c.fillRect(0, 0, 500, 400);
+      for (let j = 0; j < 5000; j++) {
+        c.fillStyle = j % 2 ? '#ffffff13' : '#111a211d';
+        c.fillRect(rand() * 500, rand() * 400, 1, 1);
+      }
+      c.fillStyle = '#eee5c84a';
+      c.fillRect(0, 20, 500, 3);
+      c.fillRect(0, 375, 500, 3);
+      c.translate(250, 200);
+      c.scale(2.5, 2.5);
+      paintPatch(
+        c,
+        {
+          length: 72,
+          width: 47,
+          type: ['OIL', 'SAND PATCH', 'ICE'][i],
+          progress: 0.2 + i * 0.3,
+        },
+        i,
+      );
+    });
+  </script>
+</html>
