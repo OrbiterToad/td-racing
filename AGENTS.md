@@ -1,4 +1,4 @@
-Commit every change you make locally. I will push to `origin` manually.
+Commit every change you make locally and push your commits to `origin`.
 
 Use the following commit message format:
 
