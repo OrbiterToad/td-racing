@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="154" viewBox="0 0 80 154">
+ <g fill="#25312e"><rect x="2" y="31" width="12" height="27" rx="3"/><rect x="66" y="31" width="12" height="27" rx="3"/><rect x="1" y="110" width="13" height="28" rx="3"/><rect x="66" y="110" width="13" height="28" rx="3"/></g>
+ <path d="M18 5Q40 0 62 5L69 15L73 112Q76 137 63 146H17Q4 137 7 112L11 15Z" fill="#edc34b" stroke="#60543f" stroke-opacity=".65" stroke-width="2.5"/>
+ <path d="M17 11Q40 6 63 11M13 26L11 112M67 26L69 112" stroke="#ffe6b8" stroke-opacity=".45" stroke-width="2" fill="none"/>
+ <path d="M28 7H35V48H28ZM42 7H49V48H42Z" fill="#f2ecd5"/>
+ <path d="M14 18L25 15L24 25L13 28ZM66 18L55 15L56 25L67 28Z" fill="#f2efd8"/>
+ <path d="M15 35L22 33M58 33L65 35" stroke="#906a49" stroke-width="3"/>
+ <path d="M18 54Q40 44 62 54L57 73Q40 67 23 73Z" fill="#eef0da"/>
+ <path d="M25 77H55L59 101Q40 106 21 101Z" fill="#bfd5cc"/>
+ <path d="M22 108Q40 114 58 108L63 128Q40 135 17 128Z" fill="#e5ead7"/>
+ <path d="M12 63L19 76L17 103L10 113ZM68 63L61 76L63 103L70 113Z" fill="#9abcb5"/>
+ <path d="M28 133H35V145H28ZM42 133H49V145H42Z" fill="#f0e9cf"/>
+ <rect x="9" y="136" width="62" height="6" rx="2" fill="#4c5a50"/>
+ <rect x="13" y="138" width="12" height="4" rx="1" fill="#aa4d3c"/><rect x="55" y="138" width="12" height="4" rx="1" fill="#aa4d3c"/>
+ <rect x="22" y="141" width="7" height="4" fill="#e9ddbf"/><rect x="51" y="141" width="7" height="4" fill="#e9ddbf"/>
+</svg>

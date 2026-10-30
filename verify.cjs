@@ -437,3 +437,32 @@ for(let i=0;i<200;i++){
   assert(Math.abs(coastShoreFrame(x,y).distance-brutePathDistance(coast.shore,x,y,true))<1e-7,'Coast lookup must preserve its exact distance');
 }
 console.log('PASS: optimized road/pit selection, proximity rejection, river and shoreline queries match independent full scans across all maps.');
+
+assert(measured.drift>178&&measured.drift<200,'Drift Spec must be a little slower than its original 207 km/h tuning');
+assert(measured.formula>300&&measured.formula<370&&measured.formula>measured.sprint*1.6,'Formula X must have substantially higher speed');
+function steadyCorner(id){
+  configureTrack('juniper');configureCar(id,'red');reset();const p=track[0];car.vx=p.tx*250;car.vy=p.ty*250;keys.add('KeyW');keys.add('KeyD');
+  for(let i=0;i<.8/CFG.step;i++){car.x=p.x;car.y=p.y;simulate(CFG.step);}return car.slip;
+}
+const clubSlip=steadyCorner('clubsport'),driftSlip=steadyCorner('drift');assert(driftSlip>clubSlip*2,'The drift coupe must hold a substantially larger powered slide');
+keys.clear();keys.add('KeyA');for(let i=0;i<.6/CFG.step;i++){car.x=track[0].x;car.y=track[0].y;simulate(CFG.step);}assert(car.slip<driftSlip*.4,'Lifting and countersteering must catch a drift');
+const formulaSlip=steadyCorner('formula');assert(formulaSlip<clubSlip*.6,'Formula X must remain planted in the same powered corner');
+function brakeProbe(id){configureTrack('juniper');configureCar(id);reset();const p=track[0];car.vx=p.tx*300;car.vy=p.ty*300;keys.add('KeyS');for(let i=0;i<.2/CFG.step;i++){car.x=p.x;car.y=p.y;simulate(CFG.step);}return speed();}
+assert(brakeProbe('formula')<brakeProbe('clubsport')*.65,'The formula car must have braking power to match its speed');
+for(const id of Object.keys(VEHICLES))for(const color of ['red','blue','green','yellow','black']){
+  const path=carImagePath(id,color);assert(path.startsWith('assets/cars/')&&path.endsWith('.svg'),'All six cars must have dedicated vector artwork');assert(fs.existsSync(__dirname+'/'+path),'Every car/paint asset must exist');
+}
+for(const id of ['drift','formula','muscle'])for(const map of Object.keys(MAPS)){
+  configureTrack(map);configureCar(id);reset();
+  for(let i=0;i<track.length;i+=35)for(const side of [-1,1]){reset(i);const p=track[i];car.x+=p.nx*side*(widthAt('wall',i/track.length)-34);car.y+=p.ny*side*(widthAt('wall',i/track.length)-34);car.vx=p.nx*side*1000;car.vy=p.ny*side*1000;step(.15);assert(withinDrivingRails(),'New cars must stay inside barriers at high impact speeds');assert(Number.isFinite(car.x+car.y+car.vx+car.vy));}
+  for(let i=0;i<pitLane.points.length;i+=9){const p=pitLane.points[i];reset();car.x=p.x;car.y=p.y;car.angle=Math.atan2(p.ty,p.tx);car.vx=p.tx*90;car.vy=p.ty*90;const x=car.x,y=car.y;step(CFG.step);assert(Math.hypot(car.x-x,car.y-y)<2,'All new car sizes must fit through pit/service roads');}
+}
+configureTrack('juniper');const originalRecord=storage.get(MAPS.juniper.bestKey),newKeys=[];
+for(const id of ['drift','formula','muscle']){configureCar(id,'red');driveRecordedLap(.1);const key=bestKeyFor();newKeys.push(key);assert(storage.has(key)&&storage.has(key+'-ghost-v1'),'All new cars must save separate best laps and ghosts');configureCar(id,'blue');assert.equal(bestKeyFor(),key,'Paint must preserve each new car’s record');readBest();assert(lapGhost.best);}
+assert.notEqual(newKeys[0],newKeys[1]);assert.equal(storage.get(MAPS.juniper.bestKey),originalRecord,'New car records must not overwrite the original car');
+console.log('PASS: slower controllable Drift Spec, very fast/high-grip Formula X, strong formula braking, all 30 SVG paints, high-speed collisions/pit clearance on every map, and separate records/ghosts.');
+
+assert(measured.muscle>200&&measured.muscle<240,'Iron V8 must have strong muscle-car pace');
+steadyCorner('clubsport');const agileYaw=car.yaw;steadyCorner('muscle');assert(car.yaw<agileYaw,'The muscle car must turn more deliberately than the balanced coupe');
+assert.equal(VEHICLES.muscle.art,'muscle');assert(VEHICLES.muscle.power>VEHICLES.drift.power&&VEHICLES.muscle.steering<VEHICLES.drift.steering,'Iron V8 must emphasize torque over drift-car agility');
+console.log('PASS: Iron V8 torque, deliberate steering, distinct pace and dedicated five-color muscle-car assets.');

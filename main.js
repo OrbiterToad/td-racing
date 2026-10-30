@@ -56,9 +56,12 @@ const MAPS = {
   ].map(p=>p.map(v=>v*.9))}
 };
 const VEHICLES={
-  clubsport:{id:'clubsport',name:'Clubsport R',tag:'BALANCED / RWD',description:'The original. Progressive slides and a predictable balance.',sprite:1,power:242,ceiling:620,drag:.00056,grip:1,steering:1,wheelbase:46,brakes:330,offroad:1,length:44,width:24,bars:[.75,.75,.75]},
-  sprint:{id:'sprint',name:'Sprint GT',tag:'FAST / RWD',description:'More power and speed. Brake early and manage the rear.',sprite:5,power:275,ceiling:700,drag:.00052,grip:.94,steering:.92,wheelbase:49,brakes:350,offroad:1.08,length:48,width:25,bars:[.97,.66,.58]},
-  rally:{id:'rally',name:'Offroad',tag:'GRIPPY / AWD',description:'Nimble steering, more grip, and better recovery off the road.',sprite:4,power:232,ceiling:585,drag:.00060,grip:1.1,steering:1.1,wheelbase:43,brakes:335,offroad:.7,length:44,width:25,bars:[.66,.93,.96]}
+  clubsport:{id:'clubsport',name:'Clubsport R',tag:'BALANCED / RWD',description:'The original. Progressive slides and a predictable balance.',sprite:1,art:'clubsport',power:242,ceiling:620,drag:.00056,grip:1,steering:1,wheelbase:46,brakes:330,offroad:1,length:44,width:24,bars:[.47,.75,.75]},
+  sprint:{id:'sprint',name:'Sprint GT',tag:'FAST / RWD',description:'More power and speed. Brake early and manage the rear.',sprite:5,art:'sprint',power:275,ceiling:700,drag:.00052,grip:.94,steering:.92,wheelbase:49,brakes:350,offroad:1.08,length:48,width:25,bars:[.53,.66,.58]},
+  rally:{id:'rally',name:'Offroad',tag:'GRIPPY / AWD',description:'Nimble steering, more grip, and better recovery off the road.',sprite:4,art:'rally',power:232,ceiling:585,drag:.00060,grip:1.1,steering:1.1,wheelbase:43,brakes:335,offroad:.7,length:44,width:25,bars:[.45,.93,.96]},
+  drift:{id:'drift',name:'Drift Spec',tag:'DRIFT / RWD',description:'Slide-focused rear-drive coupe with an angle kit. Lift and countersteer to catch the slide.',art:'drift',power:310,ceiling:740,drag:.00054,grip:.72,steering:1.26,wheelbase:43,brakes:365,offroad:1.12,length:49,width:27,powerSlide:.28,bars:[.56,.52,.43]},
+  muscle:{id:'muscle',name:'Iron V8',tag:'MUSCLE / RWD',description:'Heavy rear-drive coupe with big torque and broad power slides. Plan your braking and let the V8 pull.',art:'muscle',power:430,ceiling:860,drag:.00062,grip:.87,steering:.9,wheelbase:53,brakes:360,offroad:1.35,length:54,width:29,powerSlide:.16,steerResponse:6,yawResponse:5.8,bars:[.65,.58,.35]},
+  formula:{id:'formula',name:'Formula X',tag:'OPEN WHEEL / RWD',description:'Very high grip, strong downforce and serious speed. Light open-wheel chassis; strongest on asphalt.',art:'formula',power:760,ceiling:1250,drag:.00042,grip:3.8,steering:1.18,wheelbase:47,brakes:920,offroad:1.6,length:56,width:30,downforce:.65,bars:[1,1,.18]}
 };
 const PAINTS={red:{name:'Ember',hex:'#eb782d'},blue:{name:'Ocean',hex:'#3299cb'},green:{name:'Forest',hex:'#36bb72'},yellow:{name:'Sunburst',hex:'#edc34b'},black:{name:'Graphite',hex:'#66666a'}};
 let activeCar=VEHICLES.clubsport,paint='red',pickerMode='tracks',pendingTrack='juniper',pendingCar='clubsport',pendingPaint='red',pickerWasPaused=false;
@@ -99,7 +102,7 @@ function widthAt(kind,progress){return CFG[kind]*narrowFactor(progress);}
 function timingGateHalfWidth(progress){return widthAt('wall',progress)-6;}
 function bestKeyFor(map=activeMap,vehicle=activeCar){return map.bestKey+(vehicle.id==='clubsport'?'':'-'+vehicle.id);}
 function configureCar(id,color=paint){if(!Object.hasOwn(VEHICLES,id)||!Object.hasOwn(PAINTS,color))return false;activeCar=VEHICLES[id];paint=color;BEST_KEY=bestKeyFor();return true;}
-function carImagePath(id=activeCar.id,color=paint){return 'assets/kenney/PNG/Cars/car_'+color+'_'+VEHICLES[id].sprite+'.png';}
+function carImagePath(id=activeCar.id,color=paint){const vehicle=VEHICLES[id];return vehicle.art?'assets/cars/'+vehicle.art+'-'+color+'.svg':'assets/kenney/PNG/Cars/car_'+color+'_'+vehicle.sprite+'.png';}
 function loadCarArt(){carArt=new Image();carArt.src=carImagePath();}
 function readBest(){race.best=null;timing.best=[];try{const saved=JSON.parse(localStorage.getItem(BEST_KEY));if(typeof saved==='number'&&saved>0&&Number.isFinite(saved))race.best=saved;const session=JSON.parse(localStorage.getItem(BEST_KEY+'-sectors-v1'));if(validSession(session,race.best))timing.best=session.sectors.slice();}catch(_){}loadLapGhost();}
 function validSession(session,best){
@@ -574,12 +577,12 @@ function simulate(dt) {
   let forward=car.vx*fx+car.vy*fy,lateral=car.vx*rx+car.vy*ry;
   const speed=Math.hypot(car.vx,car.vy),gas=keys.has('KeyW')||keys.has('ArrowUp'),braking=keys.has('KeyS')||keys.has('ArrowDown'),hand=keys.has('Space');
   const steering=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);
-  car.steer=lerpTo(car.steer,steering,1-Math.exp(-9*dt));
+  car.steer=lerpTo(car.steer,steering,1-Math.exp(-(activeCar.steerResponse||9)*dt));
   car.throttle=gas?1:0;car.brake=braking||hand?1:0;
   const offroad=['GRASS','GRAVEL','SAND','SAND PATCH','SNOW'].includes(surface);
   const baseGrip=surface==='FORD'?.55:surface==='DIRT'?.62:surface==='ICE'?.13:surface==='OIL'?.12:surface==='SAND PATCH'?.48:surface==='SAND'?.32:surface==='SNOW'?.4:surface==='GRASS'?.58:surface==='GRAVEL'?.43:surface==='RUNOFF'?.9:activeMap.id==='canyon'?.92:activeMap.id==='alpine'?.95:1;
   const loose=offroad||surface==='DIRT';
-  const oilGrip=1-.8*clamp(car.slickTime/1.15,0,1),grip=baseGrip*activeCar.grip*oilGrip*(car.coconutSlip>0?.45:1);
+  const oilGrip=1-.8*clamp(car.slickTime/1.15,0,1),aeroSurface=surface==='ASPHALT'||surface==='PIT LANE'||surface==='RUNOFF',aeroGrip=1+(aeroSurface?(activeCar.downforce||0)*clamp(speed/730,0,1)**2:0),powerSlide=1-(activeCar.powerSlide||0)*(gas?1:0)*clamp(Math.abs(forward)/160,0,1)*clamp(Math.abs(car.steer)*2,0,1),grip=baseGrip*activeCar.grip*oilGrip*aeroGrip*powerSlide*(car.coconutSlip>0?.45:1);
   let acceleration=0;
   if(gas)acceleration+=forward<-8?activeCar.brakes:activeCar.power*(1-clamp(forward/activeCar.ceiling,0,.93));
   if(braking)acceleration+=forward>8?-activeCar.brakes:-95*(1-clamp(-forward/115,0,1));
@@ -595,7 +598,7 @@ function simulate(dt) {
   forward+=acceleration*dt;
   const steeringAngle=car.steer*(.52/(1+Math.abs(forward)/190))*activeCar.steering;
   const targetYaw=forward/activeCar.wheelbase*Math.tan(steeringAngle)*(hand?1.42:1);
-  car.yaw=lerpTo(car.yaw,targetYaw,1-Math.exp(-(hand?5.2:8)*dt));
+  car.yaw=lerpTo(car.yaw,targetYaw,1-Math.exp(-(hand?5.2:(activeCar.yawResponse||8))*dt));
   // Friction has a finite lateral acceleration budget, so excessive speed breaks traction.
   const availableGrip=(hand?105:420)*grip*(braking?.83:1);
   const correction=clamp(-lateral*(hand?2.1:9.5)*grip,-availableGrip,availableGrip)*dt;
@@ -707,11 +710,12 @@ function draw() {
 
 function drawCar(c) {
   c.save();c.translate(car.x,car.y);c.rotate(car.angle);
-  c.fillStyle='#10201b40';roundedRect(c,-19+3,-11+4,43,24,5);c.fill();
+  c.fillStyle='#10201b40';roundedRect(c,-activeCar.length/2+3,-activeCar.width/2+4,activeCar.length,activeCar.width,5);c.fill();
   // Front tires visibly steer independently from the body.
   for(const side of [-1,1]){c.save();c.translate(12,side*11);c.rotate(car.steer*.35);c.fillStyle='#182124';c.fillRect(-5,-3,10,6);c.restore();c.fillStyle='#182124';c.fillRect(-17,side*11-3,10,6);}
   if(carArt.complete&&carArt.naturalWidth){c.save();c.rotate(Math.PI/2);c.drawImage(carArt,-activeCar.width/2,-activeCar.length/2,activeCar.width,activeCar.length);c.restore();}
   else{c.fillStyle=PAINTS[paint].hex;roundedRect(c,-activeCar.length/2,-activeCar.width/2,activeCar.length,activeCar.width,5);c.fill();c.fillStyle='#b9dedb';c.fillRect(4,-8,7,16);c.fillStyle='#293c3f';c.fillRect(-9,-8,6,16);}
+  if(activeCar.id==='formula'){for(const [x,steers] of [[activeCar.length*.22,true],[-activeCar.length*.28,false]])for(const side of [-1,1]){c.save();c.translate(x,side*activeCar.width*.38);if(steers)c.rotate(car.steer*.35);c.fillStyle='#25312d';roundedRect(c,-5,-3.2,10,6.4,1.2);c.fill();c.restore();}}
   c.save();if(car.brake){c.shadowColor='#ff4b35';c.shadowBlur=7;}c.fillStyle=car.brake?'#ff6a4f':'#942d27';c.fillRect(-activeCar.length/2,-9,2,5);c.fillRect(-activeCar.length/2,4,2,5);c.restore();
   c.restore();
 }
@@ -1187,8 +1191,8 @@ function drawPatchHighlights(c,time){
 function playImpact(strength){if(!soundEnabled||!audioCtx||!audioLayers)return;const source=audioCtx.createBufferSource(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();source.buffer=audioLayers.buffer;filter.type='lowpass';filter.frequency.value=600;gain.gain.setValueAtTime(Math.min(.12,strength*.1),audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.13);source.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);source.start();source.stop(audioCtx.currentTime+.14);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};}
 function updateHUD(){
   const speed=Math.hypot(car.vx,car.vy),signed=car.vx*Math.cos(car.angle)+car.vy*Math.sin(car.angle),kmh=Math.round(speed*.46);
-  $('speed').textContent=kmh;$('gear').textContent=speed<5?'N':signed<0?'R':Math.min(5,1+Math.floor(kmh/36));
-  $('rpm').style.width=Math.min(100,kmh/170*100)+'%';$('throttle').style.width=car.throttle*100+'%';$('brake').style.width=car.brake*100+'%';
+  $('speed').textContent=kmh;$('gear').textContent=speed<5?'N':signed<0?'R':Math.min(activeCar.id==='formula'?8:5,1+Math.floor(kmh/(activeCar.id==='formula'?42:36)));
+  $('rpm').style.width=Math.min(100,kmh/(activeCar.id==='formula'?340:activeCar.id==='drift'?190:activeCar.id==='muscle'?220:170)*100)+'%';$('throttle').style.width=car.throttle*100+'%';$('brake').style.width=car.brake*100+'%';
   $('clock').textContent=formatTime(race.time);$('best').textContent=formatTime(race.best);$('last').textContent=formatTime(race.last);$('lap').textContent=String(race.lap).padStart(2,'0');
   const surfaceLabel=car.slickTime>0&&car.surface!=='OIL'?'OILY TIRES':car.slip>35&&car.surface==='ASPHALT'?'SLIDING':car.surface;
   $('surface').textContent='●  '+surfaceLabel;$('surface').style.color=car.surface==='ICE'?'#c0f0ff':car.slickTime>0?'#c8b7ed':car.surface.startsWith('SAND')?'#ffd49a':car.surface==='SNOW'?'#e0f4ff':car.surface==='GRAVEL'?'#e9c795':car.surface==='GRASS'?'#b5d686':activeMap.accent;

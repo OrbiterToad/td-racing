@@ -68,8 +68,16 @@ lost (red) at your current position along the recorded route.
 GARAGE
 Clubsport R: balanced rear-wheel drive, approximately 158 km/h.
 Sprint GT: more power, approximately 177 km/h, demands earlier braking.
-Offroad: Kenney car 4, all-wheel drive, more grip and less off-road drag,
+Offroad: all-wheel-drive trail car, more grip and less off-road drag,
 approximately 150 km/h.
+Drift Spec: rear-wheel-drive coupe with an angle kit, power oversteer and
+a rear wing, approximately 188 km/h. Lift and countersteer to catch a slide.
+Formula X: original open-wheel car with very high asphalt grip, speed-built
+downforce, strong brakes and an eight-speed display, approximately 337 km/h.
+Iron V8: heavy rear-wheel-drive muscle coupe, strong torque, slower steering
+and broad power slides, approximately 217 km/h.
+All six cars have dedicated local artwork in every paint and separate lap ghosts
+and personal-best records.
 Paint: Ember, Ocean, Forest, Sunburst, or Graphite.
 Changing car starts a fresh run and loads that car's record. Changing only
 paint preserves the lap. Canceling either picker preserves your run.
