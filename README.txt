@@ -43,7 +43,8 @@ personal best has no recorded path. Faster recorded laps replace the ghost;
 your historic personal best stays separate. The cyan outline and GHOST label
 remain visible when the cars overlap. A cyan minimap dot tracks the ghost
 when it is outside the camera view. Its status and target time appear in
-the timing panel. Ghosts save locally and replay on subsequent laps,
+the timing panel. On a fresh run, the ghost and its live delta stay hidden
+until you cross the start line. Ghosts save locally and replay on subsequent laps,
 including through the pit lane. LIVE TO GHOST shows time gained (green) or
 lost (red) at your current position along the recorded route.
 

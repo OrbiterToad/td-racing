@@ -7,9 +7,9 @@ const node = id => {if(!nodes.has(id)) nodes.set(id,{style:{},classList:{add(){}
 const storage = new Map();
 const sandbox = {window:{},document:{getElementById:node},console,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null}};
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta};',sandbox);
-const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta}=sandbox.window.test;
-function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,countdown:0,goTime:0,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
+vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose};',sandbox);
+const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose}=sandbox.window.test;
+function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,crossedStart:false,countdown:0,goTime:0,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
 function step(seconds){for(let i=0;i<seconds/CFG.step;i++)simulate(CFG.step);}
 function speed(){return Math.hypot(car.vx,car.vy);}
 function withinDrivingRails(){const n=nearestDriving(car.x,car.y);return n.distance<n.wall-8;}
@@ -336,7 +336,7 @@ for(const id of Object.keys(MAPS)){
   driveRecordedLap(.1);assert(lapGhost.best,'First clean recorded lap must create a ghost despite an older faster best on '+id);
   assert.equal(race.best,10,'Creating a ghost must preserve the historic personal best');
   const first=lapGhost.best.time;readBest();assert.equal(lapGhost.best.time,first,'A recorded ghost slower than a historic best must survive reload');
-  race.started=false;assert(ghostStatus().includes('READY'));assert(ghostPose(0),'A stored ghost must be visible before driving');
+  race.started=false;assert(ghostStatus().includes('READY'));assert(ghostPose(0),'Stored trajectory data must remain readable before driving');
   driveRecordedLap(.08);assert(lapGhost.best.time<first&&lapGhost.best.time>race.best,'The fastest recorded path must replace the ghost without beating an older best');
   const fastest=storage.get(key);driveRecordedLap(.12);assert.equal(storage.get(key),fastest,'A slower recorded lap must not replace the ghost');
   driveRecordedLap(.05,true);assert.equal(storage.get(key),fastest,'An invalid lap must not replace the ghost');
@@ -346,7 +346,21 @@ console.log('PASS: ghosts seed from a first clean lap with historic records, per
 configureTrack('amazonas');reset();keys.add('KeyW');startCountdown();const gridPosition={x:car.x,y:car.y};step(2.9);
 assert(race.countdown>0&&race.time===0&&!race.started,'The countdown must not start lap timing');assert.equal(speed(),0);assert.equal(car.x,gridPosition.x);assert.equal(car.y,gridPosition.y);
 assert.equal(lapGhost.frames.length,1,'Waiting for GO must not record an idle lap');step(.3);assert.equal(race.countdown,0);assert(speed()>8&&race.started,'Held throttle must drive after GO');assert(race.goTime>0,'GO must remain visible briefly');
-keys.clear();reset();lapGhost.best={time:20,sectors:[5,5,5,5],frames:[[0,0,0,0],[5,100,0,0],[10,100,100,1.57],[15,0,100,3.14],[20,0,0,-1.57]]};race.started=true;race.next=1;race.time=1.5;car.x=50;car.y=0;
+keys.clear();reset();lapGhost.best={time:20,sectors:[5,5,5,5],frames:[[0,0,0,0],[5,100,0,0],[10,100,100,1.57],[15,0,100,3.14],[20,0,0,-1.57]]};race.started=true;race.crossedStart=true;race.next=1;race.time=1.5;car.x=50;car.y=0;
 assert(Math.abs(liveGhostDelta()+1)<1e-8,'Delta must compare time at the same position, not at the same replay time');race.time=3.5;assert(Math.abs(liveGhostDelta()-1)<1e-8,'A slower driver must see a positive delta');
 race.next=4;race.time=19;car.x=0;car.y=10;assert(Math.abs(liveGhostDelta()+.5)<1e-8,'Sector windows must distinguish the start from the finish');race.invalid=true;assert.equal(liveGhostDelta(),null,'Invalid laps must not show a misleading delta');race.invalid=false;car.x=10000;car.y=10000;assert.equal(liveGhostDelta(),null,'A driver far from the recorded path must not get a misleading delta');lapGhost.best=null;assert.equal(liveGhostDelta(),null);
 console.log('PASS: 3–2–1–GO holds the car and timer, releases held throttle, and live ghost deltas compare matching positions with correct sign and finish-sector handling.');
+
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);reset();const p=track[0];lapGhost.best={time:10,frames:[[0,p.x,p.y,0],[10,p.x+100,p.y,0]]};
+  assert.equal(visibleGhostPose(),null,'Ghost must stay hidden on the grid on '+id);
+  race.started=true;race.time=2;race.previous=.98;assert.equal(visibleGhostPose(),null,'Moving off the grid must not release the ghost');assert.equal(liveGhostDelta(),null);
+  assert(ghostStatus().includes('Cross the start line'),'HUD must explain the waiting ghost');
+  race.previous=.999;updateRace(.01,{progress:.001,distance:widthAt('wall',0)+10});assert.equal(visibleGhostPose(),null,'Crossing outside the barriers must not release the ghost');
+  race.previous=.001;updateRace(.01,{progress:.999,distance:0});assert.equal(visibleGhostPose(),null,'Reverse crossing must not release the ghost');
+  race.previous=.999;updateRace(.01,{progress:.001,distance:0});assert(race.crossedStart&&visibleGhostPose(),'Forward start crossing must release the ghost on '+id);assert(race.time<.01,'Ghost playback must start at the crossing rather than include the grid approach');
+  const first=visibleGhostPose();assert(Math.abs(first.x-p.x)<1,'Ghost must begin at the start of its recording');
+  updateRace(.1,{progress:.002,distance:0});assert(visibleGhostPose().x>first.x,'Ghost playback must advance after crossing');
+  configureTrack(id);lapGhost.best={time:10,frames:[[0,p.x,p.y,0],[10,p.x+100,p.y,0]]};assert.equal(visibleGhostPose(),null,'A fresh run must hide the saved ghost again');
+}
+console.log('PASS: ghost car, minimap visibility, and live delta wait for a forward start crossing and reset on a fresh run on every map.');

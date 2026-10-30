@@ -60,7 +60,7 @@ const lapGhost={best:null,frames:[],cursor:0,previous:null};
 const startingGrid=[];
 let selectedStart=0;
 const camera = {x:0,y:0,zoom:1};
-const race = {started:false,countdown:0,goTime:0,time:0,last:null,best:null,lap:1,next:1,previous:0,invalid:false,travel:0,stuck:0};
+const race = {started:false,crossedStart:false,countdown:0,goTime:0,time:0,last:null,best:null,lap:1,next:1,previous:0,invalid:false,travel:0,stuck:0};
 const timing={splits:[],best:[],last:[],sectorStart:0,delta:null,flashTime:0,flashLabel:'',flashDelta:null};
 const feedback={impact:0,impactCooldown:0,rumble:0};
 let audioLayers=null;
@@ -96,7 +96,7 @@ function configureTrack(id){
   if(!Object.hasOwn(MAPS,id))return false;
   activeMap=MAPS[id];controlPoints=activeMap.points;BEST_KEY=bestKeyFor();
   for(const key of ['road','runoff','wall'])CFG[key]=activeMap[key];
-  race.countdown=0;race.goTime=0;makeTrack();lapGhost.best=null;resetGhostRecording();jungle.cooldown=0;jungle.throwTime=0;jungle.flowTime=0;jungle.coconuts.length=0;car.coconutSlip=0;return true;
+  race.crossedStart=false;race.countdown=0;race.goTime=0;makeTrack();lapGhost.best=null;resetGhostRecording();jungle.cooldown=0;jungle.throwTime=0;jungle.flowTime=0;jungle.coconuts.length=0;car.coconutSlip=0;return true;
 }
 function changeTrack(id,announce=true){
   if(!configureTrack(id))return;
@@ -395,7 +395,7 @@ function restartRun(){
   camera.x=car.x;camera.y=car.y;notify('FRESH RUN · GRID '+(slot+1));
 }
 function liveGhostDelta(){
-  const ghost=lapGhost.best;if(!ghost||!race.started||race.invalid||race.countdown>0)return null;
+  const ghost=lapGhost.best;if(!ghost||!race.started||!race.crossedStart||race.invalid||race.countdown>0)return null;
   const sector=Math.min(3,Math.max(0,race.next-1)),sectors=ghost.sectors;
   const timed=Array.isArray(sectors)&&sectors.length===4&&sectors.every(t=>Number.isFinite(t)&&t>0)&&Math.abs(sectors.reduce((a,b)=>a+b,0)-ghost.time)<.03;
   const start=timed?sectors.slice(0,sector).reduce((a,b)=>a+b,0):sector===3?ghost.time*.5:0,end=timed?start+sectors[sector]:sector===0?ghost.time*.5:ghost.time;
@@ -450,10 +450,12 @@ function ghostPose(time){
 }
 function ghostStatus(){
   if(!lapGhost.best)return race.invalid?'GHOST · Cross the finish, then drive a clean lap':'GHOST · Complete a clean lap to record';
+  if(!race.crossedStart)return 'GHOST READY · Cross the start line';
   return 'GHOST '+(!race.started?'READY':race.time>lapGhost.best.time?'FINISHED':'RACING')+' · '+formatTime(lapGhost.best.time);
 }
+function visibleGhostPose(){return race.crossedStart?ghostPose(race.time):null;}
 function drawLapGhost(c){
-  const pose=ghostPose(race.started?race.time:0);if(!pose)return;
+  const pose=visibleGhostPose();if(!pose)return;
   c.save();c.translate(pose.x,pose.y);c.rotate(pose.angle);c.fillStyle='#8bdefa';c.strokeStyle='#c4f3ff';c.lineWidth=2.2;
   c.globalAlpha=.26;roundedRect(c,-activeCar.length/2-2,-activeCar.width/2-2,activeCar.length+4,activeCar.width+4,6);c.fill();
   c.globalAlpha=.92;c.shadowColor='#74ddff';c.shadowBlur=7;c.stroke();c.shadowBlur=0;
@@ -565,7 +567,7 @@ function updateRace(dt,n) {
       else notify((firstGhost&&ghostSaved?'GHOST READY · ':'LAP COMPLETE · ')+formatTime(race.last));
     }else if(race.invalid)notify('FRESH LAP · Make it a clean one');
     else if(race.time>8)notify('LAP NOT COUNTED · Pass every sector on the track');
-    race.time=remainder;race.next=1;race.travel=0;race.invalid=false;beginLap(crossingFrame);
+    race.crossedStart=true;race.time=remainder;race.next=1;race.travel=0;race.invalid=false;beginLap(crossingFrame);
   }
   race.previous=progress;
 }
@@ -924,7 +926,7 @@ function updateHUD(){
   $('sector-status').textContent=timing.best.length?'Comparing with your best lap sectors.':'Complete a clean lap to set sector references.';
 }
 
-function drawMinimap(){if(!mapCtx)return;const c=mapCtx,b=pitLane.bounds,scale=Math.min(280/(b.right-b.left),225/(b.bottom-b.top));c.clearRect(0,0,320,266);c.save();c.translate(160,132);c.scale(scale,scale);c.translate(-(b.left+b.right)/2,-(b.top+b.bottom)/2);if(activeMap.id==='amazonas')paintAmazonRiver(c,false);path(c,pitLane.points,0,false);c.strokeStyle='#c2b98c';c.lineWidth=2/scale;c.stroke();ribbon(c,'#536258',9/scale);ribbon(c,'#abbca2',3/scale);if(activeMap.id==='amazonas'){c.save();c.globalAlpha=.75;paintAmazonRiver(c,false);c.restore();}const p=track[0];c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.fillStyle=activeMap.accent;c.fillRect(-1/scale,-5/scale,2/scale,10/scale);c.restore();const ghost=ghostPose(race.started?race.time:0);if(ghost){c.save();c.translate(ghost.x,ghost.y);c.fillStyle='#91e1ff';c.strokeStyle='#e4faff';c.lineWidth=1/scale;c.beginPath();c.arc(0,0,4/scale,0,Math.PI*2);c.fill();c.stroke();c.restore();}c.save();c.translate(car.x,car.y);c.rotate(car.angle);c.scale(1/scale,1/scale);c.fillStyle=activeMap.accent;c.beginPath();c.moveTo(5,0);c.lineTo(-3.5,-3.5);c.lineTo(-2,0);c.lineTo(-3.5,3.5);c.closePath();c.fill();c.restore();c.restore();}
+function drawMinimap(){if(!mapCtx)return;const c=mapCtx,b=pitLane.bounds,scale=Math.min(280/(b.right-b.left),225/(b.bottom-b.top));c.clearRect(0,0,320,266);c.save();c.translate(160,132);c.scale(scale,scale);c.translate(-(b.left+b.right)/2,-(b.top+b.bottom)/2);if(activeMap.id==='amazonas')paintAmazonRiver(c,false);path(c,pitLane.points,0,false);c.strokeStyle='#c2b98c';c.lineWidth=2/scale;c.stroke();ribbon(c,'#536258',9/scale);ribbon(c,'#abbca2',3/scale);if(activeMap.id==='amazonas'){c.save();c.globalAlpha=.75;paintAmazonRiver(c,false);c.restore();}const p=track[0];c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.fillStyle=activeMap.accent;c.fillRect(-1/scale,-5/scale,2/scale,10/scale);c.restore();const ghost=visibleGhostPose();if(ghost){c.save();c.translate(ghost.x,ghost.y);c.fillStyle='#91e1ff';c.strokeStyle='#e4faff';c.lineWidth=1/scale;c.beginPath();c.arc(0,0,4/scale,0,Math.PI*2);c.fill();c.stroke();c.restore();}c.save();c.translate(car.x,car.y);c.rotate(car.angle);c.scale(1/scale,1/scale);c.fillStyle=activeMap.accent;c.beginPath();c.moveTo(5,0);c.lineTo(-3.5,-3.5);c.lineTo(-2,0);c.lineTo(-3.5,3.5);c.closePath();c.fill();c.restore();c.restore();}
 
 function toggleSound(){
   soundEnabled=!soundEnabled;
