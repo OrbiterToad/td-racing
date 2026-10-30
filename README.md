@@ -184,6 +184,7 @@ Run the same checks as CI:
 ```sh
 npm run lint
 npm test
+npm audit --audit-level=high
 npm run build
 npm run test:browser
 ```
@@ -195,18 +196,54 @@ and pause controls, and reports missing local assets or JavaScript errors.
 External requests are blocked to verify the game works with bundled p5.js.
 Browser failure reports are saved in `playwright-report/` and `test-results/`.
 
-The [GitHub Actions workflow](.github/workflows/ci.yml) runs these checks on pull
-requests and pushes to `master`. After successful checks on `master`, it deploys
-the tested `dist/` folder to GitHub Pages. Pull requests never deploy. The folder
-contains the game, runtime assets, and asset credits; it is generated locally
-and is not committed.
+The [GitHub Actions workflow](.github/workflows/ci.yml) runs on every branch
+push, every pull request, and manual runs. It reports four independent checks:
 
-To enable hosting, open the repository's **Settings → Pages** and select
-**GitHub Actions** as the source. Then push to `master` or run **CI and deploy**
-manually from the Actions tab. The site will be available at
-[orbitertoad.github.io/td-racing](https://orbitertoad.github.io/td-racing/).
+- **Lint** checks JavaScript with ESLint and allows no warnings.
+- **Simulation tests** runs the game physics and circuit assertions.
+- **Dependency audit** blocks high and critical vulnerabilities, including in
+  development tools, using `npm audit --audit-level=high`.
+- **Build and browser tests** packages the site and tests that exact output in
+  Chromium under `/td-racing/`, matching GitHub Pages hosting.
+
+All jobs use Node.js 24, `npm ci`, the committed lockfile, and npm download
+caching. New commits cancel obsolete pull request runs. Browser reports,
+screenshots, and failure traces are available in the run's **Artifacts →
+browser-diagnostics** for seven days, including reports for successful runs.
+
+After all four checks pass on `master`, **Deploy to GitHub Pages** publishes
+the tested `dist/` artifact without rebuilding it. Pull requests and other
+branches run checks only. The deployment job alone receives Pages write and
+OIDC permissions, and deployments run one at a time. `dist/` contains the game,
+runtime assets, and credits; it is generated and is not committed.
+
+To enable hosting:
+
+1. Open the repository's **Settings → Pages** and select **GitHub Actions** as
+   the source.
+2. In **Settings → Environments → github-pages**, ensure deployment branch
+   rules allow `master`.
+3. Push or merge this workflow to `master`. Alternatively, select **CI and
+   deploy → Run workflow → master** in the Actions tab.
+4. Wait for all checks and deployment to pass. The deployment environment and
+   Pages settings show the published URL:
+   [orbitertoad.github.io/td-racing](https://orbitertoad.github.io/td-racing/).
+
 Deployment uses GitHub's built-in token; no hosting credentials are required.
 See [GitHub's Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
-Optionally, add a branch rule for `master` requiring **Lint and test** before
-merging pull requests.
+To enforce checks before merging, add a branch ruleset for `master`, require a
+pull request, and require **Lint**, **Simulation tests**, **Dependency audit**,
+and **Build and browser tests**. Run the workflow once so these check names
+appear in the ruleset picker. Avoid requiring the deployment check: it runs
+after merging. Direct pushes remain possible unless your ruleset restricts them.
+
+[Dependabot](.github/dependabot.yml) opens weekly update pull requests for npm
+packages and GitHub Actions. Minor and patch development-tool updates are
+grouped; major npm updates stay separate for review. Updates run the same CI
+checks and require a merge before they reach production.
+
+If deployment fails, check **Settings → Pages** uses GitHub Actions and the
+`github-pages` environment allows `master`. If a check fails, open that job's
+logs; for browser failures, download `browser-diagnostics` and open the HTML
+report with `npx playwright show-report <path-to-playwright-report>`.

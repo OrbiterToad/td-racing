@@ -3,37 +3,81 @@ name: CI and deploy
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: ['**']
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Replace obsolete PR runs; let branch runs finish, including deployments.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CI: true
+
 jobs:
   checks:
-    name: Lint and test
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Lint
+            command: npm run lint
+          - name: Simulation tests
+            command: npm test
+          - name: Dependency audit
+            command: npm audit --audit-level=high
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run check
+        run: ${{ matrix.command }}
+
+  browser:
+    name: Build and browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build static site
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Test packaged site at the Pages subpath
+        run: npm run test:browser
       - name: Upload browser diagnostics
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: browser-diagnostics
           path: |
             playwright-report/
             test-results/
+          if-no-files-found: ignore
           retention-days: 7
       - name: Upload tested site
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
@@ -43,7 +87,7 @@ jobs:
 
   deploy:
     name: Deploy to GitHub Pages
-    needs: checks
+    needs: [checks, browser]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -57,7 +101,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/configure-pages@v5
-      - name: Deploy
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Deploy tested artifact
         id: deployment
         uses: actions/deploy-pages@v4
