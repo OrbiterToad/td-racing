@@ -57,14 +57,26 @@ cars are active; they cruise in their lanes and brake after a collision.
 
 ## Scenery
 
-A shared pack of 36 original top-down SVG assets adds varied tree crowns,
+A shared pack of 48 original top-down SVG assets adds varied tree crowns,
 palms, snowy pines, houses, cabins, offices, and warehouses. Paddocks have
 five themed service bays, a control room, team canopies, tyre racks, fuel
-stores, and supply crates, all inside the reserved paddock footprint.
+stores, tool trolleys, water tanks, and supply crates, all inside the reserved
+paddock footprint. New homes, greenhouses, cafés, garden beds, transporters,
+grandstands, mossy rocks, and willows add variety outside the driving corridors.
+
+Scenery shares one placement plan: buildings reserve their full plots first,
+then small props and trees fill the remaining space without overlapping.
+Ground details render below props, rooftops, and tree canopies. City park
+paths and the fountain stay clear, as does the monkey’s perch in Amazonas.
 
 The pack loads once into a reusable raster cache. Static scenery remains
 baked into the world canvas, so the new detail does not add per-frame SVG
 rendering. Regenerate the assets with `python3 tools/build-scenery-assets.py`.
+
+![Themed paddocks across all seven circuits, with numbered garages, control rooms, and team canopies](preview-paddocks.png)
+
+Explore the full [scenery asset pack](preview-scenery-assets.png) and
+[scenery placement across all maps](preview-scenery-placement.png).
 
 Every landscape has denser scenery outside the barriers: woodland logs
 and ferns, desert rock and cactus clusters, mountain pines and snowdrifts,

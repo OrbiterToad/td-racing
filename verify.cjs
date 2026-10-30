@@ -25,7 +25,7 @@ const sandbox = {
 vm.createContext(sandbox);
 vm.runInContext(
   fs.readFileSync(__dirname + '/main.js', 'utf8') +
-    '\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout};',
+    '\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout,SCENERY_LAYERS,sceneryScene,sceneryBuildings,sceneryTrees,sceneryDetailLayer};',
   sandbox,
 );
 const {
@@ -83,6 +83,11 @@ const {
   coastShoreFrame,
   SCENERY_ASSETS,
   paddockAssetLayout,
+  SCENERY_LAYERS,
+  sceneryScene,
+  sceneryBuildings,
+  sceneryTrees,
+  sceneryDetailLayer,
 } = sandbox.window.test;
 function reset(i = 0) {
   keys.clear();
@@ -1909,7 +1914,7 @@ console.log(
 );
 
 assert(
-  SCENERY_ASSETS.length >= 36,
+  SCENERY_ASSETS.length >= 48,
   'The new scenery library must include substantial tree, house, paddock and support-asset variety',
 );
 assert.equal(
@@ -1975,5 +1980,108 @@ for (const id of Object.keys(MAPS)) {
   }
 }
 console.log(
-  'PASS: 36 local scenery models, unique catalog, themed paddock bays/control buildings/equipment, safe footprints and service-lane clearance on every map.',
+  'PASS: 48 local scenery models, unique catalog, themed paddock bays/control buildings/equipment, safe footprints and service-lane clearance on every map.',
+);
+
+// Independent scatter passes used to put logs and foliage over roofs. All
+// standalone objects now share placement reservations and the actual draw list.
+assert(
+  sceneryDetailLayer('flowers') < sceneryDetailLayer('log'),
+  'Flowers belong below ground props',
+);
+assert(
+  sceneryDetailLayer('log') < sceneryDetailLayer('cabin'),
+  'Logs must never render over roofs',
+);
+assert(
+  sceneryDetailLayer('cabin') < sceneryDetailLayer('pine'),
+  'Roofs belong below the canopy layer',
+);
+const usedSceneryKeys = new Set();
+for (const id of Object.keys(MAPS)) {
+  configureTrack(id);
+  assert(
+    sceneryTrees.length > 60,
+    'Every map retains substantial vegetation: ' + id,
+  );
+  assert(
+    sceneryDetails.length > 25,
+    'Spacing must preserve roadside detail: ' + id,
+  );
+  assert.equal(
+    sceneryScene.length,
+    sceneryBuildings.length + sceneryDetails.length + sceneryTrees.length,
+    'Every planned object belongs to the shared scene',
+  );
+  for (let i = 0; i < sceneryScene.length; i++) {
+    const a = sceneryScene[i];
+    if (a.key) usedSceneryKeys.add(a.key);
+    if (SCENERY_ASSETS.includes(a.kind)) usedSceneryKeys.add(a.kind);
+    assert(
+      sceneryClear(a.x, a.y, a.radius),
+      'Full footprints must clear roads, water, park paths and the monkey site: ' +
+        id,
+    );
+    if (i)
+      assert(
+        sceneryScene[i - 1].layer <= a.layer,
+        'Ground details must render before props, roofs, and canopies',
+      );
+    if (a.type === 'detail')
+      assert.equal(
+        a.layer,
+        sceneryDetailLayer(a.kind),
+        'Every detail uses its intended layer',
+      );
+    if (a.type === 'tree') {
+      assert.equal(a.layer, SCENERY_LAYERS.canopy);
+      assert(
+        Math.hypot((a.size * 1.18) / 2, (a.size * 1.18) / 2) <= a.radius,
+        'Rotated tree sprite must fit its reservation',
+      );
+    }
+    for (let j = 0; j < i; j++) {
+      const b = sceneryScene[j];
+      assert(
+        Math.hypot(a.x - b.x, a.y - b.y) >= a.radius + b.radius + 8 - 1e-6,
+        'Scenery footprints must not overlap: ' +
+          id +
+          ' ' +
+          a.kind +
+          ' / ' +
+          b.kind,
+      );
+    }
+  }
+  if (id === 'city' || id === 'coast')
+    assert(
+      sceneryBuildings.length > 10,
+      'Village and city buildings must survive spacing checks',
+    );
+  const snapshot = JSON.stringify(sceneryScene);
+  configureTrack(id);
+  assert.equal(
+    JSON.stringify(sceneryScene),
+    snapshot,
+    'Switching maps must reproduce the same placement and layers',
+  );
+}
+for (const key of [
+  'greenhouse',
+  'shed-garden',
+  'cafe-terrace',
+  'service-transporter',
+  'tool-trolley',
+  'water-tank',
+  'spectator-stand',
+  'garden-bed',
+  'rock-moss',
+  'tree-willow',
+])
+  assert(
+    usedSceneryKeys.has(key),
+    'New asset must actually appear in a map: ' + key,
+  );
+console.log(
+  'PASS: shared footprint reservations, rotated sprite bounds, deterministic placement, park/monkey clearance, layered draw order, and new asset coverage across all seven maps.',
 );

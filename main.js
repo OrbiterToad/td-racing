@@ -2094,6 +2094,7 @@ function drawTrackPreview(canvas, map) {
 }
 
 const SCENERY_ASSETS = [
+  'cafe-terrace',
   'control-room',
   'control-room-snow',
   'cottage-snow',
@@ -2105,7 +2106,11 @@ const SCENERY_ASSETS = [
   'garage-cream',
   'garage-industrial',
   'garage-jungle',
+  'garden-bed',
+  'greenhouse',
+  'house-bungalow',
   'house-modern',
+  'house-row',
   'house-sandstone',
   'house-slate',
   'house-terracotta',
@@ -2114,9 +2119,14 @@ const SCENERY_ASSETS = [
   'office-lowrise',
   'park-bench',
   'picnic-table',
+  'rock-moss',
   'service-tent-blue',
   'service-tent-red',
   'service-tent-sand',
+  'service-transporter',
+  'shed-garden',
+  'spectator-stand',
+  'tool-trolley',
   'tree-acacia',
   'tree-birch',
   'tree-cactus',
@@ -2127,8 +2137,10 @@ const SCENERY_ASSETS = [
   'tree-palm',
   'tree-pine',
   'tree-pine-snow',
+  'tree-willow',
   'tyre-rack',
   'warehouse',
+  'water-tank',
   'wood-crates',
 ];
 const sceneryArt = Object.create(null);
@@ -2232,6 +2244,8 @@ function paddockAssetLayout() {
       angle: 0,
     },
     { key: 'wood-crates', x: 135, y: forecourt, w: 17, h: 17, angle: 0 },
+    { key: 'tool-trolley', x: -23, y: forecourt, w: 17, h: 20, angle: 0 },
+    { key: 'water-tank', x: -227, y: forecourt, w: 18, h: 18, angle: 0 },
   );
   return props;
 }
@@ -2284,14 +2298,14 @@ function paintPaddock(c) {
       c.stroke();
     }
     if (prop.bay) {
+      const labelY = prop.y + (paddock.side === 1 ? -26 : 26);
+      c.fillStyle = '#293c36';
+      roundedRect(c, prop.x - 9, labelY - 6, 18, 12, 3);
+      c.fill();
       c.fillStyle = '#f3efd8';
       c.font = 'bold 9px Arial';
       c.textAlign = 'center';
-      c.fillText(
-        String(prop.bay).padStart(2, '0'),
-        prop.x,
-        prop.y + (paddock.side === 1 ? -41 : 45),
-      );
+      c.fillText(String(prop.bay).padStart(2, '0'), prop.x, labelY + 3);
     }
   }
   c.restore();
@@ -4075,30 +4089,6 @@ function paintCoastLandmarks(c) {
   c.restore();
   paintCoastBoat(c, 2050, -450, 0.7, '#c98262');
   paintCoastBoat(c, 2110, 850, -0.4, '#5a9da8');
-  // Village roofs stay on land, away from both driving corridors.
-  const rand = seededRandom(891);
-  for (let i = 0; i < 48; i++) {
-    const x = -2200 + rand() * 1200,
-      y = -900 + rand() * 1450,
-      w = 45 + rand() * 45,
-      h = 42 + rand() * 35;
-    if (
-      coastLandDistance(x, y) < 110 ||
-      nearest(x, y).distance < CFG.wall + 100 ||
-      withinPitDistance(x, y, pitLane.wall + 100) ||
-      Math.hypot(x - paddock.x, y - paddock.y) < 370
-    )
-      continue;
-    paintCoastBuilding(
-      c,
-      x,
-      y,
-      w,
-      h,
-      rand() * 0.6 - 0.3,
-      i % 3 ? '#c7835d' : '#dba575',
-    );
-  }
 }
 function drawCoastWaves(c) {
   if (activeMap.id !== 'coast') return;
@@ -4125,7 +4115,39 @@ function drawCoastWaves(c) {
   c.restore();
 }
 
-const sceneryDetails = [];
+// Place large sites first, then details, then trees. Every object reserves its
+// complete rotated sprite footprint, including the shadow, before anything draws.
+const SCENERY_LAYERS = { ground: 0, props: 1, structures: 2, canopy: 3 };
+const sceneryDetails = [],
+  sceneryBuildings = [],
+  sceneryTrees = [],
+  sceneryScene = [];
+function reserveScenery(prop, target) {
+  if (!sceneryClear(prop.x, prop.y, prop.radius)) return false;
+  if (
+    sceneryScene.some(
+      (other) =>
+        (prop.x - other.x) ** 2 + (prop.y - other.y) ** 2 <
+        (prop.radius + other.radius + 8) ** 2,
+    )
+  )
+    return false;
+  target.push(prop);
+  sceneryScene.push(prop);
+  return true;
+}
+function cityParkClear(x, y, radius) {
+  const dx = x - 190,
+    dy = y - 390;
+  if (Math.hypot(dx, dy) < 66 + radius) return false;
+  if (Math.abs(Math.hypot(dx / 380, dy / 285) - 1) * 285 < radius + 14)
+    return false;
+  if (Math.hypot(x - Math.max(-170, Math.min(550, x)), dy) < radius + 12)
+    return false;
+  if (Math.hypot(dx, y - Math.max(120, Math.min(660, y))) < radius + 12)
+    return false;
+  return Math.hypot(x - 190, y - 775) > radius + 95;
+}
 function sceneryClear(x, y, radius) {
   const n = nearest(x, y);
   if (
@@ -4144,8 +4166,15 @@ function sceneryClear(x, y, radius) {
     py < 125 + radius
   )
     return false;
-  if (activeMap.id === 'amazonas' && amazonRiverDistance(x, y) < 125 + radius)
-    return false;
+  if (activeMap.id === 'amazonas') {
+    const m = monkeyPosition();
+    if (
+      amazonRiverDistance(x, y) < 125 + radius ||
+      Math.hypot(x - m.x, y - (m.y - 20)) < 100 + radius
+    )
+      return false;
+  }
+  if (activeMap.id === 'city' && !cityParkClear(x, y, radius)) return false;
   if (
     activeMap.id === 'coast' &&
     (coastLandDistance(x, y) < 90 + radius ||
@@ -4154,40 +4183,320 @@ function sceneryClear(x, y, radius) {
     return false;
   return true;
 }
+function buildSceneryBuildings() {
+  if (activeMap.id === 'coast') {
+    const rand = seededRandom(891);
+    for (let i = 0; i < 64; i++) {
+      const x = -2200 + rand() * 1200,
+        y = -900 + rand() * 1450,
+        w = 45 + rand() * 45,
+        h = 42 + rand() * 35,
+        angle = rand() * 0.6 - 0.3;
+      reserveScenery(
+        {
+          type: 'building',
+          kind: 'coast',
+          x,
+          y,
+          w,
+          h,
+          angle,
+          radius: Math.hypot(w + 8, h + 8) / 2,
+          seed: i,
+          layer: SCENERY_LAYERS.structures,
+        },
+        sceneryBuildings,
+      );
+    }
+  }
+  if (activeMap.id === 'city') {
+    const rand = seededRandom(4209);
+    for (let x = -2320; x < 1700; x += 235)
+      for (let y = -2000; y < -240; y += 245) {
+        const w = 125 + rand() * 45,
+          h = 135 + rand() * 45,
+          px = x + (rand() - 0.5) * 25,
+          py = y + (rand() - 0.5) * 25;
+        reserveScenery(
+          {
+            type: 'building',
+            kind: 'office',
+            x: px,
+            y: py,
+            w,
+            h,
+            angle: 0,
+            radius: Math.hypot(w * 1.4, h * 1.4) / 2 + 2,
+            seed: Math.floor(rand() * 100000),
+            layer: SCENERY_LAYERS.structures,
+          },
+          sceneryBuildings,
+        );
+      }
+    for (let x = -1100; x < 2100; x += 245)
+      for (let y = 30; y < 2150; y += 245) {
+        const px = x + (rand() - 0.5) * 45,
+          py = y + (rand() - 0.5) * 45;
+        if (px > -380 && px < 760 && py < 850) continue;
+        reserveScenery(
+          {
+            type: 'building',
+            kind: 'home',
+            x: px,
+            y: py,
+            w: 78 + rand() * 15,
+            h: 62 + rand() * 15,
+            angle: 0,
+            radius: Math.hypot(192, 184) / 2 + 2,
+            seed: Math.floor(rand() * 100000),
+            layer: SCENERY_LAYERS.structures,
+          },
+          sceneryBuildings,
+        );
+      }
+  }
+}
+function sceneryDetailLayer(kind) {
+  if (
+    [
+      'fern',
+      'flowers',
+      'drygrass',
+      'snowdrift',
+      'parking',
+      'garden-bed',
+    ].includes(kind)
+  )
+    return SCENERY_LAYERS.ground;
+  if (
+    [
+      'cabin',
+      'hut',
+      'villa',
+      'citybuilding',
+      'greenhouse',
+      'shed-garden',
+      'cafe-terrace',
+      'spectator-stand',
+      'canopy',
+      'water-tank',
+    ].includes(kind)
+  )
+    return SCENERY_LAYERS.structures;
+  if (['pine', 'cactus'].includes(kind)) return SCENERY_LAYERS.canopy;
+  return SCENERY_LAYERS.props;
+}
 function buildSceneryDetails() {
   sceneryDetails.length = 0;
+  sceneryBuildings.length = 0;
+  sceneryTrees.length = 0;
+  sceneryScene.length = 0;
+  buildSceneryBuildings();
   const rand = seededRandom(
       5600 + Object.keys(MAPS).indexOf(activeMap.id) * 271,
     ),
     kinds = {
-      juniper: ['rock', 'log', 'fern', 'flowers', 'cabin', 'picnic'],
-      canyon: ['rock', 'cactus', 'drygrass', 'hut'],
-      alpine: ['rock', 'pine', 'snowdrift', 'cabin'],
-      amazonas: ['fern', 'flowers', 'log', 'rock', 'hut'],
-      rallycross: ['tires', 'canopy', 'servicecar', 'rock'],
-      coast: ['umbrella', 'flowers', 'rock', 'villa', 'bench'],
-      city: ['citybuilding', 'streetlamp', 'parking', 'flowers', 'bench'],
+      juniper: [
+        'rock-moss',
+        'log',
+        'fern',
+        'flowers',
+        'cabin',
+        'picnic',
+        'shed-garden',
+        'greenhouse',
+        'spectator-stand',
+      ],
+      canyon: [
+        'rock',
+        'cactus',
+        'drygrass',
+        'hut',
+        'water-tank',
+        'service-transporter',
+      ],
+      alpine: [
+        'rock',
+        'pine',
+        'snowdrift',
+        'cabin',
+        'shed-garden',
+        'spectator-stand',
+      ],
+      amazonas: ['fern', 'flowers', 'log', 'rock-moss', 'hut', 'picnic'],
+      rallycross: [
+        'tires',
+        'canopy',
+        'service-transporter',
+        'rock',
+        'tool-trolley',
+        'spectator-stand',
+      ],
+      coast: [
+        'umbrella',
+        'flowers',
+        'rock',
+        'villa',
+        'bench',
+        'cafe-terrace',
+        'garden-bed',
+      ],
+      city: [
+        'citybuilding',
+        'streetlamp',
+        'parking',
+        'flowers',
+        'bench',
+        'garden-bed',
+        'greenhouse',
+        'cafe-terrace',
+      ],
     }[activeMap.id];
-  for (let i = 0; i < 180; i++) {
+  for (let i = 0; i < 360; i++) {
     const p = track[Math.floor(rand() * track.length)],
       size = 22 + rand() * 32,
       radius = size * 1.3 + 8,
       side = rand() < 0.5 ? -1 : 1,
       d = widthAt('wall', p.s / track.totalLength) + radius + 60 + rand() * 240,
       x = p.x + p.nx * d * side,
-      y = p.y + p.ny * d * side;
-    if (!sceneryClear(x, y, radius)) continue;
-    sceneryDetails.push({
-      x,
-      y,
-      size,
-      radius,
-      angle: rand() * Math.PI * 2,
-      kind: kinds[Math.floor(rand() * kinds.length)],
-      seed: Math.floor(rand() * 100000),
-    });
+      y = p.y + p.ny * d * side,
+      kind = kinds[Math.floor(rand() * kinds.length)],
+      seed = Math.floor(rand() * 100000),
+      rotation = rand() * Math.PI * 2;
+    const layer = sceneryDetailLayer(kind),
+      aligned =
+        layer === SCENERY_LAYERS.structures ||
+        ['service-transporter', 'bench', 'picnic'].includes(kind),
+      angle = aligned
+        ? activeMap.id === 'city'
+          ? 0
+          : Math.atan2(p.ty, p.tx) + (side === 1 ? Math.PI : 0)
+        : rotation;
+    // Buildings belong outside the central park; paths and the fountain stay open.
+    if (
+      activeMap.id === 'city' &&
+      ['citybuilding', 'greenhouse', 'cafe-terrace'].includes(kind) &&
+      x > -400 - radius &&
+      x < 780 + radius &&
+      y > -110 - radius &&
+      y < 870 + radius
+    )
+      continue;
+    reserveScenery(
+      { type: 'detail', x, y, size, radius, angle, kind, seed, layer },
+      sceneryDetails,
+    );
+  }
+  buildSceneryTrees();
+  sceneryScene.sort((a, b) => a.layer - b.layer || a.y - b.y || a.x - b.x);
+}
+function buildSceneryTrees() {
+  const id = activeMap.id,
+    rand = seededRandom(7300 + Object.keys(MAPS).indexOf(id) * 113),
+    keys = {
+      juniper: [
+        'tree-oak',
+        'tree-birch',
+        'tree-elm',
+        'tree-pine',
+        'tree-willow',
+      ],
+      canyon: ['tree-cactus', 'tree-acacia'],
+      alpine: ['tree-pine-snow', 'tree-pine-snow', 'tree-pine'],
+      amazonas: ['tree-jungle', 'tree-jungle', 'tree-fan-palm'],
+      coast: ['tree-palm', 'tree-fan-palm'],
+      city: ['tree-birch', 'tree-elm', 'tree-willow'],
+      rallycross: ['tree-oak', 'tree-birch', 'tree-pine'],
+    }[id];
+  for (let i = 0; i < (id === 'amazonas' ? 2800 : 1100); i++) {
+    const x = rand() * worldBounds.width + worldBounds.x,
+      y = rand() * worldBounds.height + worldBounds.y,
+      size = id === 'amazonas' ? 65 + rand() * 65 : 35 + rand() * 48,
+      key = keys[Math.floor(rand() * keys.length)],
+      angle = rand() * Math.PI * 2;
+    if (id === 'city' && y < -100) continue;
+    if (id === 'amazonas' && Math.abs(x + 500) < 180 && Math.abs(y + 220) < 110)
+      continue;
+    reserveScenery(
+      {
+        type: 'tree',
+        kind: key,
+        key,
+        x,
+        y,
+        size,
+        radius: size * 0.85,
+        angle,
+        layer: SCENERY_LAYERS.canopy,
+      },
+      sceneryTrees,
+    );
   }
 }
+function paintSceneryGround(c) {
+  for (const site of sceneryBuildings) {
+    const { x, y, w, h, kind } = site;
+    if (kind === 'home') {
+      c.fillStyle = site.seed % 2 ? '#b4bd91' : '#98ae81';
+      roundedRect(c, x - 96, y - 92, 192, 184, 7);
+      c.fill();
+      c.strokeStyle = '#d9ddbf';
+      c.lineWidth = 3;
+      c.stroke();
+    } else if (kind === 'office') {
+      c.fillStyle = '#b5bcb03d';
+      roundedRect(c, x - w * 0.7, y - h * 0.7, w * 1.4, h * 1.4, 8);
+      c.fill();
+    }
+  }
+}
+function paintSceneryScene(c) {
+  // The sorted list is also the actual draw order: ground, props, roofs, crowns.
+  for (const prop of sceneryScene) {
+    const rand = seededRandom(prop.seed || 0);
+    if (prop.type === 'building') {
+      if (prop.kind === 'coast')
+        paintCoastBuilding(
+          c,
+          prop.x,
+          prop.y,
+          prop.w,
+          prop.h,
+          prop.angle,
+          prop.seed % 3 ? '#c7835d' : '#dba575',
+        );
+      else if (prop.kind === 'home')
+        paintCityBuilding(
+          c,
+          prop.x - 18,
+          prop.y - 18,
+          prop.w,
+          prop.h,
+          rand,
+          true,
+        );
+      else paintCityBuilding(c, prop.x, prop.y, prop.w, prop.h, rand);
+    } else if (prop.type === 'tree') {
+      if (
+        !drawSceneryAsset(
+          c,
+          prop.key,
+          prop.x,
+          prop.y,
+          prop.size * 1.18,
+          prop.size * 1.18,
+          prop.angle,
+        )
+      )
+        paintCityTree(c, prop.x, prop.y, prop.size, rand);
+    } else paintSceneryDetails(c, [prop]);
+  }
+  // Garden trees share their home's reserved plot, but still draw as canopies.
+  for (const site of sceneryBuildings)
+    if (site.kind === 'home')
+      paintCityTree(c, site.x + 60, site.y + 55, 36, seededRandom(site.seed));
+}
+
 function paintSceneryRock(c, size, rand) {
   const desert = activeMap.id === 'canyon',
     snow = activeMap.id === 'alpine';
@@ -4215,15 +4524,26 @@ function paintSceneryRock(c, size, rand) {
   c.closePath();
   c.fill();
 }
-function paintSceneryDetails(c) {
-  for (const prop of sceneryDetails) {
+function paintSceneryDetails(c, props = sceneryDetails) {
+  for (const prop of props) {
     const { x, y, size, angle, kind } = prop,
       rand = seededRandom(prop.seed);
     c.save();
     c.translate(x, y);
     c.rotate(angle);
-    const asset =
-      kind === 'canopy'
+    const asset = [
+      'greenhouse',
+      'shed-garden',
+      'cafe-terrace',
+      'service-transporter',
+      'tool-trolley',
+      'water-tank',
+      'spectator-stand',
+      'garden-bed',
+      'rock-moss',
+    ].includes(kind)
+      ? kind
+      : kind === 'canopy'
         ? ['service-tent-red', 'service-tent-blue', 'service-tent-sand'][
             prop.seed % 3
           ]
@@ -4495,7 +4815,13 @@ function paintCityGround(c, bounds) {
 function paintCityBuilding(c, x, y, w, h, rand, residential = false) {
   if (sceneryAssetState.ready) {
     const variants = residential
-      ? ['house-slate', 'house-modern', 'house-terracotta', 'cottage-wood']
+      ? [
+          'house-slate',
+          'house-modern',
+          'house-terracotta',
+          'house-bungalow',
+          'house-row',
+        ]
       : ['office-lowrise', 'office-courtyard', 'warehouse'];
     if (
       drawSceneryAsset(
@@ -4590,49 +4916,7 @@ function paintCityTree(c, x, y, size, rand) {
   c.fill();
   c.restore();
 }
-function paintCityLandmarks(c) {
-  const rand = seededRandom(4209);
-  for (let x = -2320; x < 1700; x += 235)
-    for (let y = -2000; y < -240; y += 245) {
-      const w = 125 + rand() * 45,
-        h = 135 + rand() * 45,
-        px = x + (rand() - 0.5) * 25,
-        py = y + (rand() - 0.5) * 25,
-        radius = Math.hypot(w, h) / 2 + 20;
-      if (!sceneryClear(px, py, radius)) continue;
-      c.fillStyle = '#b5bcb03d';
-      roundedRect(c, px - w * 0.7, py - h * 0.7, w * 1.4, h * 1.4, 8);
-      c.fill();
-      paintCityBuilding(c, px, py, w, h, rand);
-    }
-  for (let x = -1100; x < 2100; x += 245)
-    for (let y = 30; y < 2150; y += 245) {
-      const px = x + (rand() - 0.5) * 45,
-        py = y + (rand() - 0.5) * 45;
-      if (!sceneryClear(px, py, 120) || (px > -380 && px < 760 && py < 850))
-        continue;
-      c.fillStyle = rand() < 0.5 ? '#b4bd91' : '#98ae81';
-      roundedRect(c, px - 96, py - 92, 192, 184, 7);
-      c.fill();
-      c.strokeStyle = '#d9ddbf';
-      c.lineWidth = 3;
-      c.stroke();
-      paintCityBuilding(
-        c,
-        px - 8,
-        py - 12,
-        78 + rand() * 15,
-        62 + rand() * 15,
-        rand,
-        true,
-      );
-      paintCityTree(c, px + 55, py + 50, 42, rand);
-    }
-  c.fillStyle = '#e5e8d2';
-  c.font = '600 18px Arial';
-  c.textAlign = 'center';
-  c.fillText('CENTRAL PARK', 190, 780);
-}
+
 function paintCityRoadMarkings(c) {
   c.save();
   path(c, track);
@@ -4759,6 +5043,13 @@ function buildWorld() {
   if (amazon) paintAmazonRiver(c);
   if (desert) paintCanyonMesas(c, rand, w, h);
   if (alpine) paintAlpineRidges(c, rand, w, h);
+  paintSceneryGround(c);
+  if (urban) {
+    c.fillStyle = '#e5e8d2';
+    c.font = '600 18px Arial';
+    c.textAlign = 'center';
+    c.fillText('CENTRAL PARK', 190, 780);
+  }
   paintPitRoad(c);
   ribbon(
     c,
@@ -5032,76 +5323,7 @@ function buildWorld() {
     c.restore();
   }
   if (seaside) paintCoastLandmarks(c);
-  if (urban) paintCityLandmarks(c);
-  for (let i = 0; i < (amazon ? 2200 : seaside ? 720 : 680); i++) {
-    const x = rand() * w + worldBounds.x,
-      y = rand() * h + worldBounds.y,
-      size = amazon ? 65 + rand() * 65 : 35 + rand() * 48;
-    if (!sceneryClear(x, y, size * 0.65)) continue;
-    const dx = x - paddock.x,
-      dy = y - paddock.y,
-      px = dx * paddock.tx + dy * paddock.ty,
-      py = -dx * paddock.ty + dy * paddock.tx;
-    if (px > -330 && px < 370 && py > -140 && py < 175) continue;
-    if (urban) {
-      if (y < -100) continue;
-      paintCityTree(c, x, y, size, rand);
-      continue;
-    }
-    if (seaside) {
-      if (
-        coastLandDistance(x, y) < 100 + size * 0.5 ||
-        Math.hypot(x - coast.lighthouse.x, y - coast.lighthouse.y) < 150
-      )
-        continue;
-      paintCoastPalm(c, x, y, size, rand);
-      continue;
-    }
-    if (amazon) {
-      if (
-        amazonRiverDistance(x, y) < 120 + size * 0.5 ||
-        (Math.abs(x + 500) < 180 && Math.abs(y + 220) < 110)
-      )
-        continue;
-      paintJungleTree(c, x, y, size, rand);
-      continue;
-    }
-    if (desert) {
-      paintDesertProp(c, x, y, size, rand);
-      continue;
-    }
-    if (alpine) {
-      paintAlpineProp(c, x, y, size, rand);
-      continue;
-    }
-    const tree = ['tree-oak', 'tree-birch', 'tree-elm', 'tree-pine'][
-        Math.floor(rand() * 4)
-      ],
-      rotation = rand() * Math.PI * 2;
-    if (drawSceneryAsset(c, tree, x, y, size * 1.18, size * 1.18, rotation))
-      continue;
-    c.save();
-    c.translate(x, y);
-    c.rotate(rotation);
-    c.fillStyle = '#52734c';
-    for (let k = 0; k < 6; k++) {
-      c.beginPath();
-      c.arc(
-        Math.cos(k) * size * 0.17,
-        Math.sin(k) * size * 0.17,
-        size * 0.27,
-        0,
-        Math.PI * 2,
-      );
-      c.fill();
-    }
-    c.fillStyle = '#658457';
-    c.beginPath();
-    c.arc(-3, -3, size * 0.29, 0, Math.PI * 2);
-    c.fill();
-    c.restore();
-  }
-  paintSceneryDetails(c);
+  paintSceneryScene(c);
   // Direction arrows and numbered apex boards are flat markings.
   for (let i = 30; i < track.length; i += 65) {
     const p = track[i];
