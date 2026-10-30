@@ -26,6 +26,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: Formatting
+            command: npm run format:check
           - name: Lint
             command: npm run lint
           - name: Simulation tests

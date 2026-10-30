@@ -99,13 +99,13 @@ lost (red) at your current position along the recorded route.
 - **Clubsport R:** balanced rear-wheel drive, approximately 158 km/h.
 - **Sprint GT:** more power, approximately 177 km/h, demands earlier braking.
 - **Offroad:** all-wheel-drive trail car, more grip and less off-road drag,
-approximately 150 km/h.
+  approximately 150 km/h.
 - **Drift Spec:** rear-wheel-drive coupe with an angle kit, power oversteer and
-a rear wing, approximately 188 km/h. Lift and countersteer to catch a slide.
+  a rear wing, approximately 188 km/h. Lift and countersteer to catch a slide.
 - **Formula X:** original open-wheel car with very high asphalt grip, speed-built
-downforce, strong brakes and an eight-speed display, approximately 337 km/h.
+  downforce, strong brakes and an eight-speed display, approximately 337 km/h.
 - **Iron V8:** heavy rear-wheel-drive muscle coupe, strong torque, slower steering
-and broad power slides, approximately 217 km/h.
+  and broad power slides, approximately 217 km/h.
 
 All six cars have dedicated local artwork in every paint and separate lap ghosts
 and personal-best records.
@@ -182,12 +182,20 @@ libraries are missing.
 Run the same checks as CI:
 
 ```sh
+npm run format:check
 npm run lint
 npm test
 npm audit --audit-level=high
 npm run build
 npm run test:browser
 ```
+
+Run `npm run format` to apply Prettier formatting. `npm run check` runs formatting,
+lint, simulation tests, the build, and browser tests in order; run the dependency
+audit separately because it needs registry access. The pinned Prettier version,
+[formatter config](.prettierrc.json), and [EditorConfig](.editorconfig) keep editor
+and command-line formatting consistent. ESLint's Prettier compatibility config
+turns off conflicting style rules.
 
 ESLint checks project JavaScript and excludes bundled assets. `npm test` runs
 the simulation assertions in `verify.cjs`. The browser test serves the packaged
@@ -197,10 +205,11 @@ External requests are blocked to verify the game works with bundled p5.js.
 Browser failure reports are saved in `playwright-report/` and `test-results/`.
 
 The [GitHub Actions workflow](.github/workflows/ci.yml) runs on every branch
-push, every pull request, and manual runs. It reports four independent checks:
+push, every pull request, and manual runs. It reports five independent checks:
 
+- **Formatting** checks Prettier formatting without changing files.
 - **Lint** checks JavaScript with ESLint and allows no warnings.
-- **Simulation tests** runs the game physics and circuit assertions.
+- **Simulation tests** run the game physics and circuit assertions.
 - **Dependency audit** blocks high and critical vulnerabilities, including in
   development tools, using `npm audit --audit-level=high`.
 - **Build and browser tests** packages the site and tests that exact output in
@@ -211,7 +220,7 @@ caching. New commits cancel obsolete pull request runs. Browser reports,
 screenshots, and failure traces are available in the run's **Artifacts →
 browser-diagnostics** for seven days, including reports for successful runs.
 
-After all four checks pass on `master`, **Deploy to GitHub Pages** publishes
+After all five checks pass on `master`, **Deploy to GitHub Pages** publishes
 the tested `dist/` artifact without rebuilding it. Pull requests and other
 branches run checks only. The deployment job alone receives Pages write and
 OIDC permissions, and deployments run one at a time. `dist/` contains the game,
@@ -233,7 +242,7 @@ Deployment uses GitHub's built-in token; no hosting credentials are required.
 See [GitHub's Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
 To enforce checks before merging, add a branch ruleset for `master`, require a
-pull request, and require **Lint**, **Simulation tests**, **Dependency audit**,
+pull request, and require **Formatting**, **Lint**, **Simulation tests**, **Dependency audit**,
 and **Build and browser tests**. Run the workflow once so these check names
 appear in the ruleset picker. Avoid requiring the deployment check: it runs
 after merging. Direct pushes remain possible unless your ruleset restricts them.
