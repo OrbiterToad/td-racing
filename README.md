@@ -66,6 +66,9 @@ The pack loads once into a reusable raster cache. Static scenery remains
 baked into the world canvas, so the new detail does not add per-frame SVG
 rendering. Regenerate the assets with `python3 tools/build-scenery-assets.py`.
 
+Preview the [scenery asset pack](preview-scenery-assets.png) and
+[paddocks across all seven maps](preview-paddocks.png).
+
 Every landscape has denser scenery outside the barriers: woodland logs
 and ferns, desert rock and cactus clusters, mountain pines and snowdrifts,
 jungle flowers and fallen timber, rally team canopies and service vehicles,

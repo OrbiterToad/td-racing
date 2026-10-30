@@ -456,7 +456,7 @@ function paintPaddock(c){
   c.strokeStyle='#e8e3c03d';c.lineWidth=1;for(let x=-230;x<275;x+=26){c.beginPath();c.moveTo(x,-44);c.lineTo(x,79);c.stroke();}for(let y=-43;y<80;y+=26){c.beginPath();c.moveTo(-234,y);c.lineTo(274,y);c.stroke();}
   for(const prop of paddockAssetLayout()){
     if(!drawSceneryAsset(c,prop.key,prop.x,prop.y,prop.w,prop.h,prop.angle)){c.fillStyle='#d1c9a9';roundedRect(c,prop.x-prop.w/2,prop.y-prop.h/2,prop.w,prop.h,3);c.fill();c.strokeStyle='#8fa38c';c.lineWidth=2;c.stroke();}
-    if(prop.bay){c.fillStyle='#f3efd8';c.font='bold 9px Arial';c.textAlign='center';c.fillText(String(prop.bay).padStart(2,'0'),prop.x,prop.y+(paddock.side===1?-41:45));}
+    if(prop.bay){const labelY=prop.y+(paddock.side===1?-26:26);c.fillStyle='#293c36';roundedRect(c,prop.x-9,labelY-6,18,12,3);c.fill();c.fillStyle='#f3efd8';c.font='bold 9px Arial';c.textAlign='center';c.fillText(String(prop.bay).padStart(2,'0'),prop.x,labelY+3);}
   }
   c.restore();
 }
