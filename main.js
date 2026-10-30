@@ -426,7 +426,7 @@ function drawTrackPreview(canvas,map){
   c.fillStyle='#fff5dc';const start=points[0];c.beginPath();c.arc(start.x,start.y,4/scale,0,6.28);c.fill();c.restore();
 }
 
-const SCENERY_ASSETS=["control-room","control-room-snow","cottage-snow","cottage-wood","fuel-store","garage-alpine","garage-city","garage-coastal","garage-cream","garage-industrial","garage-jungle","house-modern","house-sandstone","house-slate","house-terracotta","hut-jungle","office-courtyard","office-lowrise","park-bench","picnic-table","service-tent-blue","service-tent-red","service-tent-sand","tree-acacia","tree-birch","tree-cactus","tree-elm","tree-fan-palm","tree-jungle","tree-oak","tree-palm","tree-pine","tree-pine-snow","tyre-rack","warehouse","wood-crates"];
+const SCENERY_ASSETS=["cafe-terrace","control-room","control-room-snow","cottage-snow","cottage-wood","fuel-store","garage-alpine","garage-city","garage-coastal","garage-cream","garage-industrial","garage-jungle","garden-bed","greenhouse","house-bungalow","house-modern","house-row","house-sandstone","house-slate","house-terracotta","hut-jungle","office-courtyard","office-lowrise","park-bench","picnic-table","rock-moss","service-tent-blue","service-tent-red","service-tent-sand","service-transporter","shed-garden","spectator-stand","tool-trolley","tree-acacia","tree-birch","tree-cactus","tree-elm","tree-fan-palm","tree-jungle","tree-oak","tree-palm","tree-pine","tree-pine-snow","tree-willow","tyre-rack","warehouse","water-tank","wood-crates"];
 const sceneryArt=Object.create(null);
 const sceneryAssetState={ready:false,failed:[],promise:null};
 function loadSceneryAssets(){
@@ -447,7 +447,7 @@ function paddockAssetLayout(){
   props.push({key:activeMap.id==='alpine'?'control-room-snow':'control-room',x:214,y,w:64,h:86,angle});
   props.push({key:'tyre-rack',x:-227,y:12,w:20,h:32,angle:0},{key:'fuel-store',x:263,y:12,w:24,h:36,angle:0});
   const forecourt=front<0?-37:63;
-  props.push({key:'service-tent-blue',x:-102,y:forecourt,w:44,h:front<0?18:24,angle:0},{key:'service-tent-red',x:56,y:forecourt,w:44,h:front<0?18:24,angle:0},{key:'wood-crates',x:135,y:forecourt,w:17,h:17,angle:0});
+  props.push({key:'service-tent-blue',x:-102,y:forecourt,w:44,h:front<0?18:24,angle:0},{key:'service-tent-red',x:56,y:forecourt,w:44,h:front<0?18:24,angle:0},{key:'wood-crates',x:135,y:forecourt,w:17,h:17,angle:0},{key:'tool-trolley',x:-23,y:forecourt,w:17,h:20,angle:0},{key:'water-tank',x:-227,y:forecourt,w:18,h:18,angle:0});
   return props;
 }
 function paintPaddock(c){
@@ -948,12 +948,7 @@ function paintCoastLandmarks(c){
   }
   c.restore();c.save();c.translate(harbor.x-nx*85,harbor.y-ny*85);c.fillStyle='#f3ecd4';c.font='bold 18px Arial';c.textAlign='center';c.fillText('MARINA AZUL',0,0);c.restore();
   paintCoastBoat(c,2050,-450,.7,'#c98262');paintCoastBoat(c,2110,850,-.4,'#5a9da8');
-  // Village roofs stay on land, away from both driving corridors.
-  const rand=seededRandom(891);for(let i=0;i<48;i++){
-    const x=-2200+rand()*1200,y=-900+rand()*1450,w=45+rand()*45,h=42+rand()*35;
-    if(coastLandDistance(x,y)<110||nearest(x,y).distance<CFG.wall+100||withinPitDistance(x,y,pitLane.wall+100)||Math.hypot(x-paddock.x,y-paddock.y)<370)continue;
-    paintCoastBuilding(c,x,y,w,h,rand()*.6-.3,i%3?'#c7835d':'#dba575');
-  }
+
 }
 function drawCoastWaves(c){
   if(activeMap.id!=='coast')return;c.save();c.lineCap='round';
@@ -963,32 +958,113 @@ function drawCoastWaves(c){
   }c.restore();
 }
 
-const sceneryDetails=[];
+// Place large sites first, then details, then trees. Every object reserves its
+// complete rotated sprite footprint, including the shadow, before anything draws.
+const SCENERY_LAYERS={ground:0,props:1,structures:2,canopy:3};
+const sceneryDetails=[],sceneryBuildings=[],sceneryTrees=[],sceneryScene=[];
+function reserveScenery(prop,target){
+  if(!sceneryClear(prop.x,prop.y,prop.radius))return false;
+  if(sceneryScene.some(other=>(prop.x-other.x)**2+(prop.y-other.y)**2<(prop.radius+other.radius+8)**2))return false;
+  target.push(prop);sceneryScene.push(prop);return true;
+}
+function cityParkClear(x,y,radius){
+  const dx=x-190,dy=y-390;
+  if(Math.hypot(dx,dy)<66+radius)return false;
+  if(Math.abs(Math.hypot(dx/380,dy/285)-1)*285<radius+14)return false;
+  if(Math.hypot(x-Math.max(-170,Math.min(550,x)),dy)<radius+12)return false;
+  if(Math.hypot(dx,y-Math.max(120,Math.min(660,y)))<radius+12)return false;
+  return Math.hypot(x-190,y-775)>radius+95;
+}
 function sceneryClear(x,y,radius){
   const n=nearest(x,y);if(n.distance<widthAt('wall',n.progress)+radius+24||withinPitDistance(x,y,pitLane.wall+radius+24))return false;
   const dx=x-paddock.x,dy=y-paddock.y,px=dx*paddock.tx+dy*paddock.ty,py=-dx*paddock.ty+dy*paddock.tx;
   if(px>-265-radius&&px<305+radius&&py>-75-radius&&py<125+radius)return false;
-  if(activeMap.id==='amazonas'&&amazonRiverDistance(x,y)<125+radius)return false;
+  if(activeMap.id==='amazonas'){const m=monkeyPosition();if(amazonRiverDistance(x,y)<125+radius||Math.hypot(x-m.x,y-(m.y-20))<100+radius)return false;}
+  if(activeMap.id==='city'&&!cityParkClear(x,y,radius))return false;
   if(activeMap.id==='coast'&&(coastLandDistance(x,y)<90+radius||Math.hypot(x-coast.lighthouse.x,y-coast.lighthouse.y)<130+radius))return false;
   return true;
 }
-function buildSceneryDetails(){
-  sceneryDetails.length=0;const rand=seededRandom(5600+Object.keys(MAPS).indexOf(activeMap.id)*271),kinds={juniper:['rock','log','fern','flowers','cabin','picnic'],canyon:['rock','cactus','drygrass','hut'],alpine:['rock','pine','snowdrift','cabin'],amazonas:['fern','flowers','log','rock','hut'],rallycross:['tires','canopy','servicecar','rock'],coast:['umbrella','flowers','rock','villa','bench'],city:['citybuilding','streetlamp','parking','flowers','bench']}[activeMap.id];
-  for(let i=0;i<180;i++){
-    const p=track[Math.floor(rand()*track.length)],size=22+rand()*32,radius=size*1.3+8,side=rand()<.5?-1:1,d=widthAt('wall',p.s/track.totalLength)+radius+60+rand()*240,x=p.x+p.nx*d*side,y=p.y+p.ny*d*side;
-    if(!sceneryClear(x,y,radius))continue;
-    sceneryDetails.push({x,y,size,radius,angle:rand()*Math.PI*2,kind:kinds[Math.floor(rand()*kinds.length)],seed:Math.floor(rand()*100000)});
+function buildSceneryBuildings(){
+  if(activeMap.id==='coast'){
+    const rand=seededRandom(891);
+    for(let i=0;i<64;i++){
+      const x=-2200+rand()*1200,y=-900+rand()*1450,w=45+rand()*45,h=42+rand()*35,angle=rand()*.6-.3;
+      reserveScenery({type:'building',kind:'coast',x,y,w,h,angle,radius:Math.hypot(w+8,h+8)/2,seed:i,layer:SCENERY_LAYERS.structures},sceneryBuildings);
+    }
+  }
+  if(activeMap.id==='city'){
+    const rand=seededRandom(4209);
+    for(let x=-2320;x<1700;x+=235)for(let y=-2000;y<-240;y+=245){
+      const w=125+rand()*45,h=135+rand()*45,px=x+(rand()-.5)*25,py=y+(rand()-.5)*25;
+      reserveScenery({type:'building',kind:'office',x:px,y:py,w,h,angle:0,radius:Math.hypot(w*1.4,h*1.4)/2+2,seed:Math.floor(rand()*100000),layer:SCENERY_LAYERS.structures},sceneryBuildings);
+    }
+    for(let x=-1100;x<2100;x+=245)for(let y=30;y<2150;y+=245){
+      const px=x+(rand()-.5)*45,py=y+(rand()-.5)*45;if(px>-380&&px<760&&py<850)continue;
+      reserveScenery({type:'building',kind:'home',x:px,y:py,w:78+rand()*15,h:62+rand()*15,angle:0,radius:Math.hypot(192,184)/2+2,seed:Math.floor(rand()*100000),layer:SCENERY_LAYERS.structures},sceneryBuildings);
+    }
   }
 }
+function sceneryDetailLayer(kind){
+  if(['fern','flowers','drygrass','snowdrift','parking','garden-bed'].includes(kind))return SCENERY_LAYERS.ground;
+  if(['cabin','hut','villa','citybuilding','greenhouse','shed-garden','cafe-terrace','spectator-stand','canopy','water-tank'].includes(kind))return SCENERY_LAYERS.structures;
+  if(['pine','cactus'].includes(kind))return SCENERY_LAYERS.canopy;
+  return SCENERY_LAYERS.props;
+}
+function buildSceneryDetails(){
+  sceneryDetails.length=0;sceneryBuildings.length=0;sceneryTrees.length=0;sceneryScene.length=0;
+  buildSceneryBuildings();
+  const rand=seededRandom(5600+Object.keys(MAPS).indexOf(activeMap.id)*271),kinds={juniper:['rock-moss','log','fern','flowers','cabin','picnic','shed-garden','greenhouse','spectator-stand'],canyon:['rock','cactus','drygrass','hut','water-tank','service-transporter'],alpine:['rock','pine','snowdrift','cabin','shed-garden','spectator-stand'],amazonas:['fern','flowers','log','rock-moss','hut','picnic'],rallycross:['tires','canopy','service-transporter','rock','tool-trolley','spectator-stand'],coast:['umbrella','flowers','rock','villa','bench','cafe-terrace','garden-bed'],city:['citybuilding','streetlamp','parking','flowers','bench','garden-bed','greenhouse','cafe-terrace']}[activeMap.id];
+  for(let i=0;i<360;i++){
+    const p=track[Math.floor(rand()*track.length)],size=22+rand()*32,radius=size*1.3+8,side=rand()<.5?-1:1,d=widthAt('wall',p.s/track.totalLength)+radius+60+rand()*240,x=p.x+p.nx*d*side,y=p.y+p.ny*d*side,kind=kinds[Math.floor(rand()*kinds.length)],seed=Math.floor(rand()*100000),rotation=rand()*Math.PI*2;
+    const layer=sceneryDetailLayer(kind),aligned=layer===SCENERY_LAYERS.structures||['service-transporter','bench','picnic'].includes(kind),angle=aligned?(activeMap.id==='city'?0:Math.atan2(p.ty,p.tx)+(side===1?Math.PI:0)):rotation;
+    // Buildings belong outside the central park; paths and the fountain stay open.
+    if(activeMap.id==='city'&&['citybuilding','greenhouse','cafe-terrace'].includes(kind)&&x>-400-radius&&x<780+radius&&y>-110-radius&&y<870+radius)continue;
+    reserveScenery({type:'detail',x,y,size,radius,angle,kind,seed,layer},sceneryDetails);
+  }
+  buildSceneryTrees();
+  sceneryScene.sort((a,b)=>a.layer-b.layer||a.y-b.y||a.x-b.x);
+}
+function buildSceneryTrees(){
+  const id=activeMap.id,rand=seededRandom(7300+Object.keys(MAPS).indexOf(id)*113),keys={juniper:['tree-oak','tree-birch','tree-elm','tree-pine','tree-willow'],canyon:['tree-cactus','tree-acacia'],alpine:['tree-pine-snow','tree-pine-snow','tree-pine'],amazonas:['tree-jungle','tree-jungle','tree-fan-palm'],coast:['tree-palm','tree-fan-palm'],city:['tree-birch','tree-elm','tree-willow'],rallycross:['tree-oak','tree-birch','tree-pine']}[id];
+  for(let i=0;i<(id==='amazonas'?2800:1100);i++){
+    const x=rand()*worldBounds.width+worldBounds.x,y=rand()*worldBounds.height+worldBounds.y,size=id==='amazonas'?65+rand()*65:35+rand()*48,key=keys[Math.floor(rand()*keys.length)],angle=rand()*Math.PI*2;
+    if(id==='city'&&y<-100)continue;
+    if(id==='amazonas'&&Math.abs(x+500)<180&&Math.abs(y+220)<110)continue;
+    reserveScenery({type:'tree',kind:key,key,x,y,size,radius:size*.85,angle,layer:SCENERY_LAYERS.canopy},sceneryTrees);
+  }
+}
+function paintSceneryGround(c){
+  for(const site of sceneryBuildings){
+    const {x,y,w,h,kind}=site;
+    if(kind==='home'){c.fillStyle=site.seed%2?'#b4bd91':'#98ae81';roundedRect(c,x-96,y-92,192,184,7);c.fill();c.strokeStyle='#d9ddbf';c.lineWidth=3;c.stroke();}
+    else if(kind==='office'){c.fillStyle='#b5bcb03d';roundedRect(c,x-w*.7,y-h*.7,w*1.4,h*1.4,8);c.fill();}
+  }
+}
+function paintSceneryScene(c){
+  // The sorted list is also the actual draw order: ground, props, roofs, crowns.
+  for(const prop of sceneryScene){
+    const rand=seededRandom(prop.seed||0);
+    if(prop.type==='building'){
+      if(prop.kind==='coast')paintCoastBuilding(c,prop.x,prop.y,prop.w,prop.h,prop.angle,prop.seed%3?'#c7835d':'#dba575');
+      else if(prop.kind==='home')paintCityBuilding(c,prop.x-18,prop.y-18,prop.w,prop.h,rand,true);
+      else paintCityBuilding(c,prop.x,prop.y,prop.w,prop.h,rand);
+    }else if(prop.type==='tree'){
+      if(!drawSceneryAsset(c,prop.key,prop.x,prop.y,prop.size*1.18,prop.size*1.18,prop.angle))paintCityTree(c,prop.x,prop.y,prop.size,rand);
+    }else paintSceneryDetails(c,[prop]);
+  }
+  // Garden trees share their home's reserved plot, but still draw as canopies.
+  for(const site of sceneryBuildings)if(site.kind==='home')paintCityTree(c,site.x+60,site.y+55,36,seededRandom(site.seed));
+}
+
 function paintSceneryRock(c,size,rand){
   const desert=activeMap.id==='canyon',snow=activeMap.id==='alpine';c.fillStyle='#203b2c25';c.beginPath();c.ellipse(5,6,size*.7,size*.47,0,0,Math.PI*2);c.fill();
   c.beginPath();for(let i=0;i<7;i++){const a=i*Math.PI*2/7,r=size*(.43+rand()*.17);const x=Math.cos(a)*r,y=Math.sin(a)*r*.75;i?c.lineTo(x,y):c.moveTo(x,y);}c.closePath();c.fillStyle=desert?'#ba8662':snow?'#a0b6b7':'#9b9d83';c.fill();
   c.fillStyle=desert?'#dfb48a':snow?'#e7f0e8':'#bcc0a3';c.beginPath();c.moveTo(-size*.42,-size*.1);c.lineTo(-size*.1,-size*.35);c.lineTo(size*.28,-size*.19);c.lineTo(size*.1,size*.04);c.closePath();c.fill();
 }
-function paintSceneryDetails(c){
-  for(const prop of sceneryDetails){
+function paintSceneryDetails(c,props=sceneryDetails){
+  for(const prop of props){
     const {x,y,size,angle,kind}=prop,rand=seededRandom(prop.seed);c.save();c.translate(x,y);c.rotate(angle);
-    const asset=kind==='canopy'?['service-tent-red','service-tent-blue','service-tent-sand'][prop.seed%3]:kind==='tires'?'tyre-rack':kind==='cabin'?(activeMap.id==='alpine'?'cottage-snow':'cottage-wood'):kind==='hut'?(activeMap.id==='amazonas'?'hut-jungle':'house-sandstone'):kind==='picnic'?'picnic-table':kind==='bench'?'park-bench':null;
+    const asset=['greenhouse','shed-garden','cafe-terrace','service-transporter','tool-trolley','water-tank','spectator-stand','garden-bed','rock-moss'].includes(kind)?kind:kind==='canopy'?['service-tent-red','service-tent-blue','service-tent-sand'][prop.seed%3]:kind==='tires'?'tyre-rack':kind==='cabin'?(activeMap.id==='alpine'?'cottage-snow':'cottage-wood'):kind==='hut'?(activeMap.id==='amazonas'?'hut-jungle':'house-sandstone'):kind==='picnic'?'picnic-table':kind==='bench'?'park-bench':null;
     if(asset&&drawSceneryAsset(c,asset,0,0,size*1.6,size*1.4)){c.restore();continue;}
     if(kind==='rock')paintSceneryRock(c,size,rand);
     else if(kind==='log'){
@@ -1031,7 +1107,7 @@ function paintCityGround(c,bounds){
   c.beginPath();c.moveTo(-170,390);c.lineTo(550,390);c.moveTo(190,120);c.lineTo(190,660);c.stroke();c.fillStyle='#d9d9c4';c.beginPath();c.arc(190,390,57,0,Math.PI*2);c.fill();c.fillStyle='#85bcb8';c.beginPath();c.arc(190,390,43,0,Math.PI*2);c.fill();c.fillStyle='#dae5d7';c.beginPath();c.arc(190,390,12,0,Math.PI*2);c.fill();
 }
 function paintCityBuilding(c,x,y,w,h,rand,residential=false){
-  if(sceneryAssetState.ready){const variants=residential?['house-slate','house-modern','house-terracotta','cottage-wood']:['office-lowrise','office-courtyard','warehouse'];if(drawSceneryAsset(c,variants[Math.floor(rand()*variants.length)],x,y,w+12,h+12))return;}
+  if(sceneryAssetState.ready){const variants=residential?['house-slate','house-modern','house-terracotta','house-bungalow','house-row']:['office-lowrise','office-courtyard','warehouse'];if(drawSceneryAsset(c,variants[Math.floor(rand()*variants.length)],x,y,w+12,h+12))return;}
   c.save();c.translate(x,y);c.fillStyle='#23383225';roundedRect(c,-w/2+7,-h/2+8,w,h,4);c.fill();c.fillStyle=residential?'#e5d9bd':'#d6dbd1';roundedRect(c,-w/2-6,-h/2-6,w+12,h+12,3);c.fill();
   if(residential){
     c.fillStyle=rand()<.5?'#b98262':'#bba878';c.fillRect(-w/2,-h/2,w,h);c.strokeStyle='#8a715b';c.lineWidth=3;c.beginPath();c.moveTo(-w/2,0);c.lineTo(w/2,0);c.stroke();c.fillStyle='#e5d6b2';c.fillRect(w*.2,-h*.3,w*.13,h*.2);
@@ -1047,19 +1123,7 @@ function paintCityTree(c,x,y,size,rand){
   c.save();c.translate(x,y);c.fillStyle='#344b3526';c.beginPath();c.ellipse(6,7,size*.45,size*.38,0,0,Math.PI*2);c.fill();
   for(let i=0;i<6;i++){const a=i*Math.PI/3;c.fillStyle=i%2?'#6e9364':'#5b8357';c.beginPath();c.arc(Math.cos(a)*size*.15,Math.sin(a)*size*.15,size*.27,0,Math.PI*2);c.fill();}c.fillStyle='#87a775';c.beginPath();c.arc(-size*.07,-size*.07,size*.22,0,Math.PI*2);c.fill();c.restore();
 }
-function paintCityLandmarks(c){
-  const rand=seededRandom(4209);
-  for(let x=-2320;x<1700;x+=235)for(let y=-2000;y<-240;y+=245){
-    const w=125+rand()*45,h=135+rand()*45,px=x+(rand()-.5)*25,py=y+(rand()-.5)*25,radius=Math.hypot(w,h)/2+20;
-    if(!sceneryClear(px,py,radius))continue;
-    c.fillStyle='#b5bcb03d';roundedRect(c,px-w*.7,py-h*.7,w*1.4,h*1.4,8);c.fill();paintCityBuilding(c,px,py,w,h,rand);
-  }
-  for(let x=-1100;x<2100;x+=245)for(let y=30;y<2150;y+=245){
-    const px=x+(rand()-.5)*45,py=y+(rand()-.5)*45;if(!sceneryClear(px,py,120)||px>-380&&px<760&&py<850)continue;
-    c.fillStyle=rand()<.5?'#b4bd91':'#98ae81';roundedRect(c,px-96,py-92,192,184,7);c.fill();c.strokeStyle='#d9ddbf';c.lineWidth=3;c.stroke();paintCityBuilding(c,px-8,py-12,78+rand()*15,62+rand()*15,rand,true);paintCityTree(c,px+55,py+50,42,rand);
-  }
-  c.fillStyle='#e5e8d2';c.font='600 18px Arial';c.textAlign='center';c.fillText('CENTRAL PARK',190,780);
-}
+
 function paintCityRoadMarkings(c){
   c.save();path(c,track);c.strokeStyle='#ded2a06b';c.lineWidth=2;c.setLineDash([18,20]);c.stroke();c.restore();
   for(let corner=1;corner<=6;corner++){
@@ -1081,6 +1145,8 @@ function buildWorld() {
   if(amazon)paintAmazonRiver(c);
   if(desert)paintCanyonMesas(c,rand,w,h);
   if(alpine)paintAlpineRidges(c,rand,w,h);
+  paintSceneryGround(c);
+  if(urban){c.fillStyle='#e5e8d2';c.font='600 18px Arial';c.textAlign='center';c.fillText('CENTRAL PARK',190,780);}
   paintPitRoad(c);
   ribbon(c,desert?'#a96549':alpine?'#b7c9cb':seaside?'#bead85':urban?'#727f7b':'#71895e',p=>widthAt('wall',p)*2+25);ribbon(c,desert?'#ddb27b':alpine?'#edf2e9':seaside?'#e1cf9f':urban?'#b2bab0':'#a3ac87',p=>widthAt('wall',p)*2);
   for(const [from,to]of [[.12,.38],[.51,.77]]){
@@ -1127,19 +1193,7 @@ function buildWorld() {
   // Circuit lettering is on the grass, read from directly overhead.
   if(!urban){c.save();c.translate(alpine?-350:-500,alpine?840:-220);c.fillStyle=desert?'#ffe0a77a':alpine?'#829ea77a':'#d1ddba70';c.font='italic 900 92px Barlow Condensed, Impact, sans-serif';c.textAlign='center';c.fillText('APEX /',0,0);c.font='600 14px Barlow, sans-serif';c.fillText(urban?'C I T Y   C I R C U I T':seaside?'C O S T A   A Z U L':desert?'D E S E R T   C A N Y O N':alpine?'A L P I N E   P A S S':amazon?'A M A Z O N A S':activeMap.id==='rallycross'?'R I D G E W A Y   R X':'J U N I P E R   R A C E W A Y',0,30);c.restore();}
   if(seaside)paintCoastLandmarks(c);
-  if(urban)paintCityLandmarks(c);
-  for(let i=0;i<(amazon?2200:seaside?720:680);i++){
-    const x=rand()*w+worldBounds.x,y=rand()*h+worldBounds.y,size=amazon?65+rand()*65:35+rand()*48;if(!sceneryClear(x,y,size*.65))continue;const dx=x-paddock.x,dy=y-paddock.y,px=dx*paddock.tx+dy*paddock.ty,py=-dx*paddock.ty+dy*paddock.tx;if(px>-330&&px<370&&py>-140&&py<175)continue;
-    if(urban){if(y<-100)continue;paintCityTree(c,x,y,size,rand);continue;}
-    if(seaside){if(coastLandDistance(x,y)<100+size*.5||Math.hypot(x-coast.lighthouse.x,y-coast.lighthouse.y)<150)continue;paintCoastPalm(c,x,y,size,rand);continue;}
-    if(amazon){if(amazonRiverDistance(x,y)<120+size*.5||Math.abs(x+500)<180&&Math.abs(y+220)<110)continue;paintJungleTree(c,x,y,size,rand);continue;}
-    if(desert){paintDesertProp(c,x,y,size,rand);continue;}
-    if(alpine){paintAlpineProp(c,x,y,size,rand);continue;}
-    const tree=['tree-oak','tree-birch','tree-elm','tree-pine'][Math.floor(rand()*4)],rotation=rand()*Math.PI*2;
-    if(drawSceneryAsset(c,tree,x,y,size*1.18,size*1.18,rotation))continue;
-    c.save();c.translate(x,y);c.rotate(rotation);c.fillStyle='#52734c';for(let k=0;k<6;k++){c.beginPath();c.arc(Math.cos(k)*size*.17,Math.sin(k)*size*.17,size*.27,0,Math.PI*2);c.fill();}c.fillStyle='#658457';c.beginPath();c.arc(-3,-3,size*.29,0,Math.PI*2);c.fill();c.restore();
-  }
-  paintSceneryDetails(c);
+  paintSceneryScene(c);
   // Direction arrows and numbered apex boards are flat markings.
   for(let i=30;i<track.length;i+=65){const p=track[i];c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.strokeStyle='#e4e7ca25';c.lineWidth=3;c.beginPath();c.moveTo(-13,-9);c.lineTo(0,0);c.lineTo(-13,9);c.stroke();c.restore();}
   // Braking references sit on the apron before the infield hairpin.

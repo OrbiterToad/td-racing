@@ -14,10 +14,11 @@ Local files: assets/cars/{clubsport,sprint,rally,drift,muscle,formula}-*.svg.
 Every model has five paint colors. Flat colors, light trim and rounded
 edges match the existing scenery and civilian car sprites.
 The scenery pack in assets/scenery/*.svg is original vector art created
-for this game: ten tree species, seven homes/cabins/huts, three office or
-warehouse roofs, six themed garage modules, two control rooms, three team
-canopies, tyre and fuel racks, crates, picnic tables and park benches.
-Regenerate these 36 models with python3 tools/build-scenery-assets.py.
+for this game: eleven tree species, homes/cabins/huts, offices, warehouses,
+greenhouses, cafés, garden sheds, six themed garage modules, two control
+rooms, team canopies, transporter trucks, grandstands, tyre and fuel racks,
+water tanks, tool trolleys, crates, garden beds, mossy rocks and park furniture.
+Regenerate these 48 models with python3 tools/build-scenery-assets.py.
 The game raster-caches the pack once, then bakes static scenery into the
 world canvas.
 All scenery is drawn from directly overhead; there are no side-view assets.
