@@ -1,4 +1,6 @@
 const { defineConfig } = require('@playwright/test');
+const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
+const baseURL = `http://127.0.0.1:${port}/td-racing/`;
 
 module.exports = defineConfig({
   testDir: './tests',
@@ -9,7 +11,7 @@ module.exports = defineConfig({
   expect: { timeout: 15_000 },
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:4173/td-racing/',
+    baseURL,
     browserName: 'chromium',
     viewport: { width: 1440, height: 1000 },
     trace: 'retain-on-failure',
@@ -17,7 +19,7 @@ module.exports = defineConfig({
   },
   webServer: {
     command: 'node tools/serve-site.cjs',
-    url: 'http://127.0.0.1:4173/td-racing/',
+    url: baseURL,
     reuseExistingServer: false,
   },
 });

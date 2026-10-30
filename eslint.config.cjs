@@ -14,10 +14,10 @@ module.exports = [
   js.configs.recommended,
   {
     files: ['**/*.js'],
-    languageOptions: { sourceType: 'script', globals: globals.browser },
+    languageOptions: { sourceType: 'module', globals: globals.browser },
   },
   {
-    files: ['main.js'],
+    files: ['src/**/*.js'],
     languageOptions: {
       globals: Object.fromEntries(
         [
@@ -36,8 +36,7 @@ module.exports = [
       ),
     },
     rules: {
-      // p5 invokes callbacks by name; the simulation harness also uses helpers.
-      // Existing game code contains unused locals, so defer this cleanup.
+      // Preserve the existing simulation/rendering locals during extraction.
       'no-unused-vars': 'off',
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
@@ -47,7 +46,13 @@ module.exports = [
     languageOptions: { sourceType: 'commonjs', globals: globals.node },
   },
   {
-    files: ['verify.cjs'],
+    files: ['tests/**/*.cjs'],
+    // Playwright evaluates browser callbacks inside these Node test files.
+    languageOptions: { globals: globals.browser },
+  },
+  {
+    files: ['verify.mjs'],
+    languageOptions: { globals: globals.node },
     // Keep existing simulation assertions intact while adding lint coverage.
     rules: { 'no-unused-vars': 'off' },
   },

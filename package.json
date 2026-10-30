@@ -7,8 +7,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "lint": "eslint \"*.{js,cjs}\" tools tests --max-warnings 0",
-    "test": "node verify.cjs",
+    "lint": "eslint \"*.{js,cjs,mjs}\" src tools tests --max-warnings 0",
+    "test": "node verify.mjs",
     "test:browser": "playwright test",
     "build": "node tools/build-site.cjs",
     "format": "prettier . --write",
@@ -22,5 +22,6 @@
     "eslint-config-prettier": "10.1.8",
     "globals": "17.13.0",
     "prettier": "3.9.10"
-  }
+  },
+  "type": "module"
 }

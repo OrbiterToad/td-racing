@@ -70,8 +70,9 @@
       <small>Glassy facets, branching cracks, and a frosted perimeter.</small>
     </article>
   </div>
-  <script src="../main.js"></script>
-  <script>
+  <script type="module">
+    import { seededRandom } from '../src/math.js';
+    import { paintPatch } from '../src/terrain.js';
     ['oil', 'sand', 'ice'].forEach((id, i) => {
       const c = document.getElementById(id).getContext('2d'),
         rand = seededRandom(39);
