@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>APEX performance check</title>
+<style>body{margin:20px;background:#192724;color:#e1e7d4;font:14px monospace}pre{white-space:pre-wrap}iframe{width:1280px;height:900px;border:1px solid #526858}</style>
+<h1>APEX performance check</h1><p>Runs local assets at a fixed 1280 × 900 viewport. Times are milliseconds per operation; lower is better. The simulation sample includes 4,200 tire marks.</p>
+<pre id="results">Loading the game…</pre><iframe id="game" title="Benchmark game"></iframe>
+<script>
+(async()=>{
+ const output=document.getElementById('results'),frame=document.getElementById('game');
+ try{
+  let html=await (await fetch('../index.html')).text();
+  html=html.replace('<head>','<head><base href="'+new URL('../',location.href).href+'">').replace(/<link[^>]+href="https:\/\/[^>]+>/g,'').replace('src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.min.js"','src="assets/p5.min.js"');
+  const loaded=new Promise(resolve=>frame.onload=resolve);frame.srcdoc=html;await loaded;
+  const win=frame.contentWindow;
+  for(let i=0;i<200&&!win.eval('typeof worldCanvas!=="undefined"&&!!worldCanvas');i++)await new Promise(resolve=>setTimeout(resolve,25));
+  if(!win.eval('typeof worldCanvas!=="undefined"&&!!worldCanvas'))throw Error('The game did not initialize');
+  win.eval('noLoop();paused=true;');await new Promise(resolve=>setTimeout(resolve,300));
+  const results=win.eval('('+function(){
+   function median(values){return values.sort((a,b)=>a-b)[Math.floor(values.length/2)];}
+   function measure(fn,count,flush){fn(0);fn(1);const times=[];for(let repeat=0;repeat<3;repeat++){const start=performance.now();for(let i=0;i<count;i++)fn(i);if(flush)flush();times.push((performance.now()-start)/count);}return median(times);}
+   const results=[];keys.clear();particles.length=0;
+   for(const id of ['juniper','amazonas','coast','city']){
+    const start=performance.now();configureTrack(id);const geometryMs=performance.now()-start,worldStart=performance.now();buildWorld();const worldMs=performance.now()-worldStart;
+    const rand=seededRandom(720),queries=Array.from({length:3000},(_,i)=>{const p=i%5===0?pitLane.points[Math.floor(rand()*pitLane.points.length)]:track[Math.floor(rand()*track.length)],offset=(rand()-.5)*CFG.road;return {x:p.x+p.nx*offset,y:p.y+p.ny*offset};});
+    const lookupMs=measure(i=>{const p=queries[i%queries.length];nearestDriving(p.x,p.y);},queries.length);
+    const minimapMs=measure(()=>drawMinimap(),120,()=>mapCtx.getImageData(0,0,1,1));
+    const geographicMs=id==='amazonas'?measure(i=>{const p=queries[i%queries.length];amazonRiverFrame(p.x,p.y);},3000):id==='coast'?measure(i=>{const p=queries[i%queries.length];coastShoreFrame(p.x,p.y);},3000):null;
+    skidmarks.length=0;for(let i=0;i<4200;i++){const p=track[i%track.length];skidmarks.push({x:p.x,y:p.y,px:p.x-4,py:p.y-2,life:1000,alpha:.4,loose:false});}
+    race.started=false;race.invalid=true;race.countdown=0;race.goTime=0;cityTraffic.cars.length=0;cityTraffic.wait=1e9;
+    const simulationMs=measure(i=>{const p=track[i%track.length];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0});simulate(CFG.step);},1200);
+    const center=track[Math.floor(track.length*.4)];Object.assign(car,{x:center.x,y:center.y,vx:0,vy:0});camera.x=car.x;camera.y=car.y;camera.zoom=.9;paused=true;deltaTime=0;accumulator=0;feedback.impact=0;
+    const frameMs=measure(()=>draw(),45,()=>ctx.getImageData(0,0,1,1));
+    results.push({map:id,geometryMs,worldMs,lookupMs,minimapMs,geographicMs,simulationMs,frameMs,worldPixels:worldCanvas.width*worldCanvas.height});
+   }
+   return results;
+  }.toString()+')()');
+  output.textContent=JSON.stringify(results,null,2);window.benchmarkResults=results;
+  if(new URLSearchParams(location.search).has('report'))await fetch('/__result',{method:'POST',body:JSON.stringify({ok:true,benchmark:results,userAgent:navigator.userAgent})});
+ }catch(error){output.textContent=error.stack;if(new URLSearchParams(location.search).has('report'))fetch('/__result',{method:'POST',body:JSON.stringify({ok:false,error:error.stack})});}
+})();
+</script></html>

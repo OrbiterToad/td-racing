@@ -80,6 +80,7 @@ let audioLayers=null;
 let accumulator=0, paused=false, toastTimer=0, movingTime=0, worldCanvas, worldCtx, ctx, lastHUD=0;
 let carArt, treeArt, audioCtx, engine, engineGain, soundEnabled=false, mapCtx;
 let trackBounds, worldBounds, paddock;
+let minimapLayer=null,minimapLayout=null;
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const lerpTo = (a,b,t) => a+(b-a)*t;
@@ -214,6 +215,7 @@ function makeTrack() {
   const margin=activeMap.id==='coast'?850:600;
   worldBounds={x:Math.floor(trackBounds.left-margin),y:Math.floor(trackBounds.top-margin),width:Math.ceil(trackBounds.right-trackBounds.left+margin*2),height:Math.ceil(trackBounds.bottom-trackBounds.top+margin*2)};
   paddock=findPaddockPlacement();buildPitLane();buildSceneryDetails();
+  minimapLayer=null;minimapLayout=null;
 }
 
 const pitLane={points:[],road:36,runoff:44,wall:52,entry:0,exit:0,totalLength:0};
@@ -231,18 +233,32 @@ function buildPitLane(){
   for(let i=0;i<60;i++)points.push({x:lerpTo(a.x,b.x,i/60),y:lerpTo(a.y,b.y,i/60)});
   curve(b,{x:b.x+paddock.tx*180,y:b.y+paddock.ty*180},{x:exit.x-exit.tx*180,y:exit.y-exit.ty*180},exit);points.push({x:exit.x,y:exit.y});
   let length=0;for(let i=0;i<points.length;i++){const p=points[i],q=points[Math.min(i+1,points.length-1)],prev=points[Math.max(0,i-1)],dx=q.x-prev.x,dy=q.y-prev.y,d=Math.hypot(dx,dy);p.tx=dx/d;p.ty=dy/d;p.nx=-p.ty;p.ny=p.tx;p.s=length;length+=Math.hypot(q.x-p.x,q.y-p.y);}
-  pitLane.points=points;pitLane.totalLength=length;pitLane.entry=entry.progress;pitLane.exit=exit.progress;pitLane.bounds={left:Math.min(trackBounds.left,...points.map(p=>p.x)),right:Math.max(trackBounds.right,...points.map(p=>p.x)),top:Math.min(trackBounds.top,...points.map(p=>p.y)),bottom:Math.max(trackBounds.bottom,...points.map(p=>p.y))};
+  pitLane.points=points;pitLane.totalLength=length;pitLane.entry=entry.progress;pitLane.exit=exit.progress;pitLane.segments=makePathSegments(points);pitLane.corridorBounds={left:Math.min(...points.map(p=>p.x)),right:Math.max(...points.map(p=>p.x)),top:Math.min(...points.map(p=>p.y)),bottom:Math.max(...points.map(p=>p.y))};pitLane.bounds={left:Math.min(trackBounds.left,...points.map(p=>p.x)),right:Math.max(trackBounds.right,...points.map(p=>p.x)),top:Math.min(trackBounds.top,...points.map(p=>p.y)),bottom:Math.max(trackBounds.bottom,...points.map(p=>p.y))};
 }
+// Segment data is immutable until the route changes. Queries allocate one
+// result instead of repeatedly rebuilding candidates while scanning a path.
+function makePathSegments(points,closed=false){
+  const segments=[];
+  for(let i=0;i<points.length-(closed?0:1);i++){const p=points[i],q=points[(i+1)%points.length],dx=q.x-p.x,dy=q.y-p.y,length=Math.hypot(dx,dy);segments.push({p,dx,dy,length,invLength2:1/(dx*dx+dy*dy),tx:dx/length,ty:dy/length});}
+  return segments;
+}
+function nearestSegmentFrame(segments,x,y){
+  let d2=Infinity,index=-1,fraction=0,px=0,py=0;
+  for(let i=0;i<segments.length;i++){const seg=segments[i],t=clamp(((x-seg.p.x)*seg.dx+(y-seg.p.y)*seg.dy)*seg.invLength2,0,1),sx=seg.p.x+t*seg.dx,sy=seg.p.y+t*seg.dy,dx=x-sx,dy=y-sy,d=dx*dx+dy*dy;if(d<d2){d2=d;index=i;fraction=t;px=sx;py=sy;}}
+  return index<0?null:{x:px,y:py,d2,index,t:fraction};
+}
+function boundsDistanceSquared(bounds,x,y){const dx=Math.max(bounds.left-x,0,x-bounds.right),dy=Math.max(bounds.top-y,0,y-bounds.bottom);return dx*dx+dy*dy;}
+function withinPitDistance(x,y,distance){return distance>0&&boundsDistanceSquared(pitLane.corridorBounds,x,y)<distance*distance&&nearestPit(x,y).distance<distance;}
 function nearestPit(x,y){
-  let best=null,d2=Infinity;const points=pitLane.points;
-  for(let i=0;i<points.length-1;i++){const p=points[i],q=points[i+1],dx=q.x-p.x,dy=q.y-p.y,t=clamp(((x-p.x)*dx+(y-p.y)*dy)/(dx*dx+dy*dy),0,1),px=p.x+t*dx,py=p.y+t*dy,d=(x-px)**2+(y-py)**2;
-    if(d<d2){d2=d;best={x:px,y:py,tx:p.tx,ty:p.ty,nx:p.nx,ny:p.ny,distance:Math.sqrt(d),side:(x-px)*p.nx+(y-py)*p.ny>=0?1:-1,s:p.s+t*Math.hypot(dx,dy),i};}
-  }
-  if(!best)return null;
+  const best=nearestSegmentFrame(pitLane.segments,x,y);if(!best)return null;
+  const segment=pitLane.segments[best.index],p=segment.p;best.i=best.index;best.tx=p.tx;best.ty=p.ty;best.nx=p.nx;best.ny=p.ny;best.distance=Math.sqrt(best.d2);best.side=(x-best.x)*p.nx+(y-best.y)*p.ny>=0?1:-1;best.s=p.s+best.t*segment.length;
   best.progress=(pitLane.entry+(1-pitLane.entry+pitLane.exit)*best.s/pitLane.totalLength)%1;best.pit=true;best.road=pitLane.road;best.runoff=pitLane.runoff;best.wall=pitLane.wall;return best;
 }
 function nearestDriving(x,y){
   const main=nearest(x,y);main.road=widthAt('road',main.progress);main.runoff=widthAt('runoff',main.progress);main.wall=widthAt('wall',main.progress);
+  // A pit candidate can win only if its distance is less than this margin.
+  const margin=main.distance-main.wall+pitLane.wall;
+  if(margin<=0||boundsDistanceSquared(pitLane.corridorBounds,x,y)>=margin*margin)return main;
   const pit=nearestPit(x,y);return pit&&pit.distance-pit.wall<main.distance-main.wall?pit:main;
 }
 function pitAsphalt(){return activeMap.id==='canyon'?'#4f5150':activeMap.id==='alpine'?'#46555c':'#424d50';}
@@ -277,8 +293,8 @@ function paintPitRails(c){
 function paintMainRail(c,side,color,width){
   c.beginPath();let drawing=false;
   for(let i=0;i<=track.length;i++){
-    const p=track[i%track.length],d=widthAt('wall',(i%track.length)/track.length)*side,x=p.x+p.nx*d,y=p.y+p.ny*d,pit=nearestPit(x,y);
-    if(pit&&pit.distance<pitLane.wall+12){drawing=false;continue;}
+    const p=track[i%track.length],d=widthAt('wall',(i%track.length)/track.length)*side,x=p.x+p.nx*d,y=p.y+p.ny*d;
+    if(withinPitDistance(x,y,pitLane.wall+12)){drawing=false;continue;}
     if(drawing)c.lineTo(x,y);else c.moveTo(x,y);drawing=true;
   }
   c.strokeStyle=color;c.lineWidth=width;c.stroke();
@@ -663,6 +679,14 @@ function drawSkidmarks(c){
   for(let i=0;i<12;i++){const batch=skidBatches[i];if(!batch.length)continue;c.strokeStyle=i>=6?'rgba(103,73,44,'+((i%6+1)*.12)+')':'rgba(22,27,26,'+((i%6+1)*.12)+')';c.beginPath();for(const s of batch){c.moveTo(s.px,s.py);c.lineTo(s.x,s.y);}c.stroke();}
 }
 
+function inWorldView(x,y,radius=0){
+  const zoom=camera.zoom;return Math.abs(x-camera.x)<=width/(2*zoom)+radius&&y>=camera.y-height*.54/zoom-radius&&y<=camera.y+height*.46/zoom+radius;
+}
+function drawWorldViewport(c){
+  const zoom=camera.zoom,left=camera.x-width/(2*zoom)-worldBounds.x,top=camera.y-height*.54/zoom-worldBounds.y,x=Math.max(0,Math.floor(left)-2),y=Math.max(0,Math.floor(top)-2),right=Math.min(worldCanvas.width,Math.ceil(left+width/zoom)+2),bottom=Math.min(worldCanvas.height,Math.ceil(top+height/zoom)+2);
+  if(right>x&&bottom>y)c.drawImage(worldCanvas,x,y,right-x,bottom-y,worldBounds.x+x,worldBounds.y+y,right-x,bottom-y);
+}
+
 function draw() {
   const elapsed=Math.min(deltaTime/1000,.08);
   if(!paused){accumulator+=elapsed;while(accumulator>=CFG.step){simulate(CFG.step);accumulator-=CFG.step;}}
@@ -671,7 +695,7 @@ function draw() {
   camera.zoom=lerpTo(camera.zoom,desiredZoom()*(1-clamp(Math.hypot(car.vx,car.vy)/1700,0,.19)),smoothing);
   ctx.save();ctx.setTransform(pixelDensity(),0,0,pixelDensity(),0,0);ctx.fillStyle=activeMap.id==='canyon'?'#d5a36d':activeMap.id==='alpine'?'#dbe6e3':activeMap.id==='amazonas'?'#28523b':activeMap.id==='coast'?'#288f9c':activeMap.id==='city'?'#929b98':'#8ba274';ctx.fillRect(0,0,width,height);
   ctx.translate(width/2,height*.54);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);
-  ctx.drawImage(worldCanvas,worldBounds.x,worldBounds.y);
+  drawWorldViewport(ctx);
   drawCoastWaves(ctx);drawRiverCurrent(ctx);drawSkidmarks(ctx);drawStartingGridSelection(ctx);
   for(const p of particles){ctx.globalAlpha=p.life/p.max*.35;ctx.fillStyle=p.type==='water'?'#b7f3ee':p.type==='dust'?'#dfca9b':p.type==='spark'?'#ffdf85':'#f0e9da';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
   drawPatchHighlights(ctx,millis()/1000);drawCityTraffic(ctx);drawCar(ctx);drawLapGhost(ctx);drawJungle(ctx);ctx.restore();
@@ -698,14 +722,10 @@ function ribbon(c,color,width,points=track){c.strokeStyle=color;c.lineJoin='roun
 
 // The river crosses the circuit twice as shallow, drivable fords.
 const amazonRiver=Array.from({length:129},(_,i)=>{const t=i/128;return {x:-1650+3200*t+70*Math.sin(t*Math.PI*5),y:-2400+5000*t};});
+const amazonSegments=makePathSegments(amazonRiver);
 function amazonRiverScale(t){return .78+.22*Math.sin(t*Math.PI)+.08*Math.sin(t*Math.PI*7);}
 function amazonRiverFrame(x,y){
-  let distance=Infinity,progress=0,tx=0,ty=1;
-  for(let i=0;i<amazonRiver.length-1;i++){
-    const p=amazonRiver[i],q=amazonRiver[i+1],dx=q.x-p.x,dy=q.y-p.y,t=clamp(((x-p.x)*dx+(y-p.y)*dy)/(dx*dx+dy*dy),0,1),d=Math.hypot(x-p.x-t*dx,y-p.y-t*dy);
-    if(d<distance){distance=d;progress=(i+t)/(amazonRiver.length-1);const length=Math.hypot(dx,dy);tx=dx/length;ty=dy/length;}
-  }
-  return {distance,t:progress,tx,ty};
+  const best=nearestSegmentFrame(amazonSegments,x,y),segment=amazonSegments[best.index];best.distance=Math.sqrt(best.d2);best.t=(best.index+best.t)/amazonSegments.length;best.tx=segment.tx;best.ty=segment.ty;return best;
 }
 function amazonRiverDistance(x,y){return amazonRiverFrame(x,y).distance;}
 function paintAmazonFords(c){
@@ -732,6 +752,7 @@ function drawRiverCurrent(c){
     const progress=(i/72+jungle.flowTime*.004)%1,index=progress*(amazonRiver.length-1),p=amazonRiver[Math.floor(index)],q=amazonRiver[Math.min(amazonRiver.length-1,Math.floor(index)+1)],t=index%1,dx=q.x-p.x,dy=q.y-p.y,length=Math.hypot(dx,dy);
     if(length===0)continue;
     const tx=dx/length,ty=dy/length,offset=((i%3)-1)*34*amazonRiverScale(progress),x=lerpTo(p.x,q.x,t)-ty*offset,y=lerpTo(p.y,q.y,t)+tx*offset;
+    if(!inWorldView(x,y,25))continue;
     c.strokeStyle=i%4?'#bcead55e':'#e0f7cf80';c.beginPath();c.moveTo(x-tx*9,y-ty*9);c.quadraticCurveTo(x-ty*3,y+tx*3,x+tx*10,y+ty*10);c.stroke();
     if(i%9===0){c.save();c.translate(x,y);c.rotate(Math.atan2(ty,tx));c.fillStyle='#b5cb75a0';c.beginPath();c.ellipse(0,0,5,2.5,0,0,Math.PI*2);c.fill();c.restore();}
   }
@@ -804,7 +825,7 @@ function updateJungle(dt){
 }
 function drawJungle(c){
   if(activeMap.id!=='amazonas')return;
-  const m=monkeyPosition();c.save();c.translate(m.x,m.y);
+  const m=monkeyPosition();if(inWorldView(m.x,m.y,140)){c.save();c.translate(m.x,m.y);
   // A small palm and a warning board make the thrower easy to spot on approach.
   const rand=seededRandom(46);paintJungleTree(c,0,-36,100,rand);
   c.fillStyle='#d9c27e';roundedRect(c,-39,31,78,23,3);c.fill();c.fillStyle='#384b2c';c.font='bold 10px Arial';c.textAlign='center';c.fillText('COCONUTS!',0,47);
@@ -813,7 +834,7 @@ function drawJungle(c){
   c.strokeStyle='#98603b';c.lineWidth=8;c.beginPath();c.moveTo(0,-10);c.lineTo(jungle.throwTime>0?30:11,jungle.throwTime>0?-23:-25);c.moveTo(0,13);c.lineTo(20,20);c.stroke();
   for(const side of [-1,1]){c.fillStyle='#8c5735';c.beginPath();c.arc(13,side*14,8,0,Math.PI*2);c.fill();c.fillStyle='#d4a477';c.beginPath();c.arc(14,side*14,4,0,Math.PI*2);c.fill();}
   c.fillStyle='#9c6845';c.beginPath();c.ellipse(15,0,17,16,0,0,Math.PI*2);c.fill();c.fillStyle='#e1b887';c.beginPath();c.ellipse(23,0,10,12,0,0,Math.PI*2);c.fill();
-  c.fillStyle='#241e18';for(const side of [-1,1]){c.beginPath();c.arc(24,side*6,2.3,0,Math.PI*2);c.fill();}c.beginPath();c.arc(30,0,2,0,Math.PI*2);c.fill();c.restore();
+  c.fillStyle='#241e18';for(const side of [-1,1]){c.beginPath();c.arc(24,side*6,2.3,0,Math.PI*2);c.fill();}c.beginPath();c.arc(30,0,2,0,Math.PI*2);c.fill();c.restore();}
   for(const nut of jungle.coconuts){
     if(nut.hit)continue;
     const t=Math.min(1,nut.age/nut.duration),lift=Math.sin(t*Math.PI)*65;
@@ -832,10 +853,9 @@ const coast={time:0,shore:sampleCurve([
   [1650,600],[1900,1050],[1700,1600],[1100,1850],[750,1770],
   [300,2030],[-200,1830],[-800,1820],[-1300,1700],[-1900,1500],[-5000,1700]
 ],12),lighthouse:{x:100,y:-1780}};
+const coastSegments=makePathSegments(coast.shore,true);
 function coastShoreFrame(x,y){
-  let best=null,distance=Infinity;const points=coast.shore;
-  for(let i=0;i<points.length;i++){const p=points[i],q=points[(i+1)%points.length],dx=q.x-p.x,dy=q.y-p.y,length=dx*dx+dy*dy,t=clamp(((x-p.x)*dx+(y-p.y)*dy)/length,0,1),px=p.x+dx*t,py=p.y+dy*t,d=Math.hypot(x-px,y-py);if(d<distance){distance=d;const size=Math.sqrt(length);best={x:px,y:py,tx:dx/size,ty:dy/size,distance:d};}}
-  return best;
+  const best=nearestSegmentFrame(coastSegments,x,y),segment=coastSegments[best.index];best.distance=Math.sqrt(best.d2);best.tx=segment.tx;best.ty=segment.ty;return best;
 }
 function coastOnLand(x,y){
   let inside=false;const points=coast.shore;
@@ -884,20 +904,21 @@ function paintCoastLandmarks(c){
   // Village roofs stay on land, away from both driving corridors.
   const rand=seededRandom(891);for(let i=0;i<48;i++){
     const x=-2200+rand()*1200,y=-900+rand()*1450,w=45+rand()*45,h=42+rand()*35;
-    if(coastLandDistance(x,y)<110||nearest(x,y).distance<CFG.wall+100||nearestPit(x,y).distance<pitLane.wall+100||Math.hypot(x-paddock.x,y-paddock.y)<370)continue;
+    if(coastLandDistance(x,y)<110||nearest(x,y).distance<CFG.wall+100||withinPitDistance(x,y,pitLane.wall+100)||Math.hypot(x-paddock.x,y-paddock.y)<370)continue;
     paintCoastBuilding(c,x,y,w,h,rand()*.6-.3,i%3?'#c7835d':'#dba575');
   }
 }
 function drawCoastWaves(c){
   if(activeMap.id!=='coast')return;c.save();c.lineCap='round';
   for(let i=0;i<coast.shore.length;i+=3){const p=coast.shore[i],q=coast.shore[(i+1)%coast.shore.length],length=Math.hypot(q.x-p.x,q.y-p.y),tx=(q.x-p.x)/length,ty=(q.y-p.y)/length,offset=135-((coast.time*13+i*11)%100),x=p.x+ty*offset,y=p.y-tx*offset;
+    if(!inWorldView(x,y,25))continue;
     c.globalAlpha=Math.sin((offset-35)/100*Math.PI)*.48;c.strokeStyle='#e5f7e4';c.lineWidth=2.5;c.beginPath();c.moveTo(x-tx*15,y-ty*15);c.quadraticCurveTo(x+ty*4,y-tx*4,x+tx*15,y+ty*15);c.stroke();
   }c.restore();
 }
 
 const sceneryDetails=[];
 function sceneryClear(x,y,radius){
-  const n=nearest(x,y),pit=nearestPit(x,y);if(n.distance<widthAt('wall',n.progress)+radius+24||pit.distance<pitLane.wall+radius+24)return false;
+  const n=nearest(x,y);if(n.distance<widthAt('wall',n.progress)+radius+24||withinPitDistance(x,y,pitLane.wall+radius+24))return false;
   const dx=x-paddock.x,dy=y-paddock.y,px=dx*paddock.tx+dy*paddock.ty,py=-dx*paddock.ty+dy*paddock.tx;
   if(px>-265-radius&&px<305+radius&&py>-75-radius&&py<125+radius)return false;
   if(activeMap.id==='amazonas'&&amazonRiverDistance(x,y)<125+radius)return false;
@@ -992,7 +1013,7 @@ function paintCityRoadMarkings(c){
   c.save();path(c,track);c.strokeStyle='#ded2a06b';c.lineWidth=2;c.setLineDash([18,20]);c.stroke();c.restore();
   for(let corner=1;corner<=6;corner++){
     const vertex=MAPS.city.points[corner],near=nearest(vertex[0],vertex[1]),index=(near.i-17+track.length)%track.length,p=track[index];
-    if(nearestPit(p.x,p.y).distance<pitLane.road+20)continue;
+    if(withinPitDistance(p.x,p.y,pitLane.road+20))continue;
     c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.fillStyle='#e4e6d2bb';for(let i=-5;i<=5;i++)c.fillRect(-15,i*10-3,30,6);c.restore();
     for(const side of [-1,1]){const x=p.x+p.nx*(CFG.wall+34)*side,y=p.y+p.ny*(CFG.wall+34)*side;if(!sceneryClear(x,y,8))continue;c.save();c.translate(x,y);c.rotate(Math.atan2(p.ty,p.tx));c.fillStyle='#4b5853';roundedRect(c,-5,-12,10,24,3);c.fill();for(let lamp=0;lamp<3;lamp++){c.fillStyle=['#ba7966','#d3b36c','#8eaa7b'][lamp];c.beginPath();c.arc(0,-7+lamp*7,2.6,0,Math.PI*2);c.fill();}c.restore();}
   }
@@ -1033,7 +1054,7 @@ function buildWorld() {
     const turn=prev.tx*next.ty-prev.ty*next.tx;if(Math.abs(turn)<.12)continue;
     const side=turn>0?1:-1;
     const wp=widthAt('road',i/track.length)+4,wq=widthAt('road',((i+1)%track.length)/track.length)+4;
-    if(nearestPit(p.x+p.nx*wp*side,p.y+p.ny*wp*side).distance<pitLane.road+10)continue;
+    if(withinPitDistance(p.x+p.nx*wp*side,p.y+p.ny*wp*side,pitLane.road+10))continue;
     c.beginPath();c.moveTo(p.x+p.nx*wp*side,p.y+p.ny*wp*side);c.lineTo(q.x+q.nx*wq*side,q.y+q.ny*wq*side);c.strokeStyle=urban?'#d7dccb':Math.floor(i/2)%2?(desert?'#f9ddb0':'#e3dfcd'):(desert?'#d98449':alpine?'#759fb3':seaside?'#54a7b9':urban?'#d8bd78':'#d86f58');c.lineWidth=14;c.lineCap='butt';c.stroke();
   }
   // Continuous rail follows the exact boundary used by collision detection.
@@ -1041,7 +1062,7 @@ function buildWorld() {
     paintMainRail(c,side,urban?'#7f8c82':desert?'#6e4235':'#394d43',urban?9:desert?15:11);
     paintMainRail(c,side,urban?'#d4d9cc':desert?'#b77750':'#c5ccba',urban?5:desert?9:6);
     paintMainRail(c,side,desert?'#f1ba80':'#eceddb',2);
-    for(let i=0;i<track.length;i+=4){if(urban)break;const p=track[i],offset=widthAt('wall',i/track.length);if(nearestPit(p.x+p.nx*offset*side,p.y+p.ny*offset*side).distance<pitLane.wall+12)continue;c.fillStyle=desert?'#84513a':'#4b5b50';c.beginPath();c.arc(p.x+p.nx*offset*side,p.y+p.ny*offset*side,3,0,Math.PI*2);c.fill();}
+    for(let i=0;i<track.length;i+=4){if(urban)break;const p=track[i],offset=widthAt('wall',i/track.length);if(withinPitDistance(p.x+p.nx*offset*side,p.y+p.ny*offset*side,pitLane.wall+12))continue;c.fillStyle=desert?'#84513a':'#4b5b50';c.beginPath();c.arc(p.x+p.nx*offset*side,p.y+p.ny*offset*side,3,0,Math.PI*2);c.fill();}
   }
   paintPitRails(c);
   if(amazon)paintAmazonFords(c);
@@ -1188,7 +1209,16 @@ function updateHUD(){
   $('sector-status').textContent=timing.best.length?'Comparing with your best lap sectors.':'Complete a clean lap to set sector references.';
 }
 
-function drawMinimap(){if(!mapCtx)return;const c=mapCtx,b=pitLane.bounds,scale=Math.min(280/(b.right-b.left),225/(b.bottom-b.top));c.clearRect(0,0,320,266);c.save();c.translate(160,132);c.scale(scale,scale);c.translate(-(b.left+b.right)/2,-(b.top+b.bottom)/2);if(activeMap.id==='coast'){c.save();c.globalAlpha=.3;path(c,coast.shore);c.fillStyle='#c8c99c';c.fill();c.restore();}if(activeMap.id==='amazonas')paintAmazonRiver(c,false);path(c,pitLane.points,0,false);c.strokeStyle='#c2b98c';c.lineWidth=2/scale;c.stroke();ribbon(c,'#536258',9/scale);ribbon(c,'#abbca2',3/scale);if(activeMap.id==='amazonas'){c.save();c.globalAlpha=.75;paintAmazonRiver(c,false);c.restore();}const p=track[0];c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.fillStyle=activeMap.accent;c.fillRect(-1/scale,-5/scale,2/scale,10/scale);c.restore();const ghost=visibleGhostPose();if(ghost){c.save();c.translate(ghost.x,ghost.y);c.fillStyle='#91e1ff';c.strokeStyle='#e4faff';c.lineWidth=1/scale;c.beginPath();c.arc(0,0,4/scale,0,Math.PI*2);c.fill();c.stroke();c.restore();}c.save();c.translate(car.x,car.y);c.rotate(car.angle);c.scale(1/scale,1/scale);c.fillStyle=activeMap.accent;c.beginPath();c.moveTo(5,0);c.lineTo(-3.5,-3.5);c.lineTo(-2,0);c.lineTo(-3.5,3.5);c.closePath();c.fill();c.restore();c.restore();}
+function buildMinimapLayer(){
+  const layer=document.createElement('canvas');layer.width=320;layer.height=266;
+  const c=layer.getContext('2d'),b=pitLane.bounds,scale=Math.min(280/(b.right-b.left),225/(b.bottom-b.top));
+  c.save();c.translate(160,132);c.scale(scale,scale);c.translate(-(b.left+b.right)/2,-(b.top+b.bottom)/2);if(activeMap.id==='coast'){c.save();c.globalAlpha=.3;path(c,coast.shore);c.fillStyle='#c8c99c';c.fill();c.restore();}if(activeMap.id==='amazonas')paintAmazonRiver(c,false);path(c,pitLane.points,0,false);c.strokeStyle='#c2b98c';c.lineWidth=2/scale;c.stroke();ribbon(c,'#536258',9/scale);ribbon(c,'#abbca2',3/scale);if(activeMap.id==='amazonas'){c.save();c.globalAlpha=.75;paintAmazonRiver(c,false);c.restore();}const p=track[0];c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.ty,p.tx));c.fillStyle=activeMap.accent;c.fillRect(-1/scale,-5/scale,2/scale,10/scale);c.restore();c.restore();
+  minimapLayer=layer;minimapLayout={scale,x:(b.left+b.right)/2,y:(b.top+b.bottom)/2};
+}
+function drawMinimap(){
+  if(!mapCtx)return;if(!minimapLayer)buildMinimapLayer();
+  const c=mapCtx,{scale,x,y}=minimapLayout;c.clearRect(0,0,320,266);c.drawImage(minimapLayer,0,0);c.save();c.lineCap='round';c.lineJoin='round';c.translate(160,132);c.scale(scale,scale);c.translate(-x,-y);
+  const ghost=visibleGhostPose();if(ghost){c.save();c.translate(ghost.x,ghost.y);c.fillStyle='#91e1ff';c.strokeStyle='#e4faff';c.lineWidth=1/scale;c.beginPath();c.arc(0,0,4/scale,0,Math.PI*2);c.fill();c.stroke();c.restore();}c.save();c.translate(car.x,car.y);c.rotate(car.angle);c.scale(1/scale,1/scale);c.fillStyle=activeMap.accent;c.beginPath();c.moveTo(5,0);c.lineTo(-3.5,-3.5);c.lineTo(-2,0);c.lineTo(-3.5,3.5);c.closePath();c.fill();c.restore();c.restore();}
 
 function toggleSound(){
   soundEnabled=!soundEnabled;

@@ -110,3 +110,9 @@ Internet is used for the p5.js CDN and fonts; the downloaded p5.js fallback
 and local sprites allow play if those remote resources are unavailable.
 
 See ASSETS.txt for asset sources and licenses.
+
+PERFORMANCE CHECK
+Open http://localhost:8000/tools/performance.html while the local server is
+running to compare map generation, road lookups, minimap updates, physics
+with 4,200 tire marks, and rendering at a fixed 1280 × 900 viewport.
+Results are milliseconds per operation, not an FPS estimate.

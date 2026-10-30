@@ -7,8 +7,8 @@ const node = id => {if(!nodes.has(id)) nodes.set(id,{style:{},classList:{add(){}
 const storage = new Map();
 const sandbox = {window:{},document:{getElementById:node},console,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null}};
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic};',sandbox);
-const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic}=sandbox.window.test;
+vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame};',sandbox);
+const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame}=sandbox.window.test;
 function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,crossedStart:false,countdown:0,goTime:0,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
 function step(seconds){for(let i=0;i<seconds/CFG.step;i++)simulate(CFG.step);}
 function speed(){return Math.hypot(car.vx,car.vy);}
@@ -413,3 +413,27 @@ assert(civilian.brake>0&&speed()<220,'Traffic contact must slow the player and b
 cityTraffic.wait=100;car.x=10000;car.y=10000;for(const car of cityTraffic.cars)car.age=car.life+1;updateCityTraffic(.01);assert.equal(cityTraffic.cars.length,0,'Old traffic must disappear only when away from the player');
 configureTrack('juniper');assert.equal(cityTraffic.cars.length,0);updateCityTraffic(100);assert.equal(cityTraffic.cars.length,0,'Other maps must not spawn civilian traffic');
 console.log('PASS: City Streets tight downtown turns, wavy suburbs, street clearance, sparse two-way traffic, spawn cap, lane following, collisions/braking, cleanup and map isolation.');
+
+// Independent full scans verify that cached segment data and bounding-box
+// rejections preserve the exact nearest corridor, including pit entrances.
+function brutePathDistance(points,x,y,closed=false){
+  let best=Infinity;
+  for(let i=0;i<points.length-(closed?0:1);i++){const p=points[i],q=points[(i+1)%points.length],dx=q.x-p.x,dy=q.y-p.y,t=Math.max(0,Math.min(1,((x-p.x)*dx+(y-p.y)*dy)/(dx*dx+dy*dy)));best=Math.min(best,Math.hypot(x-p.x-t*dx,y-p.y-t*dy));}
+  return best;
+}
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);
+  for(let i=0;i<350;i++){
+    const p=i%3===0?pitLane.points[Math.floor(random()*pitLane.points.length)]:track[Math.floor(random()*track.length)],x=p.x+(random()-.5)*(i%3===2?10000:800),y=p.y+(random()-.5)*(i%3===2?10000:800),expectedPit=brutePathDistance(pitLane.points,x,y),main=nearest(x,y),actual=nearestDriving(x,y),pitWins=expectedPit-pitLane.wall<main.distance-widthAt('wall',main.progress);
+    assert(Math.abs(nearestPit(x,y).distance-expectedPit)<1e-7,'Cached pit segments must match a full scan on '+id);
+    assert.equal(!!actual.pit,pitWins,'Bounding rejection must choose the same drivable corridor on '+id);
+    assert(Math.abs(actual.distance-(pitWins?expectedPit:main.distance))<1e-7);
+    for(const radius of [0,20,80,200,600])assert.equal(withinPitDistance(x,y,radius),expectedPit<radius,'Pit proximity must match exact geometry');
+  }
+}
+for(let i=0;i<200;i++){
+  const x=(random()-.5)*10000,y=(random()-.5)*10000;
+  assert(Math.abs(amazonRiverFrame(x,y).distance-brutePathDistance(amazonRiver,x,y))<1e-7,'River lookup must preserve its exact distance');
+  assert(Math.abs(coastShoreFrame(x,y).distance-brutePathDistance(coast.shore,x,y,true))<1e-7,'Coast lookup must preserve its exact distance');
+}
+console.log('PASS: optimized road/pit selection, proximity rejection, river and shoreline queries match independent full scans across all maps.');
