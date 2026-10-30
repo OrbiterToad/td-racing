@@ -22,7 +22,8 @@ reduces traction and adds rolling resistance; Offroad handles it better.
 
 Amazonas: tight, linked jungle bends with no long straights. A diagonal
 river crosses the road twice through shallow fords, with no bridges. Water
-adds drag and reduces grip; slow down and splash through. Dense palms line
+adds drag and reduces grip; slow down and splash through. Ripples and
+floating leaves flow southeast, and the current gently nudges the car. Dense palms line
 the banks. A trackside monkey throws coconuts at passing cars;
 dodge the toss or briefly lose grip. Look for the COCONUTS warning board.
 
@@ -35,6 +36,11 @@ PIT LANES
 Every circuit has an alternate paved route through its paddock. Follow PIT
 ENTRY before the finish, drive past the garages, and rejoin at PIT EXIT.
 Both openings are drivable; the pit lane has its own finish timing line.
+
+LAP GHOST
+A new personal best records a translucent ghost for that map and car. It
+replays at your lap time, including through the pit lane. Ghosts are saved
+locally with the best record; older records need a new best to add a ghost.
 
 GARAGE
 Clubsport R: balanced rear-wheel drive, approximately 158 km/h.

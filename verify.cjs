@@ -7,8 +7,8 @@ const node = id => {if(!nodes.has(id)) nodes.set(id,{style:{},classList:{add(){}
 const storage = new Map();
 const sandbox = {window:{},document:{getElementById:node},console,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null}};
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving};',sandbox);
-const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving}=sandbox.window.test;
+vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame};',sandbox);
+const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame}=sandbox.window.test;
 function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
 function step(seconds){for(let i=0;i<seconds/CFG.step;i++)simulate(CFG.step);}
 function speed(){return Math.hypot(car.vx,car.vy);}
@@ -286,3 +286,35 @@ for(const id of Object.keys(MAPS)){
   assert.equal(race.lap,2,'A full lap through the pits must count on '+id);
 }
 console.log('PASS: pit routes connect on all maps, fit cars/barriers, allow both merges, and preserve lap timing.');
+
+configureTrack('amazonas');configureCar('clubsport','red');
+const waterIndex=track.findIndex(p=>surfaceAt(nearest(p.x,p.y))==='FORD');reset(waterIndex);
+const waterStart={x:car.x,y:car.y},flow=amazonRiverFrame(car.x,car.y);step(.5);
+const pull=(car.x-waterStart.x)*flow.tx+(car.y-waterStart.y)*flow.ty;
+assert(pull>.05&&pull<5,'The southeast current must pull the car only slightly');
+const dryStartIndex=track.findIndex(p=>surfaceAt(nearest(p.x,p.y))==='ASPHALT');reset(dryStartIndex);const stationary={x:car.x,y:car.y};step(.5);
+assert(Math.hypot(car.x-stationary.x,car.y-stationary.y)<1e-8,'The current must not affect cars on dry asphalt');
+
+configureTrack('juniper');configureCar('clubsport','red');reset();race.started=true;
+for(let i=1;i<=track.length;i++){
+  lapGhost.previous=[car.x,car.y,car.angle];const p=track[i%track.length];car.x=p.x;car.y=p.y;car.angle=Math.atan2(p.ty,p.tx);
+  updateRace(.1,{progress:(i%track.length)/track.length,distance:0});recordGhostFrame();
+}
+const ghostKey=bestKeyFor()+'-ghost-v1',savedGhost=storage.get(ghostKey),savedGhostTime=race.best;
+assert(savedGhost&&lapGhost.best,'A new best lap must record and save its ghost');
+assert(Math.abs(lapGhost.best.time-race.last)<1e-8,'Ghost time must match the fastest lap');
+const middle=ghostPose(savedGhostTime/2),middlePoint=track[Math.floor(track.length/2)];
+assert(Math.hypot(middle.x-middlePoint.x,middle.y-middlePoint.y)<2,'Playback must follow the recorded car positions');
+assert.equal(ghostPose(savedGhostTime+1),null,'A ghost must stop at its finish time');
+readBest();assert(lapGhost.best&&Math.abs(lapGhost.best.time-savedGhostTime)<1e-8,'The best ghost must survive reload');
+reset();race.best=savedGhostTime;race.started=true;
+for(let i=1;i<=track.length;i++){lapGhost.previous=[car.x,car.y,car.angle];const p=track[i%track.length];car.x=p.x;car.y=p.y;car.angle=Math.atan2(p.ty,p.tx);updateRace(.2,{progress:(i%track.length)/track.length,distance:0});recordGhostFrame();}
+assert.equal(storage.get(ghostKey),savedGhost,'A slower lap must preserve the fastest ghost');
+configureCar('clubsport','blue');readBest();assert(lapGhost.best,'Changing paint must preserve the ghost');
+configureCar('sprint','blue');readBest();assert.equal(lapGhost.best,null,'Each car must replay its own ghost');
+configureTrack('canyon');readBest();assert.equal(lapGhost.best,null,'A ghost must never leak into another map');
+configureTrack('juniper');configureCar('clubsport','red');readBest();assert(lapGhost.best,'Returning to a circuit must restore its ghost');
+const realGhost=lapGhost.best;lapGhost.best={time:1,frames:[[0,0,0,Math.PI-.1],[1,10,0,-Math.PI+.1]]};lapGhost.cursor=0;
+assert(Math.abs(Math.abs(ghostPose(.5).angle)-Math.PI)<1e-8,'Ghost headings must interpolate smoothly across angle wrap');lapGhost.best=realGhost;
+storage.set(ghostKey,JSON.stringify({version:1,time:savedGhostTime,frames:[[0,0,0,0]]}));loadLapGhost();assert.equal(lapGhost.best,null,'Incomplete ghost data must be ignored');storage.set(ghostKey,savedGhost);readBest();assert(lapGhost.best);
+console.log('PASS: gentle southeast river current only in water; best-lap ghost recording, interpolation, persistence, slower-lap preservation, map/car isolation, paint changes, and invalid data handling.');
