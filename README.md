@@ -55,6 +55,17 @@ before and after the start. This is an existing street network, with
 sidewalk curbs, crosswalks and light two-way traffic. At most two other
 cars are active; they cruise in their lanes and brake after a collision.
 
+## Scenery
+
+A shared pack of 36 original top-down SVG assets adds varied tree crowns,
+palms, snowy pines, houses, cabins, offices, and warehouses. Paddocks have
+five themed service bays, a control room, team canopies, tyre racks, fuel
+stores, and supply crates, all inside the reserved paddock footprint.
+
+The pack loads once into a reusable raster cache. Static scenery remains
+baked into the world canvas, so the new detail does not add per-frame SVG
+rendering. Regenerate the assets with `python3 tools/build-scenery-assets.py`.
+
 Every landscape has denser scenery outside the barriers: woodland logs
 and ferns, desert rock and cactus clusters, mountain pines and snowdrifts,
 jungle flowers and fallen timber, rally team canopies and service vehicles,
@@ -144,8 +155,8 @@ The game pauses when the window loses focus or is hidden.
 
 Physics runs at 120 Hz. Canvas rendering uses p5.js. All game code is in
 `main.js` and all page layout/style is in `index.html`. No build step is needed.
-Internet is used for the p5.js CDN and fonts; the downloaded p5.js fallback
-and local sprites allow play if those remote resources are unavailable.
+p5.js and sprites are bundled locally. Google Fonts uses the internet;
+the game remains playable when the fonts are unavailable.
 
 See [ASSETS.txt](ASSETS.txt) for asset sources and licenses.
 
@@ -155,3 +166,47 @@ Open [the performance tool](http://localhost:8000/tools/performance.html) while 
 running to compare map generation, road lookups, minimap updates, physics
 with 4,200 tire marks, and rendering at a fixed 1280 × 900 viewport.
 Results are milliseconds per operation, not an FPS estimate.
+
+## Automated checks and deployment
+
+Use Node.js 24 or later. Install the development tools and Chromium once:
+
+```sh
+npm ci
+npx playwright install chromium
+```
+
+On Linux, use `npx playwright install --with-deps chromium` if browser system
+libraries are missing.
+
+Run the same checks as CI:
+
+```sh
+npm run lint
+npm test
+npm run build
+npm run test:browser
+```
+
+ESLint checks project JavaScript and excludes bundled assets. `npm test` runs
+the simulation assertions in `verify.cjs`. The browser test serves the packaged
+site at `/td-racing/`, checks every circuit, changes cars, checks saved selections
+and pause controls, and reports missing local assets or JavaScript errors.
+External requests are blocked to verify the game works with bundled p5.js.
+Browser failure reports are saved in `playwright-report/` and `test-results/`.
+
+The [GitHub Actions workflow](.github/workflows/ci.yml) runs these checks on pull
+requests and pushes to `master`. After successful checks on `master`, it deploys
+the tested `dist/` folder to GitHub Pages. Pull requests never deploy. The folder
+contains the game, runtime assets, and asset credits; it is generated locally
+and is not committed.
+
+To enable hosting, open the repository's **Settings → Pages** and select
+**GitHub Actions** as the source. Then push to `master` or run **CI and deploy**
+manually from the Actions tab. The site will be available at
+[orbitertoad.github.io/td-racing](https://orbitertoad.github.io/td-racing/).
+Deployment uses GitHub's built-in token; no hosting credentials are required.
+See [GitHub's Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+
+Optionally, add a branch rule for `master` requiring **Lint and test** before
+merging pull requests.
