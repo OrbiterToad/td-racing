@@ -1,38 +1,54 @@
-APEX / The Circuit Collection
+# APEX / The Circuit Collection
 
 Click the track name in the header to open the circuit picker. Preview
 cards show the route, biome, challenge, hazards, and best time for your car.
 Changing circuits resets the run, tire marks, and vehicle position.
 
-Juniper Raceway: the original technical esses and infield hairpin, with
+## Circuits
+
+### Juniper Raceway
+
+The original technical esses and infield hairpin, with
 three oil slicks just before demanding corners. Oil leaves the tires
 slippery for about 1.15 seconds; grip recovers progressively after leaving.
 
-Desert Canyon: a distinct, tighter route with two narrow rock-wall passes,
+### Desert Canyon
+
+A distinct, tighter route with two narrow rock-wall passes,
 dusty asphalt, heavy sand runoff, and four visible sand drifts on the road.
 The drifts slow the car and leave space for an avoidance line.
 
-Alpine Pass: three reversing mountain switchbacks linked by deep winding
+### Alpine Pass
+
+Three reversing mountain switchbacks linked by deep winding
 traverses and an outside descent. Exactly three visible ice patches cover
 a small portion of the road and reduce both steering and braking traction.
 Snowy pine crowns and mountain contours are seen directly from above.
 
+### Ridgeway Rallycross
+
 Ridgeway Rallycross mixes asphalt and two flowing dirt sections. Dirt
 reduces traction and adds rolling resistance; Offroad handles it better.
 
-Amazonas: tight, linked jungle bends with no long straights. A diagonal
+### Amazonas
+
+Tight, linked jungle bends with no long straights. A diagonal
 river crosses the road twice through shallow fords, with no bridges. Water
 adds drag and reduces grip; slow down and splash through. Ripples and
 floating leaves flow southeast, and the current gently nudges the car. Dense palms line
 the banks. A trackside monkey throws coconuts at passing cars;
 dodge the toss or briefly lose grip. Look for the COCONUTS warning board.
 
-Costa Azul: short coastal bends, a fishing-village hairpin, beachside
+### Costa Azul
+
+Short coastal bends, a fishing-village hairpin, beachside
 esses and two avoidable sand drifts. A lighthouse overlooks the northern
 headland; turquoise surf, fishing boats, terracotta roofs and palms frame
 the circuit. The marina pit lane connects before and after the finish.
 
-City Streets: six tight right-angle downtown corners lead into a broad,
+### City Streets
+
+Six tight right-angle downtown corners lead into a broad,
 winding suburb section. Office rooftops, crosswalks and traffic signals
 give way to gardens, houses and Central Park. A service pit lane connects
 before and after the start. This is an existing street network, with
@@ -49,12 +65,14 @@ Oil, sand, and ice have irregular outlines matching their physics areas.
 The camera follows smoothly with no screen shake. Tire marks are batched
 and track lookups use a spatial grid to keep sliding on gravel responsive.
 
-PIT LANES
+## Pit lanes
+
 Every circuit has an alternate paved route through its paddock. Follow PIT
 ENTRY before the finish, drive past the garages, and rejoin at PIT EXIT.
 Both openings are drivable; the pit lane has its own finish timing line.
 
-LAP GHOST
+## Lap ghost
+
 Your first clean lap records a ghost for that map and car, even if an older
 personal best has no recorded path. Faster recorded laps replace the ghost;
 your historic personal best stays separate. The cyan outline and GHOST label
@@ -65,17 +83,19 @@ until you cross the start line. Ghosts save locally and replay on subsequent lap
 including through the pit lane. LIVE TO GHOST shows time gained (green) or
 lost (red) at your current position along the recorded route.
 
-GARAGE
-Clubsport R: balanced rear-wheel drive, approximately 158 km/h.
-Sprint GT: more power, approximately 177 km/h, demands earlier braking.
-Offroad: all-wheel-drive trail car, more grip and less off-road drag,
+## Garage
+
+- **Clubsport R:** balanced rear-wheel drive, approximately 158 km/h.
+- **Sprint GT:** more power, approximately 177 km/h, demands earlier braking.
+- **Offroad:** all-wheel-drive trail car, more grip and less off-road drag,
 approximately 150 km/h.
-Drift Spec: rear-wheel-drive coupe with an angle kit, power oversteer and
+- **Drift Spec:** rear-wheel-drive coupe with an angle kit, power oversteer and
 a rear wing, approximately 188 km/h. Lift and countersteer to catch a slide.
-Formula X: original open-wheel car with very high asphalt grip, speed-built
+- **Formula X:** original open-wheel car with very high asphalt grip, speed-built
 downforce, strong brakes and an eight-speed display, approximately 337 km/h.
-Iron V8: heavy rear-wheel-drive muscle coupe, strong torque, slower steering
+- **Iron V8:** heavy rear-wheel-drive muscle coupe, strong torque, slower steering
 and broad power slides, approximately 217 km/h.
+
 All six cars have dedicated local artwork in every paint and separate lap ghosts
 and personal-best records.
 Paint: Ember, Ocean, Forest, Sunburst, or Graphite.
@@ -86,9 +106,17 @@ The selected track, car, paint, and each track/car best time are saved
 locally. Revised routes and hazards have separate records; earlier
 versions' records remain under their old browser storage keys.
 
+## Run locally
+
 Open this folder in a terminal and run:
-  python -m http.server 8000
-Then open http://localhost:8000
+
+```sh
+python -m http.server 8000
+```
+
+Then open [http://localhost:8000](http://localhost:8000).
+
+## Driving and controls
 
 Before driving, click a grid box to choose your starting position. Grid
 boxes follow the local curve and face the direction of travel.
@@ -97,13 +125,13 @@ A 3–2–1–GO countdown holds the car before each fresh run. Choosing another
 grid box restarts the countdown. Click Restart or press N to begin a fresh
 run from your chosen grid spot while preserving saved times and ghosts.
 
-W / Up: accelerate
-S / Down: brake; hold at rest to reverse
-A / D or Left / Right: steer
-Space: handbrake (hold while steering to initiate a slide)
-N: quick restart with countdown
-R: recover to the nearest track point (invalidates the current lap)
-Escape / P: pause
+- **W / Up:** accelerate
+- **S / Down:** brake; hold at rest to reverse
+- **A / D or Left / Right:** steer
+- **Space:** handbrake (hold while steering to initiate a slide)
+- **N:** quick restart with countdown
+- **R:** recover to the nearest track point (invalidates the current lap)
+- **Escape / P:** pause
 
 Cross all three sector gates in order, then cross the start/finish line
 in the forward direction to record a lap. Timing lines span the full width
@@ -112,15 +140,18 @@ The personal best is stored in this browser. Recovering invalidates the
 current lap; crossing the finish line begins a fresh valid lap.
 The game pauses when the window loses focus or is hidden.
 
+## Technical details
+
 Physics runs at 120 Hz. Canvas rendering uses p5.js. All game code is in
-main.js and all page layout/style is in index.html. No build step is needed.
+`main.js` and all page layout/style is in `index.html`. No build step is needed.
 Internet is used for the p5.js CDN and fonts; the downloaded p5.js fallback
 and local sprites allow play if those remote resources are unavailable.
 
-See ASSETS.txt for asset sources and licenses.
+See [ASSETS.txt](ASSETS.txt) for asset sources and licenses.
 
-PERFORMANCE CHECK
-Open http://localhost:8000/tools/performance.html while the local server is
+## Performance check
+
+Open [the performance tool](http://localhost:8000/tools/performance.html) while the local server is
 running to compare map generation, road lookups, minimap updates, physics
 with 4,200 tire marks, and rendering at a fixed 1280 × 900 viewport.
 Results are milliseconds per operation, not an FPS estimate.
