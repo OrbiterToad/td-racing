@@ -1,8 +1,16 @@
 const js = require('@eslint/js');
 const globals = require('globals');
+const prettier = require('eslint-config-prettier');
 
 module.exports = [
-  { ignores: ['assets/**', 'dist/**', 'playwright-report/**', 'test-results/**'] },
+  {
+    ignores: [
+      'assets/**',
+      'dist/**',
+      'playwright-report/**',
+      'test-results/**',
+    ],
+  },
   js.configs.recommended,
   {
     files: ['**/*.js'],
@@ -11,10 +19,21 @@ module.exports = [
   {
     files: ['main.js'],
     languageOptions: {
-      globals: Object.fromEntries([
-        'createCanvas', 'resizeCanvas', 'pixelDensity', 'drawingContext',
-        'width', 'height', 'deltaTime', 'frameCount', 'millis', 'noLoop', 'loop',
-      ].map(name => [name, 'readonly'])),
+      globals: Object.fromEntries(
+        [
+          'createCanvas',
+          'resizeCanvas',
+          'pixelDensity',
+          'drawingContext',
+          'width',
+          'height',
+          'deltaTime',
+          'frameCount',
+          'millis',
+          'noLoop',
+          'loop',
+        ].map((name) => [name, 'readonly']),
+      ),
     },
     rules: {
       // p5 invokes callbacks by name; the simulation harness also uses helpers.
@@ -32,4 +51,5 @@ module.exports = [
     // Keep existing simulation assertions intact while adding lint coverage.
     rules: { 'no-unused-vars': 'off' },
   },
+  prettier,
 ];

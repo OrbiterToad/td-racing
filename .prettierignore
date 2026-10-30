@@ -1,0 +1,10 @@
+# Runtime assets include third-party bundles and generated SVG artwork.
+assets/
+# Generated output, dependency trees, browser profiles, and reports.
+node_modules/
+dist/
+playwright-report/
+test-results/
+preview-profile/
+# Keep npm's generated lockfile in npm's own format.
+package-lock.json

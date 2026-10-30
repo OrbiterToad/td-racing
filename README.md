@@ -111,13 +111,13 @@ lost (red) at your current position along the recorded route.
 - **Clubsport R:** balanced rear-wheel drive, approximately 158 km/h.
 - **Sprint GT:** more power, approximately 177 km/h, demands earlier braking.
 - **Offroad:** all-wheel-drive trail car, more grip and less off-road drag,
-approximately 150 km/h.
+  approximately 150 km/h.
 - **Drift Spec:** rear-wheel-drive coupe with an angle kit, power oversteer and
-a rear wing, approximately 188 km/h. Lift and countersteer to catch a slide.
+  a rear wing, approximately 188 km/h. Lift and countersteer to catch a slide.
 - **Formula X:** original open-wheel car with very high asphalt grip, speed-built
-downforce, strong brakes and an eight-speed display, approximately 337 km/h.
+  downforce, strong brakes and an eight-speed display, approximately 337 km/h.
 - **Iron V8:** heavy rear-wheel-drive muscle coupe, strong torque, slower steering
-and broad power slides, approximately 217 km/h.
+  and broad power slides, approximately 217 km/h.
 
 All six cars have dedicated local artwork in every paint and separate lap ghosts
 and personal-best records.
@@ -194,11 +194,20 @@ libraries are missing.
 Run the same checks as CI:
 
 ```sh
+npm run format:check
 npm run lint
 npm test
+npm audit --audit-level=high
 npm run build
 npm run test:browser
 ```
+
+Run `npm run format` to apply Prettier formatting. `npm run check` runs formatting,
+lint, simulation tests, the build, and browser tests in order; run the dependency
+audit separately because it needs registry access. The pinned Prettier version,
+[formatter config](.prettierrc.json), and [EditorConfig](.editorconfig) keep editor
+and command-line formatting consistent. ESLint's Prettier compatibility config
+turns off conflicting style rules.
 
 ESLint checks project JavaScript and excludes bundled assets. `npm test` runs
 the simulation assertions in `verify.cjs`. The browser test serves the packaged
@@ -207,18 +216,55 @@ and pause controls, and reports missing local assets or JavaScript errors.
 External requests are blocked to verify the game works with bundled p5.js.
 Browser failure reports are saved in `playwright-report/` and `test-results/`.
 
-The [GitHub Actions workflow](.github/workflows/ci.yml) runs these checks on pull
-requests and pushes to `master`. After successful checks on `master`, it deploys
-the tested `dist/` folder to GitHub Pages. Pull requests never deploy. The folder
-contains the game, runtime assets, and asset credits; it is generated locally
-and is not committed.
+The [GitHub Actions workflow](.github/workflows/ci.yml) runs on every branch
+push, every pull request, and manual runs. It reports five independent checks:
 
-To enable hosting, open the repository's **Settings → Pages** and select
-**GitHub Actions** as the source. Then push to `master` or run **CI and deploy**
-manually from the Actions tab. The site will be available at
-[orbitertoad.github.io/td-racing](https://orbitertoad.github.io/td-racing/).
+- **Formatting** checks Prettier formatting without changing files.
+- **Lint** checks JavaScript with ESLint and allows no warnings.
+- **Simulation tests** run the game physics and circuit assertions.
+- **Dependency audit** blocks high and critical vulnerabilities, including in
+  development tools, using `npm audit --audit-level=high`.
+- **Build and browser tests** packages the site and tests that exact output in
+  Chromium under `/td-racing/`, matching GitHub Pages hosting.
+
+All jobs use Node.js 24, `npm ci`, the committed lockfile, and npm download
+caching. New commits cancel obsolete pull request runs. Browser reports,
+screenshots, and failure traces are available in the run's **Artifacts →
+browser-diagnostics** for seven days, including reports for successful runs.
+
+After all five checks pass on `master`, **Deploy to GitHub Pages** publishes
+the tested `dist/` artifact without rebuilding it. Pull requests and other
+branches run checks only. The deployment job alone receives Pages write and
+OIDC permissions, and deployments run one at a time. `dist/` contains the game,
+runtime assets, and credits; it is generated and is not committed.
+
+To enable hosting:
+
+1. Open the repository's **Settings → Pages** and select **GitHub Actions** as
+   the source.
+2. In **Settings → Environments → github-pages**, ensure deployment branch
+   rules allow `master`.
+3. Push or merge this workflow to `master`. Alternatively, select **CI and
+   deploy → Run workflow → master** in the Actions tab.
+4. Wait for all checks and deployment to pass. The deployment environment and
+   Pages settings show the published URL:
+   [orbitertoad.github.io/td-racing](https://orbitertoad.github.io/td-racing/).
+
 Deployment uses GitHub's built-in token; no hosting credentials are required.
 See [GitHub's Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
-Optionally, add a branch rule for `master` requiring **Lint and test** before
-merging pull requests.
+To enforce checks before merging, add a branch ruleset for `master`, require a
+pull request, and require **Formatting**, **Lint**, **Simulation tests**, **Dependency audit**,
+and **Build and browser tests**. Run the workflow once so these check names
+appear in the ruleset picker. Avoid requiring the deployment check: it runs
+after merging. Direct pushes remain possible unless your ruleset restricts them.
+
+[Dependabot](.github/dependabot.yml) opens weekly update pull requests for npm
+packages and GitHub Actions. Minor and patch development-tool updates are
+grouped; major npm updates stay separate for review. Updates run the same CI
+checks and require a merge before they reach production.
+
+If deployment fails, check **Settings → Pages** uses GitHub Actions and the
+`github-pages` environment allows `master`. If a check fails, open that job's
+logs; for browser failures, download `browser-diagnostics` and open the HTML
+report with `npx playwright show-report <path-to-playwright-report>`.
