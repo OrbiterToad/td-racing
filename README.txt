@@ -32,6 +32,13 @@ esses and two avoidable sand drifts. A lighthouse overlooks the northern
 headland; turquoise surf, fishing boats, terracotta roofs and palms frame
 the circuit. The marina pit lane connects before and after the finish.
 
+City Streets: six tight right-angle downtown corners lead into a broad,
+winding suburb section. Office rooftops, crosswalks and traffic signals
+give way to gardens, houses and Central Park. A service pit lane connects
+before and after the start. This is an existing street network, with
+sidewalk curbs, crosswalks and light two-way traffic. At most two other
+cars are active; they cruise in their lanes and brake after a collision.
+
 Every landscape has denser scenery outside the barriers: woodland logs
 and ferns, desert rock and cactus clusters, mountain pines and snowdrifts,
 jungle flowers and fallen timber, rally team canopies and service vehicles,

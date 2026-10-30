@@ -7,8 +7,8 @@ const node = id => {if(!nodes.has(id)) nodes.set(id,{style:{},classList:{add(){}
 const storage = new Map();
 const sandbox = {window:{},document:{getElementById:node},console,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null}};
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear};',sandbox);
-const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear}=sandbox.window.test;
+vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic};',sandbox);
+const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic}=sandbox.window.test;
 function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,crossedStart:false,countdown:0,goTime:0,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
 function step(seconds){for(let i=0;i<seconds/CFG.step;i++)simulate(CFG.step);}
 function speed(){return Math.hypot(car.vx,car.vy);}
@@ -393,3 +393,23 @@ for(const id of Object.keys(MAPS)){
   const pad=getPaddock();assert.equal(sceneryClear(pad.x,pad.y,30),false,'Scenery placement must reject the paddock');
 }
 console.log('PASS: extra biome-specific scenery on every map stays clear of all driving corridors, paddocks, and water.');
+
+configureTrack('city');configureCar('clubsport','red');reset();
+assert.equal(MAPS.city.name,'City Streets');assert.equal(MAPS.city.patches.length,0,'Existing city streets should use traffic rather than circuit surface gimmicks');
+let cityRadius=Infinity,downtownTight=0,suburbanSweep=0;
+for(let i=0;i<track.length;i++){
+  const a=track[(i+track.length-1)%track.length],b=track[i],c=track[(i+1)%track.length],cross=Math.abs((b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x)),r=Math.hypot(b.x-a.x,b.y-a.y)*Math.hypot(c.x-b.x,c.y-b.y)*Math.hypot(c.x-a.x,c.y-a.y)/(2*cross);
+  cityRadius=Math.min(cityRadius,r);if(b.y<-550&&r<135)downtownTight++;if(b.y>0&&r>180&&r<300)suburbanSweep++;
+  if(i%4===0)for(let j=i+4;j<track.length;j+=4){const q=track[j],arc=Math.min(q.s-b.s,track.totalLength-(q.s-b.s));if(arc>CFG.wall*3)assert(Math.hypot(q.x-b.x,q.y-b.y)>CFG.wall*2+10,'City road sections and sidewalks must not overlap');}
+}
+assert(cityRadius>CFG.wall+10);assert(downtownTight>30&&suburbanSweep>40,'City must have distinct tight downtown corners and sweeping suburb bends');
+assert.equal(cityTraffic.cars.length,0);updateCityTraffic(3.9);assert.equal(cityTraffic.cars.length,0,'Traffic must be occasional rather than spawn immediately');updateCityTraffic(.2);assert.equal(cityTraffic.cars.length,1,'Traffic must enter the street network');
+const civilian=cityTraffic.cars[0];assert(Math.hypot(civilian.x-car.x,civilian.y-car.y)>600,'Traffic must start outside the camera, not appear on the player');const trafficPosition={x:civilian.x,y:civilian.y};updateCityTraffic(.5);assert(Math.hypot(civilian.x-trafficPosition.x,civilian.y-trafficPosition.y)>20,'Traffic must move along the roads');
+assert(spawnCityTraffic());assert.equal(spawnCityTraffic(),false);assert.equal(cityTraffic.cars.length,2,'City may have at most two civilian cars');
+const leader=cityTraffic.cars[1];civilian.s=2000;leader.s=2065;for(const vehicle of [civilian,leader]){vehicle.direction=1;vehicle.cruise=120;vehicle.speed=120;vehicle.brake=0;}updateCityTraffic(.2);assert(civilian.speed<leader.speed,'Civilian traffic must slow when following another car');
+for(const direction of [-1,1])for(let i=0;i<track.length;i+=7){civilian.s=track[i].s;civilian.direction=direction;updateTrafficPose(civilian);assert(nearest(civilian.x,civilian.y).distance<CFG.road-10,'Both directions of traffic must remain inside the street lanes');}
+civilian.s=track[10].s;civilian.direction=1;civilian.speed=110;updateTrafficPose(civilian);const tx=Math.cos(civilian.angle),ty=Math.sin(civilian.angle);Object.assign(car,{x:civilian.x-tx*14,y:civilian.y-ty*14,angle:civilian.angle,vx:tx*220,vy:ty*220});resolveCityTraffic();
+assert(civilian.brake>0&&speed()<220,'Traffic contact must slow the player and brake the civilian');assert(Number.isFinite(car.x+car.y+car.vx+car.vy)&&withinDrivingRails(),'Traffic contact must stay stable and inside the street boundary');
+cityTraffic.wait=100;car.x=10000;car.y=10000;for(const car of cityTraffic.cars)car.age=car.life+1;updateCityTraffic(.01);assert.equal(cityTraffic.cars.length,0,'Old traffic must disappear only when away from the player');
+configureTrack('juniper');assert.equal(cityTraffic.cars.length,0);updateCityTraffic(100);assert.equal(cityTraffic.cars.length,0,'Other maps must not spawn civilian traffic');
+console.log('PASS: City Streets tight downtown turns, wavy suburbs, street clearance, sparse two-way traffic, spawn cap, lane following, collisions/braking, cleanup and map isolation.');
