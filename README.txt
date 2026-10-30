@@ -20,10 +20,21 @@ Snowy pine crowns and mountain contours are seen directly from above.
 Ridgeway Rallycross mixes asphalt and two flowing dirt sections. Dirt
 reduces traction and adds rolling resistance; Offroad handles it better.
 
+Amazonas: tight, linked jungle bends with no long straights. A diagonal
+river crosses the road twice through shallow fords, with no bridges. Water
+adds drag and reduces grip; slow down and splash through. Dense palms line
+the banks. A trackside monkey throws coconuts at passing cars;
+dodge the toss or briefly lose grip. Look for the COCONUTS warning board.
+
 Four sector times and comparisons against your best lap appear in the HUD.
 Oil, sand, and ice have irregular outlines matching their physics areas.
 The camera follows smoothly with no screen shake. Tire marks are batched
 and track lookups use a spatial grid to keep sliding on gravel responsive.
+
+PIT LANES
+Every circuit has an alternate paved route through its paddock. Follow PIT
+ENTRY before the finish, drive past the garages, and rejoin at PIT EXIT.
+Both openings are drivable; the pit lane has its own finish timing line.
 
 GARAGE
 Clubsport R: balanced rear-wheel drive, approximately 158 km/h.
@@ -42,6 +53,9 @@ Open this folder in a terminal and run:
   python -m http.server 8000
 Then open http://localhost:8000
 
+Before driving, click a grid box to choose your starting position. Grid
+boxes follow the local curve and face the direction of travel.
+
 W / Up: accelerate
 S / Down: brake; hold at rest to reverse
 A / D or Left / Right: steer
@@ -49,8 +63,9 @@ Space: handbrake (hold while steering to initiate a slide)
 R: recover to the nearest track point (invalidates the current lap)
 Escape / P: pause
 
-Cross all three sector gates in order, on the asphalt, then cross the
-start/finish line in the forward direction to record a lap.
+Cross all three sector gates in order, then cross the start/finish line
+in the forward direction to record a lap. Timing lines span the full width
+between the barriers, including curbs and runoff.
 The personal best is stored in this browser. Recovering invalidates the
 current lap; crossing the finish line begins a fresh valid lap.
 The game pauses when the window loses focus or is hidden.

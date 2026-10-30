@@ -7,11 +7,12 @@ const node = id => {if(!nodes.has(id)) nodes.set(id,{style:{},classList:{add(){}
 const storage = new Map();
 const sandbox = {window:{},document:{getElementById:node},console,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null}};
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing};',sandbox);
-const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing}=sandbox.window.test;
+vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving};',sandbox);
+const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving}=sandbox.window.test;
 function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
 function step(seconds){for(let i=0;i<seconds/CFG.step;i++)simulate(CFG.step);}
 function speed(){return Math.hypot(car.vx,car.vy);}
+function withinDrivingRails(){const n=nearestDriving(car.x,car.y);return n.distance<n.wall-8;}
 
 // Curves must accommodate a full-width continuous barrier without folding.
 let minRadius=Infinity;
@@ -64,7 +65,7 @@ assert.equal(surfaceAt(nearest(track[0].x,track[0].y)),'ASPHALT');
 // Exercise both rails over the entire track at speeds above the normal maximum.
 for(let i=0;i<track.length;i+=5)for(const side of [-1,1]){
   reset(i);const p=track[i];car.x+=p.nx*side*(CFG.wall-30);car.y+=p.ny*side*(CFG.wall-30);car.vx=p.nx*side*650;car.vy=p.ny*side*650;
-  step(.18);assert(nearest(car.x,car.y).distance<CFG.wall-8,'Car must remain inside hard barriers');
+  step(.18);assert(withinDrivingRails(),'Car must remain inside hard barriers');
   assert(Number.isFinite(car.x+car.y+car.vx+car.vy),'Collision must remain stable');
 }
 
@@ -111,8 +112,8 @@ assert(sand<canyonAsphalt*.85,'Sand must substantially slow the car');
 for(let i=0;i<track.length;i+=5)for(const side of [-1,1]){
   reset(i);const p=track[i],wall=widthAt('wall',i/track.length);
   car.x+=p.nx*side*(wall-30);car.y+=p.ny*side*(wall-30);car.vx=p.nx*side*650;car.vy=p.ny*side*650;
-  step(.18);const n=nearest(car.x,car.y);
-  assert(n.distance<widthAt('wall',n.progress)-8,'Canyon collisions must follow narrowed walls');
+  step(.18);const n=nearestDriving(car.x,car.y);
+  assert(n.distance<n.wall-8,'Canyon collisions must follow narrowed walls');
   assert(Number.isFinite(car.x+car.y+car.vx+car.vy));
 }
 reset();race.started=true;completeLap();assert.equal(race.lap,2,'Canyon checkpoints must record valid laps');
@@ -133,7 +134,7 @@ assert(alpineMinRadius>CFG.wall+10);assert(alpineLongest<500,'Mountain traverses
 assert(MAPS.alpine.patches.reduce((sum,p)=>sum+p.length*2,0)/track.totalLength<.06,'Ice must cover only a small portion of the circuit');
 for(let i=0;i<track.length;i+=5)for(const side of [-1,1]){
   reset(i);const p=track[i];car.x+=p.nx*side*(CFG.wall-30);car.y+=p.ny*side*(CFG.wall-30);car.vx=p.nx*side*650;car.vy=p.ny*side*650;
-  step(.18);const n=nearest(car.x,car.y);assert(n.distance<widthAt('wall',n.progress)-8,'Alpine barriers must contain the car');
+  step(.18);const n=nearestDriving(car.x,car.y);assert(n.distance<n.wall-8,'Alpine barriers must contain the car');
 }
 for(let i=0;i<track.length;i+=4)for(let j=i+4;j<track.length;j+=4){const a=track[i],b=track[j],d=b.s-a.s;if(Math.min(d,track.totalLength-d)<CFG.wall*3)continue;assert(Math.hypot(a.x-b.x,a.y-b.y)>CFG.wall*2+10,'Alpine track sections must not overlap');}
 function atPatch(mapId,index=0){configureTrack(mapId);const patch=MAPS[mapId].patches[index];reset(Math.floor(patch.progress*track.length));const p=patchFrame(patch);car.x=p.x;car.y=p.y;car.angle=Math.atan2(p.ty,p.tx);return p;}
@@ -157,7 +158,7 @@ for(const id of Object.keys(VEHICLES)){
   assert(configureCar(id,'blue'));reset();keys.add('KeyW');
   for(let i=0;i<25/CFG.step;i++){car.x=track[0].x;car.y=track[0].y;simulate(CFG.step);}measured[id]=speed()*.46;
   assert(fs.existsSync(__dirname+'/'+carImagePath()),'Every selectable sprite must exist');
-  for(let i=0;i<track.length;i+=100)for(const side of [-1,1]){reset(i);const p=track[i];car.x+=p.nx*side*(CFG.wall-32);car.y+=p.ny*side*(CFG.wall-32);car.vx=p.nx*side*650;car.vy=p.ny*side*650;step(.15);assert(nearest(car.x,car.y).distance<CFG.wall-8,'All car shapes must collide safely');}
+  for(let i=0;i<track.length;i+=100)for(const side of [-1,1]){reset(i);const p=track[i];car.x+=p.nx*side*(CFG.wall-32);car.y+=p.ny*side*(CFG.wall-32);car.vx=p.nx*side*650;car.vy=p.ny*side*650;step(.15);assert(withinDrivingRails(),'All car shapes must collide safely');}
 }
 assert(measured.sprint>measured.clubsport+10&&measured.rally<measured.clubsport,'Selectable cars must have distinct performance');
 configureCar('sprint','green');const sprintKey=bestKeyFor();reset();race.started=true;completeLap();assert(storage.has(sprintKey),'Car records must be stored separately');
@@ -185,10 +186,103 @@ for(let i=0;i<track.length;i+=4){
   const a=track[(i+track.length-1)%track.length],b=track[i],c=track[(i+1)%track.length],cross=Math.abs((b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x));
   assert(Math.hypot(b.x-a.x,b.y-a.y)*Math.hypot(c.x-b.x,c.y-b.y)*Math.hypot(c.x-a.x,c.y-a.y)/(2*cross)>CFG.wall+10,'Rallycross barriers must fit bends');
   for(let j=i+4;j<track.length;j+=4){const p=track[j],d=p.s-b.s;if(Math.min(d,track.totalLength-d)<CFG.wall*3)continue;assert(Math.hypot(b.x-p.x,b.y-p.y)>CFG.wall*2+10,'Rallycross sections must not overlap');}
-  for(const side of [-1,1]){reset(i);car.x+=b.nx*side*(CFG.wall-30);car.y+=b.ny*side*(CFG.wall-30);car.vx=b.nx*side*650;car.vy=b.ny*side*650;step(.18);assert(nearest(car.x,car.y).distance<CFG.wall-8);}
+  for(const side of [-1,1]){reset(i);car.x+=b.nx*side*(CFG.wall-30);car.y+=b.ny*side*(CFG.wall-30);car.vx=b.nx*side*650;car.vy=b.ny*side*650;step(.18);assert(withinDrivingRails());}
 }
 reset();race.started=true;completeLap();
 assert.equal(timing.last.length,4);assert(timing.last.every(v=>v>0));assert(Math.abs(timing.last.reduce((a,b)=>a+b,0)-race.last)<1e-8,'Four sectors must sum to the recorded lap');
 const savedSectors=JSON.stringify(timing.best);timing.best=[];readBest();assert.equal(JSON.stringify(timing.best),savedSectors,'Best sector references must survive reload');
 reset();race.started=true;race.invalid=true;completeLap();assert.equal(JSON.stringify(timing.best),savedSectors,'Invalid lap must not replace sector references');
-console.log('PASS: exact spatial lookup on all four maps, Rallycross surface transitions/geometry/barriers, four-sector timing and persistence.');
+console.log('PASS: exact spatial lookup on all maps, Rallycross surface transitions/geometry/barriers, four-sector timing and persistence.');
+
+// Tight jungle curves must accommodate rails and two drivable river fords.
+configureTrack('amazonas');configureCar('clubsport','red');
+let amazonRadius=Infinity,amazonStraight=0,amazonLongest=0;
+for(let i=0;i<track.length;i++){
+  const a=track[(i+track.length-1)%track.length],b=track[i],c=track[(i+1)%track.length];
+  const cross=Math.abs((b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x));
+  const radius=Math.hypot(b.x-a.x,b.y-a.y)*Math.hypot(c.x-b.x,c.y-b.y)*Math.hypot(c.x-a.x,c.y-a.y)/(2*cross);
+  amazonRadius=Math.min(amazonRadius,radius);
+  amazonStraight=radius>1000?amazonStraight+Math.hypot(c.x-b.x,c.y-b.y):0;
+  amazonLongest=Math.max(amazonLongest,amazonStraight);
+  if(i%4===0)for(const side of [-1,1]){reset(i);car.x+=b.nx*side*(CFG.wall-30);car.y+=b.ny*side*(CFG.wall-30);car.vx=b.nx*side*650;car.vy=b.ny*side*650;step(.18);assert(withinDrivingRails(),'Amazonas rails must contain the car');}
+  if(i%4===0)for(let j=i+4;j<track.length;j+=4){const q=track[j],arc=Math.min(q.s-b.s,track.totalLength-(q.s-b.s));if(arc>CFG.wall*3)assert(Math.hypot(q.x-b.x,q.y-b.y)>CFG.wall*2+10,'Jungle sections must leave room for both rails');}
+}
+assert(amazonRadius>CFG.wall+10,'Small-radius corners must still fit continuous rails');
+assert(amazonLongest<350,'Amazonas must not have long straights');
+let crossings=0;
+for(let i=0;i<track.length;i++){const p=track[i],q=track[(i+track.length-1)%track.length];if(surfaceAt(nearest(p.x,p.y))==='FORD'&&surfaceAt(nearest(q.x,q.y))!=='FORD')crossings++;}
+assert.equal(crossings,2,'The diagonal river must cross the road twice');
+const fordIndex=track.findIndex(p=>surfaceAt(nearest(p.x,p.y))==='FORD');
+const fordSpeed=coastAt(fordIndex,0),dryIndex=track.findIndex(p=>surfaceAt(nearest(p.x,p.y))==='ASPHALT'),drySpeed=coastAt(dryIndex,0);
+assert(fordSpeed<drySpeed*.95,'Driving through a shallow ford must add water resistance');
+reset(fordIndex);keys.add('KeyW');step(1);assert(speed()>30,'Cars must be able to drive through the river');
+assert(amazonRiver[0].x<amazonRiver.at(-1).x&&amazonRiver[0].y<amazonRiver.at(-1).y,'River must run diagonally northwest to southeast');
+reset(Math.floor(track.length*.32));car.vx=track[Math.floor(track.length*.32)].tx*180;car.vy=track[Math.floor(track.length*.32)].ty*180;
+updateJungle(CFG.step);assert.equal(jungle.coconuts.length,1,'Monkey must throw at a passing car');
+updateJungle(CFG.step);assert.equal(jungle.coconuts.length,1,'Throw cooldown must prevent spam');
+const nut=jungle.coconuts[0];nut.age=nut.duration-CFG.step;car.x=nut.tx;car.y=nut.ty;updateJungle(CFG.step);
+assert(car.coconutSlip>0&&nut.hit,'A coconut landing on the car must briefly reduce grip');
+const velocityAfterHit=car.vx;updateJungle(CFG.step);assert.equal(car.vx,velocityAfterHit,'Each coconut may hit only once');
+car.x=10000;car.y=10000;for(let i=0;i<500;i++)updateJungle(CFG.step);
+assert.equal(car.coconutSlip,0,'Coconut grip penalty must expire');assert.equal(jungle.coconuts.length,0,'Old coconuts must be cleaned up');
+reset(Math.floor(track.length*.32));car.vx=180;updateJungle(CFG.step);assert(jungle.coconuts.length>0);
+configureTrack('juniper');assert.equal(jungle.coconuts.length,0,'Switching tracks must clear jungle hazards');assert.equal(car.coconutSlip,0);
+updateJungle(1);assert.equal(jungle.coconuts.length,0,'Monkey hazards must only run on Amazonas');
+console.log('PASS: Amazonas tight curves, rail impacts and spacing, two drivable river crossings and water drag, monkey throws/cooldown, coconut impacts/recovery, and map switching.');
+
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);reset();
+  for(let i=0;i<startingGrid.length;i++){
+    const slot=startingGrid[i];
+    assert(chooseStartingSlot(i),'A grid slot must be selectable before driving');
+    assert.equal(car.x,slot.x);assert.equal(car.y,slot.y);assert(speed()===0,'Selecting a slot must leave the car stationary');
+    assert(Math.abs(Math.cos(car.angle)*slot.tx+Math.sin(car.angle)*slot.ty-1)<1e-8,'Spawn must face along the local track tangent');
+    for(const x of [-26,26])for(const y of [-14,14])assert(nearest(slot.x+slot.tx*x-slot.ty*y,slot.y+slot.ty*x+slot.tx*y).distance<CFG.road,'Every grid box must fit on the curved road');
+  }
+  race.started=true;const x=car.x,y=car.y;assert.equal(chooseStartingSlot(0),false);assert.equal(car.x,x);assert.equal(car.y,y);
+}
+console.log('PASS: selectable grid slots fit every circuit, align spawn direction, and cannot teleport during a race.');
+
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);const placement=getPaddock();
+  assert(Math.abs(placement.tx*track[0].tx+placement.ty*track[0].ty-1)<1e-8,'Paddock roofs must align with the local circuit');
+  for(let x=-240;x<=280;x+=10)for(let y=-50;y<=85;y+=10){
+    const p=paddockPoint(x,y),n=nearest(p.x,p.y);
+    assert(n.distance>widthAt('wall',n.progress)+20,'The whole paddock and apron must clear all track barriers on '+id);
+    if(id==='amazonas'){let riverDistance=Infinity;for(const q of amazonRiver)riverDistance=Math.min(riverDistance,Math.hypot(p.x-q.x,p.y-q.y));assert(riverDistance>130,'Paddock must stay clear of the river and banks');}
+  }
+}
+console.log('PASS: all five paddocks align with the circuit, clear every road/barrier, and avoid the river.');
+
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);reset();race.started=true;
+  for(let i=1;i<=track.length;i++){const progress=(i%track.length)/track.length;updateRace(.1,{progress,distance:widthAt('wall',progress)-25});}
+  assert.equal(race.lap,2,'A complete lap along the outer verge must count on '+id);assert.equal(timing.last.length,4);
+  for(const gate of [.25,.5,.75]){
+    reset();race.next=gate*4;race.previous=gate-.001;updateRace(.1,{progress:gate+.001,distance:widthAt('wall',gate)+1});assert.equal(race.next,gate*4,'Crossings beyond a barrier must not count');
+    race.previous=gate+.001;updateRace(.1,{progress:gate-.001,distance:0});assert.equal(race.next,gate*4,'Reverse crossings must not count');
+  }
+  reset();race.previous=.999;race.next=4;race.travel=.95;updateRace(.1,{progress:.001,distance:widthAt('wall',0)+1});assert.equal(race.lap,1,'Finish crossings outside the barrier must not count');
+}
+console.log('PASS: full-width sector/finish gates count verge crossings on all maps and reject out-of-bounds/reverse crossings.');
+
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);reset();
+  assert(pitLane.points.length>100,'Each map must have a complete alternate paddock road');
+  assert(nearest(pitLane.points[0].x,pitLane.points[0].y).distance<1e-6,'Pit entry must meet the circuit');
+  assert(nearest(pitLane.points.at(-1).x,pitLane.points.at(-1).y).distance<1e-6,'Pit exit must meet the circuit');
+  for(let i=1;i<pitLane.points.length-1;i++){
+    const a=pitLane.points[i-1],b=pitLane.points[i],c=pitLane.points[i+1],cross=Math.abs((b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x)),radius=Math.hypot(b.x-a.x,b.y-a.y)*Math.hypot(c.x-b.x,c.y-b.y)*Math.hypot(c.x-a.x,c.y-a.y)/(2*cross);
+    assert(radius>pitLane.wall+10,'Pit curves must fit cars and barriers on '+id);
+    reset();car.x=b.x;car.y=b.y;car.angle=Math.atan2(b.ty,b.tx);car.vx=b.tx*90;car.vy=b.ty*90;
+    const x=car.x,y=car.y;step(CFG.step);assert(Math.hypot(car.x-x,car.y-y)<2,'Pit route must not hit an invisible main-track barrier on '+id);
+    const n=nearestDriving(b.x,b.y);assert(n.distance<n.wall-20,'Pit centerline must be inside the drivable corridor');
+  }
+  // Take a complete lap through the pit lane instead of the main finish.
+  reset();race.started=true;
+  const exit=pitLane.exit,entry=pitLane.entry;race.previous=exit;
+  for(let progress=exit+.001;progress<entry;progress+=.001)updateRace(.02,{progress,distance:0});
+  for(const p of pitLane.points){const n=nearestDriving(p.x,p.y);updateRace(.02,n);}
+  assert.equal(race.lap,2,'A full lap through the pits must count on '+id);
+}
+console.log('PASS: pit routes connect on all maps, fit cars/barriers, allow both merges, and preserve lap timing.');
