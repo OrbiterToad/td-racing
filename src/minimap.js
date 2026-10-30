@@ -1,8 +1,9 @@
+import { PAINTS } from './config.js';
 import { coast } from './coast.js';
 import { visibleGhostPose } from './ghost.js';
 import { paintAmazonRiver } from './jungle.js';
 import { path, ribbon } from './renderer.js';
-import { car, pitLane, state, track } from './state.js';
+import { car, opponentRace, pitLane, state, track } from './state.js';
 
 export function buildMinimapLayer() {
   const layer = document.createElement('canvas');
@@ -65,6 +66,12 @@ export function drawMinimap() {
   c.translate(160, 132);
   c.scale(scale, scale);
   c.translate(-x, -y);
+  for (const rival of opponentRace.cars) {
+    c.fillStyle = PAINTS[rival.paint].hex;
+    c.beginPath();
+    c.arc(rival.x, rival.y, 3.5 / scale, 0, Math.PI * 2);
+    c.fill();
+  }
   const ghost = visibleGhostPose();
   if (ghost) {
     c.save();

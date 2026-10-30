@@ -1,5 +1,5 @@
 import { clamp, lerpTo } from './math.js';
-import { car, lapGhost, race, state, timing } from './state.js';
+import { car, lapGhost, opponentRace, race, state, timing } from './state.js';
 import { formatTime } from './ui.js';
 
 export function liveGhostDelta() {
@@ -188,5 +188,6 @@ export function ghostStatus() {
 }
 
 export function visibleGhostPose() {
+  if (opponentRace.enabled) return null;
   return race.crossedStart ? ghostPose(race.time) : null;
 }

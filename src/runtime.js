@@ -1,3 +1,4 @@
+import { toggleOpponentRace } from './opponents.js';
 import { toggleSound } from './audio.js';
 import { configureCar, loadCarArt, readBest } from './cars.js';
 import { MAPS } from './config.js';
@@ -145,6 +146,8 @@ export function initializeGame() {
   $('resume').onclick = () => setPaused(false);
   $('sound').onclick = toggleSound;
   $('restart').onclick = restartRun;
+  $('race-mode').onclick = toggleOpponentRace;
+  $('race-mode').disabled = false;
   window.addEventListener('keydown', (e) => {
     if ($('selection-dialog').open) return;
     if (

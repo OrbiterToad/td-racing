@@ -1,3 +1,4 @@
+import * as club from './src/opponents.js';
 // Run with `node verify.mjs`. Exercises the real ES modules without a browser.
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -2095,4 +2096,129 @@ for (const key of [
   );
 console.log(
   'PASS: shared footprint reservations, rotated sprite bounds, deterministic placement, park/monkey clearance, layered draw order, and new asset coverage across all seven maps.',
+);
+
+// Complete club races use the production AI controller and lap validation.
+configureCar('clubsport', 'red');
+configureTrack('juniper');
+reset();
+recover(false);
+club.opponentRace.enabled = true;
+startCountdown();
+assert.equal(club.opponentRace.cars.length, 3);
+assert.equal(new Set(club.opponentRace.cars.map((c) => c.paint)).size, 3);
+const gridPositions = club.opponentRace.cars.map((c) => c.s);
+club.updateOpponents(1);
+assert.deepEqual(
+  club.opponentRace.cars.map((c) => c.s),
+  gridPositions,
+);
+assert.equal(club.opponentRace.elapsed, 0, 'AI waits for GO');
+assert(chooseStartingSlot(2));
+assert(
+  club.opponentRace.cars.every((c) => c.s !== -250),
+  'Player grid slot stays clear',
+);
+assert.equal(club.opponentRace.elapsed, 0);
+race.countdown = 0;
+let observedBraking = false;
+for (let step = 0; step < 600 * 60; step++) {
+  club.updateOpponents(1 / 60);
+  for (const rival of club.opponentRace.cars) {
+    observedBraking ||= rival.brake;
+    assert(Number.isFinite(rival.x) && Number.isFinite(rival.y));
+    assert(rival.speed >= 0 && rival.speed <= 335);
+    if (step % 60 === 0) {
+      assert(
+        nearest(rival.x, rival.y).distance < CFG.road - 20,
+        'Opponents stay inside the road through every bend',
+      );
+    }
+  }
+  if (club.opponentRace.cars.every((c) => c.finish !== null)) break;
+}
+assert(observedBraking, 'Opponents brake before corners and oil');
+assert(
+  club.opponentRace.cars.every((c) => c.finish > 0),
+  'Every opponent finishes three laps',
+);
+assert(club.opponentRace.cars[0].finish < club.opponentRace.cars[1].finish);
+assert(club.opponentRace.cars[1].finish < club.opponentRace.cars[2].finish);
+assert(club.opponentRace.cars.every((c) => c.s === 3 * track.totalLength));
+const finishTimes = club.opponentRace.cars.map((c) => c.finish);
+club.updateOpponents(1);
+assert.deepEqual(
+  club.opponentRace.cars.map((c) => c.finish),
+  finishTimes,
+  'Finished opponents keep their original result',
+);
+
+// Replaying identical starts has identical pace even when the player moves.
+club.resetOpponentRace();
+for (let i = 0; i < 600; i++) club.updateOpponents(1 / 60);
+const firstRun = club.opponentRace.cars.map((c) => [c.s, c.speed]);
+car.x += 1500;
+car.y -= 1500;
+club.resetOpponentRace();
+for (let i = 0; i < 600; i++) club.updateOpponents(1 / 60);
+assert.deepEqual(
+  club.opponentRace.cars.map((c) => [c.s, c.speed]),
+  firstRun,
+  'Opponent pace never depends on player position',
+);
+
+// An invalid lap cannot finish the race. Three validated laps can.
+reset();
+race.countdown = 0;
+race.started = true;
+race.crossedStart = true;
+club.opponentRace.elapsed = 300;
+function clubLap(invalid = false) {
+  race.invalid = invalid;
+  race.next = 1;
+  for (const gate of [0.25, 0.5, 0.75]) {
+    race.previous = gate - 0.001;
+    updateRace(0.02, { progress: gate + 0.001, distance: 0 });
+  }
+  race.travel = 0.999;
+  race.previous = 0.999;
+  updateRace(0.02, { progress: 0.001, distance: 0 });
+}
+clubLap(true);
+assert.equal(race.lap, 1);
+assert.equal(club.opponentRace.finished, false);
+clubLap();
+clubLap();
+assert.equal(club.opponentRace.finished, false);
+clubLap();
+assert.equal(club.opponentRace.finished, true);
+assert(club.opponentRace.playerFinish > 0);
+assert.equal(car.vx, 0);
+const frozenClock = club.opponentRace.elapsed;
+simulate(CFG.step);
+assert.equal(
+  club.opponentRace.elapsed,
+  frozenClock,
+  'Race freezes on player finish',
+);
+const standings = club.opponentStandings();
+assert(
+  standings[0].player,
+  'Finished driver ranks ahead of unfinished drivers',
+);
+club.opponentRace.cars[0].finish = club.opponentRace.playerFinish - 1;
+assert.equal(
+  club.opponentStandings()[1].player,
+  true,
+  'Finish order uses crossing times',
+);
+club.resetOpponentRace();
+assert.equal(club.opponentRace.finished, false);
+assert.equal(club.opponentRace.playerFinish, null);
+assert.equal(club.opponentRace.elapsed, 0);
+configureTrack('city');
+assert.equal(club.opponentRace.enabled, false);
+assert.equal(club.opponentRace.cars.length, 0);
+console.log(
+  'PASS: three-lap club races, countdown/grid resets, road clearance, braking, deterministic pace, clean-lap validation, finish order, and mode cleanup.',
 );

@@ -1,3 +1,4 @@
+import { resetOpponentRace } from './opponents.js';
 import { CFG } from './config.js';
 import {
   ghostCrossingFrame,
@@ -12,6 +13,7 @@ import {
   keys,
   lapGhost,
   race,
+  opponentRace,
   startingGrid,
   state,
   timing,
@@ -27,6 +29,7 @@ export function beginLap(start) {
 }
 
 export function recover(showMessage = true) {
+  if (showMessage && opponentRace.enabled && opponentRace.finished) return;
   const n = track.length ? nearest(car.x, car.y) : null;
   const p = showMessage
     ? nearestDriving(car.x, car.y)
@@ -78,6 +81,7 @@ export function buildStartingGrid() {
 export function chooseStartingSlot(index) {
   if (
     race.started ||
+    (opponentRace.enabled && opponentRace.elapsed > 0) ||
     !Number.isInteger(index) ||
     index < 0 ||
     index >= startingGrid.length
@@ -92,6 +96,7 @@ export function chooseStartingSlot(index) {
 }
 
 export function startCountdown() {
+  resetOpponentRace();
   race.countdown = 3;
   race.goTime = 0;
   car.vx = 0;
@@ -104,6 +109,7 @@ export function restartRun() {
   changeTrack(state.activeMap.id, false);
   state.selectedStart = slot;
   recover(false);
+  resetOpponentRace();
   resetGhostRecording();
   camera.x = car.x;
   camera.y = car.y;
@@ -147,6 +153,15 @@ export function updateRace(dt, n) {
       finishSector(crossingTime, 3);
       race.last = crossingTime;
       race.lap++;
+      if (opponentRace.enabled && race.lap > opponentRace.laps) {
+        opponentRace.playerFinish = opponentRace.elapsed - dt + dt * fraction;
+        opponentRace.finished = true;
+        car.vx = 0;
+        car.vy = 0;
+        car.yaw = 0;
+        car.throttle = 0;
+        car.brake = 0;
+      }
       timing.last = timing.splits.slice();
       const firstGhost = !lapGhost.best,
         ghostSaved = saveLapGhost(race.last, crossingFrame);

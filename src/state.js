@@ -132,3 +132,16 @@ export const sceneryBuildings = [];
 export const sceneryTrees = [];
 
 export const sceneryScene = [];
+
+// Club races use non-contact, path-following opponents. Player physics and
+// clean-lap validation stay shared with time trial.
+export const opponentRace = {
+  enabled: false,
+  laps: 3,
+  elapsed: 0,
+  finished: false,
+  playerFinish: null,
+  cars: [],
+  profile: [],
+  spacing: 80,
+};

@@ -154,3 +154,99 @@ test('module callbacks keep driving, resize, pause, and restart working', async 
   ).toBe(0);
   expect(errors).toEqual([]);
 });
+
+test('club race starts, pauses, restarts, finishes, and returns to time trial', async ({
+  page,
+}, testInfo) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  await expect(page.locator('#game canvas.p5Canvas')).toBeVisible();
+  await page.locator('#race-mode').click();
+  await expect(page.locator('#race-panel')).toBeVisible();
+  await expect(page.locator('#track-title')).toHaveText('Juniper Raceway');
+  await expect(page.locator('#car-name')).toHaveText('CLUBSPORT R');
+  await expect(page.locator('#race-standings')).toHaveText(
+    /Alex[\s\S]*Blair[\s\S]*Casey/,
+  );
+  await expect(page.locator('#session-mode')).toHaveText('CLUB RACE');
+  await expect(page.locator('#lap')).toHaveText('1 / 3');
+  const readRace = () =>
+    page.evaluate(async () => {
+      const { opponentRace } = await import('./src/state.js');
+      return {
+        elapsed: opponentRace.elapsed,
+        positions: opponentRace.cars.map((c) => c.s),
+      };
+    });
+  await expect.poll(async () => (await readRace()).elapsed).toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const { opponentArt } = await import('./src/opponents.js');
+        return Object.values(opponentArt).every(
+          (art) => art.complete && art.naturalWidth > 0,
+        );
+      }),
+    )
+    .toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('club-race.png') });
+  await page.locator('#pause').click();
+  const pausedState = await readRace();
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        let frames = 0;
+        function frame() {
+          if (++frames === 12) resolve();
+          else requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }),
+  );
+  expect(await readRace()).toEqual(pausedState);
+  await page.locator('#resume').click();
+  await page.keyboard.press('n');
+  await expect(page.locator('#start-countdown')).toHaveText(/^[123]$/);
+  expect((await readRace()).elapsed).toBe(0);
+  await page.evaluate(async () => {
+    const { chooseStartingSlot } = await import('./src/race.js');
+    chooseStartingSlot(3);
+  });
+  expect((await readRace()).positions).not.toContain(-330);
+
+  // Exercise the production timing gates without steering for several minutes.
+  await page.evaluate(async () => {
+    const { race, opponentRace } = await import('./src/state.js');
+    const { updateRace } = await import('./src/race.js');
+    const { updateHUD } = await import('./src/ui.js');
+    race.countdown = 0;
+    race.started = true;
+    race.crossedStart = true;
+    opponentRace.elapsed = 240;
+    for (let lap = 0; lap < 3; lap++) {
+      race.next = 1;
+      for (const gate of [0.25, 0.5, 0.75]) {
+        race.previous = gate - 0.001;
+        updateRace(0.02, { progress: gate + 0.001, distance: 0 });
+      }
+      race.travel = 0.999;
+      race.previous = 0.999;
+      updateRace(0.02, { progress: 0.001, distance: 0 });
+    }
+    updateHUD();
+  });
+  await expect(page.locator('#race-position')).toHaveText('FINISHED · P1 / 4');
+  await expect(page.locator('#race-help')).toContainText(
+    'Restart to race again',
+  );
+  await page.locator('#restart').click();
+  await expect(page.locator('#race-position')).toContainText('POSITION');
+  await expect(page.locator('#start-countdown')).toHaveText(/^[123]$/);
+  await page.locator('#race-mode').click();
+  await expect(page.locator('#race-panel')).not.toBeVisible();
+  await expect(page.locator('#session-mode')).toHaveText('FREE PRACTICE');
+  expect((await readRace()).positions).toEqual([]);
+  expect(errors).toEqual([]);
+});
