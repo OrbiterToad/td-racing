@@ -1,7 +1,81 @@
-// Run with `node verify.cjs`. Exercises the real simulation without a browser.
-const fs = require('node:fs');
-const vm = require('node:vm');
-const assert = require('node:assert/strict');
+// Run with `node verify.mjs`. Exercises the real ES modules without a browser.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+import {
+  bestKeyFor,
+  carImagePath,
+  configureCar,
+  readBest,
+} from './src/cars.js';
+import { coast, coastLandDistance, coastShoreFrame } from './src/coast.js';
+import {
+  CFG,
+  MAPS,
+  SCENERY_ASSETS,
+  SCENERY_LAYERS,
+  VEHICLES,
+} from './src/config.js';
+import {
+  ghostPose,
+  ghostStatus,
+  liveGhostDelta,
+  loadLapGhost,
+  recordGhostFrame,
+  visibleGhostPose,
+} from './src/ghost.js';
+import { amazonRiver, amazonRiverFrame, updateJungle } from './src/jungle.js';
+import { simulate } from './src/physics.js';
+import {
+  beginLap,
+  chooseStartingSlot,
+  recover,
+  startCountdown,
+  updateRace,
+} from './src/race.js';
+import {
+  paddockAssetLayout,
+  sceneryClear,
+  sceneryDetailLayer,
+} from './src/scenery.js';
+import {
+  car,
+  cityTraffic,
+  jungle,
+  keys,
+  lapGhost,
+  pitLane,
+  race,
+  sceneryBuildings,
+  sceneryDetails,
+  sceneryScene,
+  sceneryTrees,
+  skidmarks,
+  startingGrid,
+  state,
+  timing,
+  track,
+} from './src/state.js';
+import {
+  configureTrack,
+  makeTrack,
+  nearest,
+  nearestDriving,
+  nearestPit,
+  paddockPoint,
+  patchFrame,
+  surfaceAt,
+  widthAt,
+  withinPitDistance,
+} from './src/tracks.js';
+import {
+  resolveCityTraffic,
+  spawnCityTraffic,
+  updateCityTraffic,
+  updateTrafficPose,
+} from './src/traffic.js';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const nodes = new Map();
 const node = (id) => {
   if (!nodes.has(id))
@@ -22,73 +96,10 @@ const sandbox = {
     getItem: (k) => storage.get(k) || null,
   },
 };
-vm.createContext(sandbox);
-vm.runInContext(
-  fs.readFileSync(__dirname + '/main.js', 'utf8') +
-    '\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout,SCENERY_LAYERS,sceneryScene,sceneryBuildings,sceneryTrees,sceneryDetailLayer};',
-  sandbox,
-);
-const {
-  car,
-  race,
-  track,
-  keys,
-  simulate,
-  recover,
-  nearest,
-  surfaceAt,
-  CFG,
-  updateRace,
-  skidmarks,
-  configureTrack,
-  widthAt,
-  readBest,
-  MAPS,
-  VEHICLES,
-  configureCar,
-  bestKeyFor,
-  patchFrame,
-  carImagePath,
-  beginLap,
-  timing,
-  jungle,
-  updateJungle,
-  amazonRiver,
-  startingGrid,
-  chooseStartingSlot,
-  paddockPoint,
-  getPaddock,
-  pitLane,
-  nearestDriving,
-  lapGhost,
-  recordGhostFrame,
-  ghostPose,
-  loadLapGhost,
-  amazonRiverFrame,
-  ghostStatus,
-  startCountdown,
-  liveGhostDelta,
-  visibleGhostPose,
-  coast,
-  coastLandDistance,
-  sceneryDetails,
-  sceneryClear,
-  cityTraffic,
-  spawnCityTraffic,
-  updateCityTraffic,
-  updateTrafficPose,
-  resolveCityTraffic,
-  nearestPit,
-  withinPitDistance,
-  coastShoreFrame,
-  SCENERY_ASSETS,
-  paddockAssetLayout,
-  SCENERY_LAYERS,
-  sceneryScene,
-  sceneryBuildings,
-  sceneryTrees,
-  sceneryDetailLayer,
-} = sandbox.window.test;
+Object.assign(globalThis, sandbox);
+makeTrack();
+const getPaddock = () => state.paddock;
+
 function reset(i = 0) {
   keys.clear();
   beginLap();

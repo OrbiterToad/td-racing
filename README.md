@@ -165,8 +165,29 @@ The game pauses when the window loses focus or is hidden.
 
 ## Technical details
 
-Physics runs at 120 Hz. Canvas rendering uses p5.js. All game code is in
-`main.js` and all page layout/style is in `index.html`. No build step is needed.
+Physics runs at 120 Hz. Canvas rendering uses p5.js. `main.js` registers the
+p5 callbacks; game code lives in native ES modules in
+`src/`. Page layout/style remains in `index.html`. No bundler is needed; serve
+the folder over HTTP as shown above so the browser can load modules.
+
+The module layout is:
+
+| Area                                      | Files under `src/`                                              |
+| ----------------------------------------- | --------------------------------------------------------------- |
+| Startup and browser events                | `runtime.js`                                                    |
+| Circuit/car definitions and shared state  | `config.js`, `state.js`                                         |
+| Geometry, surfaces, vehicles, and traffic | `tracks.js`, `cars.js`, `traffic.js`                            |
+| Physics, lap timing, and ghosts           | `physics.js`, `race.js`, `ghost.js`                             |
+| World construction and scenery            | `world.js`, `scenery.js`, `terrain.js`, `jungle.js`, `coast.js` |
+| Frame rendering, HUD, picker, and minimap | `renderer.js`, `ui.js`, `minimap.js`                            |
+| Audio and math helpers                    | `audio.js`, `math.js`                                           |
+
+Modules import the stable simulation objects (such as `car` and `track`) by
+name. Replaceable values (such as the selected circuit and canvas contexts)
+live on `state`; read those properties when needed rather than taking a stale
+copy. Importing modules does not start the game: only `main.js` registers the
+p5 callbacks. The simulation harness imports the same modules directly.
+
 p5.js and sprites are bundled locally. Google Fonts uses the internet;
 the game remains playable when the fonts are unavailable.
 
@@ -210,10 +231,11 @@ and command-line formatting consistent. ESLint's Prettier compatibility config
 turns off conflicting style rules.
 
 ESLint checks project JavaScript and excludes bundled assets. `npm test` runs
-the simulation assertions in `verify.cjs`. The browser test serves the packaged
+the simulation assertions in `verify.mjs`. The browser test serves the packaged
 site at `/td-racing/`, checks every circuit, changes cars, checks saved selections
 and pause controls, and reports missing local assets or JavaScript errors.
 External requests are blocked to verify the game works with bundled p5.js.
+Set `PLAYWRIGHT_PORT` to use another local browser-test port when needed.
 Browser failure reports are saved in `playwright-report/` and `test-results/`.
 
 The [GitHub Actions workflow](.github/workflows/ci.yml) runs on every branch
