@@ -1,0 +1,16 @@
+{"timestamp":397092467,"category":"session_restore","name":"backup_can_be_loaded_session_file","extra":{"can_load":"false","loadfail_reason":"File doesn't exist.","glean_timestamp":"1793357641923","path_key":"clean"}}
+{"timestamp":397092469,"category":"session_restore","name":"backup_can_be_loaded_session_file","extra":{"can_load":"true","glean_timestamp":"1793357641925","loadfail_reason":"N/A","path_key":"recovery"}}
+{"timestamp":397092469,"category":"session_restore","name":"backup_can_be_loaded_session_file","extra":{"glean_timestamp":"1793357641925","loadfail_reason":"N/A","can_load":"true","path_key":"recovery"}}
+{"timestamp":397092470,"category":"session_restore","name":"shutdown_success_session_startup","extra":{"shutdown_ok":"true","shutdown_reason":"final-state-write-incomplete","glean_timestamp":"1793357641926"}}
+{"timestamp":397093252,"category":"jsonfile","name":"load_logins","extra":{"value":"error_notfounderror","glean_timestamp":"1793357642708"}}
+{"timestamp":397093417,"category":"normandy","name":"expose_nimbus_experiment","extra":{"featureId":"ipProtection","glean_timestamp":"1793357642873","value":"vpn-mvp-beta-rollout-in-wave-1-countries","branchSlug":"mvp-beta"}}
+{"timestamp":397093417,"category":"nimbus_events","name":"exposure","extra":{"experiment":"vpn-mvp-beta-rollout-in-wave-1-countries","glean_timestamp":"1793357642873","branch":"mvp-beta","feature_id":"ipProtection"}}
+{"timestamp":397093466,"category":"nimbus_events","name":"startup_database_consistency","extra":{"glean_timestamp":"1793357642922","db_active_count":"27","primary":"database","total_db_count":"27","store_active_count":"27","trigger":"startup","total_store_count":"27"}}
+{"timestamp":397093737,"category":"jsonfile","name":"load_autofillprofiles","extra":{"value":"error_notfounderror","glean_timestamp":"1793357643192"}}
+{"timestamp":397093766,"category":"doh","name":"state_rollback","extra":{"glean_timestamp":"1793357643222","value":"null"}}
+{"timestamp":397093932,"category":"containers","name":"container_profile_loaded","extra":{"containers":"4","glean_timestamp":"1793357643388"}}
+{"timestamp":397093985,"category":"upgrade_dialog","name":"trigger_reason","extra":{"glean_timestamp":"1793357643441","value":"not-major"}}
+{"timestamp":397094710,"category":"normandy","name":"enroll_failed_nimbus_experiment","extra":{"glean_timestamp":"1793357644166","value":"built-in-vpn-messaging-evergreen","reason":"feature-conflict"}}
+{"timestamp":397094710,"category":"nimbus_events","name":"enroll_failed","extra":{"reason":"feature-conflict","glean_timestamp":"1793357644166","experiment":"built-in-vpn-messaging-evergreen"}}
+{"timestamp":397094830,"category":"nimbus_events","name":"is_ready","extra":{"glean_timestamp":"1793357644285"}}
+{"timestamp":397095429,"category":"glean","name":"session_start","extra":{"session_id":"0ce1ed6b-7c28-42a6-9592-2b7be045cd74","sampled_in":"true","glean_timestamp":"397095429","session_seq":"2","session_start_time":"2026-10-30T11:54:04.884+01:00"}}

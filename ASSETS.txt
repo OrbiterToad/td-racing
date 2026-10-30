@@ -1,19 +1,25 @@
 APEX / The Circuit Collection
 
-Civilian traffic and overhead tree art: Kenney Racing Pack, by Kenney Vleugels.
+Civilian traffic art: Kenney Racing Pack, by Kenney Vleugels.
 Source: https://kenney.nl/assets/racing-pack
 Download: https://opengameart.org/content/racing-pack
 License: Creative Commons Zero (CC0 / public domain).
 Original license: assets/kenney/License.txt
-Used files: PNG/Objects/tree_large.png and civilian traffic car style 2
-in red, blue, yellow and black, from PNG/Cars/. Legacy garage sprites stay
-bundled. No asset service is required at runtime.
+Used files: civilian traffic car style 2
+in red, blue, yellow and black, from PNG/Cars/. Legacy garage and tree sprites stay bundled. No asset service is required at runtime.
 
 All six garage cars use original top-down SVG vehicle art created for
 this game: Clubsport R, Sprint GT, Offroad, Drift Spec, Iron V8 and Formula X.
 Local files: assets/cars/{clubsport,sprint,rally,drift,muscle,formula}-*.svg.
 Every model has five paint colors. Flat colors, light trim and rounded
 edges match the existing scenery and civilian car sprites.
+The scenery pack in assets/scenery/*.svg is original vector art created
+for this game: ten tree species, seven homes/cabins/huts, three office or
+warehouse roofs, six themed garage modules, two control rooms, three team
+canopies, tyre and fuel racks, crates, picnic tables and park benches.
+Regenerate these 36 models with python3 tools/build-scenery-assets.py.
+The game raster-caches the pack once, then bakes static scenery into the
+world canvas.
 All scenery is drawn from directly overhead; there are no side-view assets.
 
 Road, gravel, grass, curbs, tire marks, roof planes, and UI: original procedural art.

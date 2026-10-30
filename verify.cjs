@@ -7,8 +7,8 @@ const node = id => {if(!nodes.has(id)) nodes.set(id,{style:{},classList:{add(){}
 const storage = new Map();
 const sandbox = {window:{},document:{getElementById:node},console,localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null}};
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame};',sandbox);
-const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame}=sandbox.window.test;
+vm.runInContext(fs.readFileSync(__dirname+'/main.js','utf8')+'\nmakeTrack();window.test={car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock:()=>paddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout};',sandbox);
+const {car,race,track,keys,simulate,recover,nearest,surfaceAt,CFG,updateRace,skidmarks,configureTrack,widthAt,readBest,MAPS,VEHICLES,configureCar,bestKeyFor,patchFrame,carImagePath,beginLap,timing,jungle,updateJungle,amazonRiver,startingGrid,chooseStartingSlot,paddockPoint,getPaddock,pitLane,nearestDriving,lapGhost,recordGhostFrame,ghostPose,loadLapGhost,amazonRiverFrame,ghostStatus,startCountdown,liveGhostDelta,visibleGhostPose,coast,coastLandDistance,sceneryDetails,sceneryClear,cityTraffic,spawnCityTraffic,updateCityTraffic,updateTrafficPose,resolveCityTraffic,nearestPit,withinPitDistance,coastShoreFrame,SCENERY_ASSETS,paddockAssetLayout}=sandbox.window.test;
 function reset(i=0){keys.clear();beginLap();const p=track[i];Object.assign(car,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ty,p.tx),yaw:0,steer:0,slickTime:0,slip:0});Object.assign(race,{started:false,crossedStart:false,countdown:0,goTime:0,time:0,next:1,previous:i/track.length,invalid:false,travel:0,stuck:0,lap:1,best:null,last:null});}
 function step(seconds){for(let i=0;i<seconds/CFG.step;i++)simulate(CFG.step);}
 function speed(){return Math.hypot(car.vx,car.vy);}
@@ -466,3 +466,22 @@ assert(measured.muscle>200&&measured.muscle<240,'Iron V8 must have strong muscle
 steadyCorner('clubsport');const agileYaw=car.yaw;steadyCorner('muscle');assert(car.yaw<agileYaw,'The muscle car must turn more deliberately than the balanced coupe');
 assert.equal(VEHICLES.muscle.art,'muscle');assert(VEHICLES.muscle.power>VEHICLES.drift.power&&VEHICLES.muscle.steering<VEHICLES.drift.steering,'Iron V8 must emphasize torque over drift-car agility');
 console.log('PASS: Iron V8 torque, deliberate steering, distinct pace and dedicated five-color muscle-car assets.');
+
+assert(SCENERY_ASSETS.length>=36,'The new scenery library must include substantial tree, house, paddock and support-asset variety');
+assert.equal(new Set(SCENERY_ASSETS).size,SCENERY_ASSETS.length,'Every scenery asset key must be unique');
+for(const key of SCENERY_ASSETS)assert(fs.existsSync(__dirname+'/assets/scenery/'+key+'.svg'),'Every registered scenery asset must exist locally');
+for(const id of Object.keys(MAPS)){
+  configureTrack(id);const layout=paddockAssetLayout();assert.equal(layout.filter(p=>p.bay).length,5,'Each paddock must have five visible service bays');
+  assert(layout.some(p=>p.key.startsWith('control-room')),'Each paddock must include a control building');
+  assert(layout.some(p=>p.key==='tyre-rack')&&layout.some(p=>p.key==='fuel-store'),'Each paddock must include new service equipment');
+  for(const prop of layout){
+    assert(SCENERY_ASSETS.includes(prop.key),'Every paddock model must use a registered asset');
+    for(const x of [-prop.w/2,prop.w/2])for(const y of [-prop.h/2,prop.h/2]){
+      const lx=prop.x+Math.cos(prop.angle)*x-Math.sin(prop.angle)*y,ly=prop.y+Math.sin(prop.angle)*x+Math.cos(prop.angle)*y;
+      assert(lx>=-240&&lx<=280&&ly>=-50&&ly<=85,'Paddock equipment must fit its reserved footprint');
+      const p=paddockPoint(lx,ly),n=nearest(p.x,p.y);assert(n.distance>widthAt('wall',n.progress)+20,'New paddock assets must not cover the main road or barriers');assert(nearestPit(p.x,p.y).distance>pitLane.wall+10,'New paddock assets must stay outside the service lane');
+    }
+  }
+  for(const prop of sceneryDetails){if(['cabin','hut','picnic','bench','canopy','tires'].includes(prop.kind))assert(Math.hypot(prop.size*.8,prop.size*.7)<=prop.radius,'New scenery assets must fit their tested clearance radius');}
+}
+console.log('PASS: 36 local scenery models, unique catalog, themed paddock bays/control buildings/equipment, safe footprints and service-lane clearance on every map.');
