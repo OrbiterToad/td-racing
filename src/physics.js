@@ -61,7 +61,12 @@ export function simulate(dt) {
     ),
     drive = driveVehicle(
       car,
-      { steer: steering, throttle: gas, brake: braking, handbrake: hand },
+      {
+        steer: steering * state.settings.steeringSensitivity,
+        throttle: gas,
+        brake: braking,
+        handbrake: hand,
+      },
       dt,
     ),
     {
@@ -174,6 +179,7 @@ export function triggerImpact(speed) {
 }
 
 export function burst(x, y, type, count) {
+  if (state.settings.reducedMotion) return;
   for (let i = 0; i < count; i++)
     particles.push({
       x,

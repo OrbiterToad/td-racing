@@ -29,7 +29,7 @@ const GAME_MODES = {
     name: 'Club race',
     tag: '4 DRIVERS / 3 LAPS',
     description:
-      'Line up against Alex, Blair and Casey. Three laps, fixed opponent pace and a race to the finish. Non-contact racing.',
+      'Line up against Alex, Blair and Casey. Three laps, fixed opponent pace, and full vehicle contact.',
   },
 };
 
@@ -240,7 +240,7 @@ export function renderPicker() {
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
       : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;
   const details = modes
-    ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · NON-CONTACT OPPONENTS' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
+    ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
     : tracks
       ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div><span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
       : `<div class="car-stats">${['PACE', 'HANDLING', 'OFF ROAD'].map((label, i) => `<span>${label}<i><b style="width:${selected.bars[i] * 100}%"></b></i></span>`).join('')}</div>`;
@@ -471,7 +471,7 @@ export function setPaused(value, moveFocus = true) {
   }
   if (state.engineGain)
     state.engineGain.gain.setTargetAtTime(
-      state.paused ? 0 : 0.025,
+      !state.paused && state.soundEnabled ? 0.018 + car.throttle * 0.014 : 0,
       state.audioCtx.currentTime,
       0.05,
     );

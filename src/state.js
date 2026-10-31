@@ -12,6 +12,13 @@ export const state = {
   pendingCar: 'clubsport',
   pendingPaint: 'red',
   pendingGameMode: 'trial',
+  settings: {
+    volume: 0.7,
+    steeringSensitivity: 1,
+    reducedMotion: false,
+    reducedMotionSaved: false,
+  },
+  audioMasterGain: undefined,
   pickerWasPaused: false,
   activeMap: MAPS.juniper,
   controlPoints: MAPS.juniper.points,

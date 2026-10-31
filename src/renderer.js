@@ -310,11 +310,12 @@ export function draw() {
   const smoothing = 1 - Math.exp(-4.5 * elapsed);
   camera.x = lerpTo(camera.x, car.x + car.vx * 0.42, smoothing);
   camera.y = lerpTo(camera.y, car.y + car.vy * 0.42, smoothing);
-  camera.zoom = lerpTo(
-    camera.zoom,
-    desiredZoom() * (1 - clamp(Math.hypot(car.vx, car.vy) / 1700, 0, 0.19)),
-    smoothing,
-  );
+  const targetZoom = state.settings.reducedMotion
+    ? desiredZoom()
+    : desiredZoom() * (1 - clamp(Math.hypot(car.vx, car.vy) / 1700, 0, 0.19));
+  camera.zoom = state.settings.reducedMotion
+    ? targetZoom
+    : lerpTo(camera.zoom, targetZoom, smoothing);
   state.ctx.save();
   state.ctx.setTransform(pixelDensity(), 0, 0, pixelDensity(), 0, 0);
   state.ctx.fillStyle =
@@ -334,8 +335,10 @@ export function draw() {
   state.ctx.scale(camera.zoom, camera.zoom);
   state.ctx.translate(-camera.x, -camera.y);
   drawWorldViewport(state.ctx);
-  drawCoastWaves(state.ctx);
-  drawRiverCurrent(state.ctx);
+  if (!state.settings.reducedMotion) {
+    drawCoastWaves(state.ctx);
+    drawRiverCurrent(state.ctx);
+  }
   drawSkidmarks(state.ctx);
   drawStartingGridSelection(state.ctx);
   for (const p of particles) {
@@ -353,14 +356,15 @@ export function draw() {
     state.ctx.fill();
   }
   state.ctx.globalAlpha = 1;
-  drawPatchHighlights(state.ctx, millis() / 1000);
+  if (!state.settings.reducedMotion)
+    drawPatchHighlights(state.ctx, millis() / 1000);
   drawCityTraffic(state.ctx);
   drawOpponents(state.ctx);
   drawCar(state.ctx);
   drawLapGhost(state.ctx);
   drawJungle(state.ctx);
   state.ctx.restore();
-  if (feedback.impact > 0.03) {
+  if (!state.settings.reducedMotion && feedback.impact > 0.03) {
     state.ctx.save();
     state.ctx.fillStyle = 'rgba(247,130,92,' + feedback.impact * 0.065 + ')';
     state.ctx.fillRect(0, 0, width, height);
