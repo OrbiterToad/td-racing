@@ -67,8 +67,8 @@ jobs:
         run: npm ci
       - name: Build static site
         run: npm run build
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium, Firefox, and WebKit
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Test packaged site at the Pages subpath
         run: npm run test:browser
       - name: Upload browser diagnostics

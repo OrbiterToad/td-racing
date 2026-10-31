@@ -224,14 +224,14 @@ Results are milliseconds per operation, not an FPS estimate.
 
 ## Automated checks and deployment
 
-Use Node.js 24 or later. Install the development tools and Chromium once:
+Use Node.js 24 or later. Install the development tools and all three browser engines once:
 
 ```sh
 npm ci
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 ```
 
-On Linux, use `npx playwright install --with-deps chromium` if browser system
+On Linux, use `npx playwright install --with-deps chromium firefox webkit` if browser system
 libraries are missing.
 
 Run the same checks as CI:
@@ -261,6 +261,8 @@ keeping club-race progress when changing paint, clearing held controls on focus
 loss, and playing with malformed, blocked, or full browser storage.
 External requests are blocked to verify the game works with bundled p5.js.
 Set `PLAYWRIGHT_PORT` to use another local browser-test port when needed.
+Each spec runs in the named `chromium`, `firefox`, and `webkit` projects.
+Use `npm run test:browser -- --project=firefox` to reproduce one engine.
 Browser failure reports are saved in `playwright-report/` and `test-results/`.
 
 The [GitHub Actions workflow](.github/workflows/ci.yml) runs on every branch
@@ -272,7 +274,7 @@ push, every pull request, and manual runs. It reports five independent checks:
 - **Dependency audit** blocks high and critical vulnerabilities, including in
   development tools, using `npm audit --audit-level=high`.
 - **Build and browser tests** packages the site and tests that exact output in
-  Chromium under `/td-racing/`, matching GitHub Pages hosting.
+  Chromium, Firefox, and WebKit under `/td-racing/`, matching GitHub Pages hosting.
 
 All jobs use Node.js 24, `npm ci`, the committed lockfile, and npm download
 caching. New commits cancel obsolete pull request runs. Browser reports,
