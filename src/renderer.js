@@ -1,3 +1,4 @@
+import { drawOpponents } from './opponents.js';
 import { updateAudio } from './audio.js';
 import { drawCoastWaves } from './coast.js';
 import { CFG, PAINTS } from './config.js';
@@ -346,6 +347,7 @@ export function draw() {
   state.ctx.globalAlpha = 1;
   drawPatchHighlights(state.ctx, millis() / 1000);
   drawCityTraffic(state.ctx);
+  drawOpponents(state.ctx);
   drawCar(state.ctx);
   drawLapGhost(state.ctx);
   drawJungle(state.ctx);

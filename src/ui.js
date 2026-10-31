@@ -1,3 +1,4 @@
+import { updateOpponentHUD } from './opponents.js';
 import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
 import { coast, paintCoastGround } from './coast.js';
 import { MAPS, PAINTS, VEHICLES } from './config.js';
@@ -6,7 +7,7 @@ import { paintAmazonRiver } from './jungle.js';
 import { seededRandom } from './math.js';
 import { ribbon } from './renderer.js';
 import { changeTrack } from './runtime.js';
-import { car, keys, race, state, timing } from './state.js';
+import { car, keys, opponentRace, race, state, timing } from './state.js';
 import { paintCityGround } from './terrain.js';
 import { dirtProgress, sampleMap } from './tracks.js';
 
@@ -438,6 +439,7 @@ export function formatDelta(t) {
 }
 
 export function updateHUD() {
+  updateOpponentHUD();
   const speed = Math.hypot(car.vx, car.vy),
     signed = car.vx * Math.cos(car.angle) + car.vy * Math.sin(car.angle),
     kmh = Math.round(speed * 0.46);
@@ -469,7 +471,9 @@ export function updateHUD() {
   $('clock').textContent = formatTime(race.time);
   $('best').textContent = formatTime(race.best);
   $('last').textContent = formatTime(race.last);
-  $('lap').textContent = String(race.lap).padStart(2, '0');
+  $('lap').textContent = opponentRace.enabled
+    ? Math.min(race.lap, opponentRace.laps) + ' / ' + opponentRace.laps
+    : String(race.lap).padStart(2, '0');
   const surfaceLabel =
     car.slickTime > 0 && car.surface !== 'OIL'
       ? 'OILY TIRES'
@@ -562,8 +566,10 @@ export function updateHUD() {
           ? ' / ' + formatDelta(timing.flashDelta)
           : '')
       : '';
-  $('ghost-status').textContent = ghostStatus();
-  const ghostDelta = liveGhostDelta();
+  $('ghost-status').textContent = opponentRace.enabled
+    ? 'GHOST · Hidden during club races'
+    : ghostStatus();
+  const ghostDelta = opponentRace.enabled ? null : liveGhostDelta();
   $('ghost-delta').textContent = formatDelta(ghostDelta);
   $('ghost-delta').style.color =
     ghostDelta === null ? '#9eb0a4' : ghostDelta <= 0 ? '#d5f578' : '#f0a28a';

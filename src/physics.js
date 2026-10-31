@@ -1,3 +1,4 @@
+import { updateOpponents } from './opponents.js';
 import { playImpact } from './audio.js';
 import { coast } from './coast.js';
 import { recordGhostFrame } from './ghost.js';
@@ -11,6 +12,7 @@ import {
   lapGhost,
   particles,
   race,
+  opponentRace,
   skidmarks,
   state,
   timing,
@@ -21,6 +23,7 @@ import { resolveCityTraffic, updateCityTraffic } from './traffic.js';
 import { $ } from './ui.js';
 
 export function simulate(dt) {
+  if (opponentRace.enabled && opponentRace.finished) return;
   lapGhost.previous = [car.x, car.y, car.angle];
   updateJungle(dt);
   if (state.activeMap.id === 'coast') coast.time += dt;
@@ -34,6 +37,7 @@ export function simulate(dt) {
     return;
   }
   race.goTime = Math.max(0, race.goTime - dt);
+  updateOpponents(dt);
   updateCityTraffic(dt);
   feedback.impact *= Math.exp(-7 * dt);
   feedback.impactCooldown = Math.max(0, feedback.impactCooldown - dt);

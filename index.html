@@ -1153,6 +1153,26 @@
           font-size: 80px;
         }
       }
+      #race-panel {
+        border-bottom: 1px solid #ffffff20;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+      }
+      #race-standings {
+        white-space: pre-line;
+        font: 12px/1.7 monospace;
+        color: #dce8d6;
+      }
+      #race-help {
+        max-width: 270px;
+        font-size: 10px;
+        line-height: 1.5;
+        color: #9eb0a4;
+        margin: 6px 0 0;
+      }
+      #race-mode[aria-pressed='true'] {
+        color: var(--lime);
+      }
     </style>
   </head>
   <body>
@@ -1170,8 +1190,10 @@
         </button>
       </div>
       <div class="session">
-        <span class="live"><i class="dot"></i> FREE PRACTICE</span
-        ><span class="tag">01 DRIVER · NO LIMITS</span>
+        <span class="live"
+          ><i class="dot"></i>
+          <span id="session-mode">FREE PRACTICE</span></span
+        ><span class="tag" id="session-drivers">01 DRIVER · NO LIMITS</span>
       </div>
     </header>
     <main
@@ -1189,6 +1211,14 @@
         </div>
       </div>
       <div class="overlay timing">
+        <div id="race-panel" hidden>
+          <div class="timing-title">
+            <span id="race-position" role="status">POSITION 1 / 4</span
+            ><span id="race-elapsed">00:00.000</span>
+          </div>
+          <div id="race-standings"></div>
+          <p id="race-help"></p>
+        </div>
         <div class="timing-title">
           <span>CURRENT LAP</span><span class="lap" id="lap">01</span>
         </div>
@@ -1320,6 +1350,15 @@
         ><span class="control"><kbd>ESC</kbd> Pause</span>
       </div>
       <div class="actions">
+        <button
+          class="action"
+          id="race-mode"
+          disabled
+          aria-pressed="false"
+          title="Three-lap non-contact race on Juniper in Clubsport R"
+        >
+          Race AI · Juniper
+        </button>
         <button
           class="action"
           id="restart"

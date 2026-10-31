@@ -94,6 +94,24 @@ Every circuit has an alternate paved route through its paddock. Follow PIT
 ENTRY before the finish, drive past the garages, and rejoin at PIT EXIT.
 Both openings are drivable; the pit lane has its own finish timing line.
 
+## Club race
+
+Click **Race AI · Juniper** in the bottom bar for a three-lap race against Alex,
+Blair, and Casey. Everyone drives a Clubsport R on Juniper. The three opponents
+have different fixed paces, brake ahead of bends, and slow around oil. Their pace
+does not change to catch or wait for you. This first version uses non-contact,
+path-following opponents; cars can pass through each other.
+
+The timing panel shows live positions, total race time, and the finishing result.
+Opponent colors and name labels match the minimap dots. Cross the start line,
+then complete three clean laps through all sector gates. Recovery invalidates
+the current lap, so it must be replaced with a clean lap. Pause freezes the whole
+race. **N / Restart** resets every driver and the countdown; selecting another
+grid box before GO also resets the field. Click **Time trial** to leave the race.
+Changing circuit or car also returns to time trial; changing paint preserves the
+race. Ghost recording and personal bests remain available, with ghost rendering
+hidden during club races so it is easy to identify the three opponents.
+
 ## Lap ghost
 
 Your first clean lap records a ghost for that map and car, even if an older
