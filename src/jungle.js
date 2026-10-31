@@ -63,31 +63,6 @@ export function paintAmazonFords(c) {
   water.globalCompositeOperation = 'source-in';
   paintFordWater(water);
   c.drawImage(layer, state.worldBounds.x, state.worldBounds.y);
-  // Mark both approaches on the dry verge; water itself remains unobstructed.
-  for (let i = 0; i < track.length; i++) {
-    const p = track[i],
-      prev = track[(i + track.length - 1) % track.length];
-    if (
-      amazonRiverDistance(p.x, p.y) < 140 &&
-      amazonRiverDistance(prev.x, prev.y) >= 140
-    ) {
-      for (const side of [-1, 1]) {
-        c.save();
-        c.translate(
-          p.x + p.nx * side * (CFG.road + 22),
-          p.y + p.ny * side * (CFG.road + 22),
-        );
-        c.rotate(Math.atan2(p.ty, p.tx));
-        c.fillStyle = '#f3d37b';
-        c.fillRect(-23, -11, 46, 22);
-        c.fillStyle = '#294c46';
-        c.textAlign = 'center';
-        c.font = 'bold 11px Arial';
-        c.fillText('FORD', 0, 4);
-        c.restore();
-      }
-    }
-  }
 }
 
 export function drawRiverCurrent(c) {
@@ -344,16 +319,9 @@ export function drawJungle(c) {
   if (inWorldView(m.x, m.y, 140)) {
     c.save();
     c.translate(m.x, m.y);
-    // A small palm and a warning board make the thrower easy to spot on approach.
+    // A small palm makes the thrower easy to spot on approach.
     const rand = seededRandom(46);
     paintJungleTree(c, 0, -36, 100, rand);
-    c.fillStyle = '#d9c27e';
-    roundedRect(c, -39, 31, 78, 23, 3);
-    c.fill();
-    c.fillStyle = '#384b2c';
-    c.font = 'bold 10px Arial';
-    c.textAlign = 'center';
-    c.fillText('COCONUTS!', 0, 47);
     c.rotate(m.angle);
     c.strokeStyle = '#80502f';
     c.lineWidth = 7;
