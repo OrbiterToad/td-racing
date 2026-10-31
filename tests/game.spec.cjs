@@ -137,6 +137,8 @@ test('gamepad can navigate and confirm the session setup wizard', async ({
   await expect(page.locator('#picker-title')).toHaveText('Choose your mode.');
   await press(0);
   await expect(page.locator('#selection-dialog')).not.toBeVisible();
+  if (await page.locator('#tutorial-dialog').isVisible())
+    await page.locator('#tutorial-skip').click();
   await page.locator('#pause').click();
   await expect(page.locator('#pause-screen')).toHaveClass('open');
   await press(9);
