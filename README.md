@@ -268,7 +268,11 @@ and command-line formatting consistent. ESLint's Prettier compatibility config
 turns off conflicting style rules.
 
 ESLint checks project JavaScript and excludes bundled assets. `npm test` runs
-the simulation assertions in `verify.mjs`. The browser test serves the packaged
+the simulation assertions in `verify.mjs`, followed by deterministic collision
+tests in `tests/collisions.test.mjs`. Collision coverage includes momentum
+transfer, overlap separation, close passes, repeated contact stability, shared
+player/AI dynamics, barriers, and recovery. Run it alone with
+`node --test tests/collisions.test.mjs`. The browser test serves the packaged
 site at `/td-racing/`, checks every circuit, changes cars, checks saved selections
 and pause controls, and reports missing local assets or JavaScript errors.
 Session tests cover canceling track/car/paint drafts, restoring pause state,
