@@ -15,6 +15,8 @@ test.describe('touch driving controls', () => {
       await page.locator('#picker-apply').click();
     }
     await expect(page.locator('#selection-dialog')).not.toBeVisible();
+    if (await page.locator('#tutorial-dialog').isVisible())
+      await page.locator('#tutorial-skip').click();
   }
 
   for (const viewport of [
