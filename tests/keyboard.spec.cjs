@@ -1,9 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
-async function tabTo(page, target) {
+async function tabTo(page, target, key = 'Tab') {
   for (let step = 0; step < 35; step++) {
     if (await target.evaluate((el) => el === document.activeElement)) return;
-    await page.keyboard.press('Tab');
+    await page.keyboard.press(key);
   }
   await expect(target).toBeFocused();
 }
@@ -105,7 +105,9 @@ for (const picker of ['garage', 'tracks']) {
   }) => {
     await startTrial(page);
     const opener = page.locator(`#open-${picker}`);
-    await tabTo(page, opener);
+    // The header precedes the driving region in document order. Navigate
+    // backwards rather than relying on browser chrome to wrap page focus.
+    await tabTo(page, opener, 'Shift+Tab');
     await page.keyboard.press('Space');
     await expect(page.locator('#picker-apply')).toBeFocused();
     await page.keyboard.press('ArrowRight');

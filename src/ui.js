@@ -461,7 +461,7 @@ export function setPaused(value, moveFocus = true) {
   $('pause-screen').classList.toggle('open', state.paused);
   $('pause').textContent = state.paused ? '▶ Resume' : 'Ⅱ Pause';
   $('pause').setAttribute('aria-pressed', String(state.paused));
-  if (changed && moveFocus && !$('selection-dialog').open) {
+  if (changed && moveFocus && !document.querySelector('dialog[open]')) {
     if (state.paused) {
       pauseOpener = document.activeElement;
       $('resume').focus();

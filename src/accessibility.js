@@ -3,7 +3,9 @@
 export function initModalKeyboard() {
   document.addEventListener('keydown', (event) => {
     if (event.defaultPrevented || event.key !== 'Tab') return;
-    const dialog = document.querySelector('dialog:modal');
+    const dialog =
+      event.target.closest?.('dialog:modal') ??
+      [...document.querySelectorAll('dialog:modal')].at(-1);
     if (!dialog) return;
     const controls = [
       ...dialog.querySelectorAll(
