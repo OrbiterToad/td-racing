@@ -67,17 +67,21 @@ function onTrack(distance, offset = 0, forward = 0, sideways = 0) {
 
 function withinBarriers(body) {
   const p = nearestDriving(body.x, body.y);
-  const forward = Math.abs(
-    Math.cos(body.angle) * p.nx + Math.sin(body.angle) * p.ny,
-  );
-  const side = Math.abs(
-    -Math.sin(body.angle) * p.nx + Math.cos(body.angle) * p.ny,
-  );
-  assert(
-    p.distance + (forward * spec.length) / 2 + (side * spec.width) / 2 <=
-      p.wall - 6 + 1e-6,
-    `The full vehicle footprint must remain inside the track barrier (penetration: ${p.distance + (forward * spec.length) / 2 + (side * spec.width) / 2 - (p.wall - 6)})`,
-  );
+  const cos = Math.cos(body.angle),
+    sin = Math.sin(body.angle);
+  // Project the four actual corners onto the local rail normal. Checking the
+  // center alone would miss a bumper or side pushed through the barrier.
+  for (const forward of [-spec.length / 2, spec.length / 2]) {
+    for (const side of [-spec.width / 2, spec.width / 2]) {
+      const x = body.x + cos * forward - sin * side;
+      const y = body.y + sin * forward + cos * side;
+      const lateral = Math.abs((x - p.x) * p.nx + (y - p.y) * p.ny);
+      assert(
+        lateral <= p.wall - 6 + 1e-6,
+        `The full vehicle footprint must remain inside the track barrier (penetration: ${lateral - (p.wall - 6)})`,
+      );
+    }
+  }
 }
 
 before(() => {
