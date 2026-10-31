@@ -12,7 +12,11 @@ import {
   track,
 } from './state.js';
 import { nearestDriving, pointOnTrack } from './tracks.js';
-import { driveVehicle, resolveVehicleCollision } from './vehicle-physics.js';
+import {
+  driveVehicle,
+  resolveVehicleBarrier,
+  resolveVehicleCollision,
+} from './vehicle-physics.js';
 import { $, formatTime, notify, syncCarHUD } from './ui.js';
 
 export { opponentRace };
@@ -198,6 +202,8 @@ export function resolveOpponentCollisions() {
         vehicles[i].spec,
         vehicles[j].spec,
       );
+  for (const { vehicle, spec } of vehicles)
+    resolveVehicleBarrier(vehicle, spec);
 }
 
 export function opponentStandings() {
