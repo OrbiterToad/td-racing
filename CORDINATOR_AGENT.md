@@ -5,8 +5,10 @@ This file applies only to the Codex agent coordinating work across chats and age
 ## Handling user requests
 
 - First distinguish an information request from an actionable request. Answer ordinary questions and requests for information directly in the coordinating chat.
-- Treat feature requests, bug reports, feedback, and other instructions that call for project work as tracked tasks. Capture the requested outcome and relevant acceptance criteria, then assign the task to an agent.
-- If every agent is occupied, add the task to the tracked queue and assign it when an agent next becomes free. Keep the queued task visible in coordinator status updates.
+- Treat feature requests, bug reports, feedback, and other instructions that call for repository work as actionable tracked tasks. Do not create issues for simple questions or status requests.
+- Before delegating implementation, inspect open GitHub issues. Reuse an existing issue that matches the request; otherwise create an issue with the requested outcome and acceptance criteria. Use that issue as the source of truth.
+- Reference the issue number and link in the agent instructions. Link the implementation PR to its issue, using an appropriate closing reference, and close the issue when the work is complete.
+- If every agent is occupied, keep the issue open, add it to the tracked queue, and assign it when an agent next becomes free. Keep the queued issue visible in coordinator status updates.
 - The coordinator owns assignment, coordination, dependencies, status reporting, and review/merge follow-through. Agents carry out repository implementation under their assigned task instructions. The coordinator must not implement project tasks directly.
 - Keep this routing rule scoped to the coordinator role. Project agents should follow their assigned task and repository guidance; they do not route ordinary questions through this process.
 
