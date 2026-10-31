@@ -10,6 +10,8 @@ async function startSession(page) {
   await expect(page.locator('#picker-title')).toHaveText('Choose your mode.');
   await page.locator('#picker-apply').click();
   await expect(page.locator('#selection-dialog')).not.toBeVisible();
+  const guide = page.locator('#tutorial-dialog');
+  if (await guide.isVisible()) await page.locator('#tutorial-skip').click();
 }
 
 test('packaged game loads, changes tracks and cars, and remembers selections', async ({
@@ -380,6 +382,8 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
   await expect(page.locator('#car-name')).toHaveText('SPRINT GT');
   await expect(page.locator('#start-countdown')).toHaveText(/^[123]$/);
   expect((await readStartup()).worldBuilt).toBe(true);
+  if (await page.locator('#tutorial-dialog').isVisible())
+    await page.locator('#tutorial-skip').click();
 
   // Canceling an in-session picker keeps the selected car and lap intact.
   await page.locator('#pause').click();
@@ -534,6 +538,8 @@ test('club race can be selected on the final wizard page and survives back navig
   );
   await page.locator('#picker-apply').click();
   await expect(page.locator('#race-panel')).toBeVisible();
+  if (await page.locator('#tutorial-dialog').isVisible())
+    await page.locator('#tutorial-skip').click();
   await expect(page.locator('#race-standings')).toHaveText(
     /Alex[\s\S]*Blair[\s\S]*Casey/,
   );

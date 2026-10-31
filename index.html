@@ -1706,6 +1706,7 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="src/tutorial.css" />
   </head>
   <body class="starting">
     <header>
@@ -1884,6 +1885,9 @@
             ⚙ SETTINGS
           </button>
           <button class="primary" id="resume">BACK ON TRACK →</button>
+          <button class="guide-link" id="tutorial-help">
+            HELP / DRIVING GUIDE
+          </button>
           <p>
             <a class="credits" href="ASSETS.txt" target="_blank" rel="noopener"
               >Asset credits ↗</a
@@ -2041,6 +2045,35 @@
             DONE / BACK
           </button>
         </footer>
+    <dialog id="tutorial-dialog" aria-labelledby="tutorial-heading">
+      <div class="tutorial-shell">
+        <div class="tutorial-topline">
+          <span id="tutorial-step"></span>
+          <button id="tutorial-skip" class="tutorial-skip">SKIP GUIDE</button>
+        </div>
+        <progress
+          id="tutorial-progress"
+          max="7"
+          value="1"
+          aria-label="Guide progress"
+        ></progress>
+        <section class="tutorial-content" aria-live="polite" aria-atomic="true">
+          <span class="tutorial-kicker">APEX / DRIVER BRIEFING</span>
+          <h2 id="tutorial-heading"></h2>
+          <p id="tutorial-copy"></p>
+          <div
+            id="tutorial-keys"
+            class="tutorial-keys"
+            aria-label="Controls"
+          ></div>
+        </section>
+        <nav class="tutorial-navigation" aria-label="Guide pages">
+          <button id="tutorial-back" class="tutorial-secondary">← BACK</button>
+          <button id="tutorial-next" class="tutorial-primary">NEXT →</button>
+          <button id="tutorial-finish" class="tutorial-primary" hidden>
+            LET’S DRIVE →
+          </button>
+        </nav>
       </div>
     </dialog>
     <footer>
