@@ -8,12 +8,13 @@
   },
   "scripts": {
     "lint": "eslint \"*.{js,cjs,mjs}\" src tools tests --max-warnings 0",
-    "test": "node verify.mjs",
+    "test": "node verify.mjs && node --test tests/collisions.test.mjs",
     "test:browser": "playwright test",
     "build": "node tools/build-site.cjs",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "check": "npm run format:check && npm run lint && npm test && npm run build && npm run test:browser"
+    "check": "npm run format:check && npm run lint && npm test && npm run build && npm run test:browser",
+    "benchmark": "node tools/benchmark.cjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

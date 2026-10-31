@@ -33,6 +33,10 @@
         outline: 2px solid var(--lime);
         outline-offset: 5px;
       }
+      #game:focus-visible {
+        outline: 2px solid var(--lime);
+        outline-offset: -3px;
+      }
       header {
         height: 78px;
         display: flex;
@@ -1595,6 +1599,7 @@
     </header>
     <main
       id="game"
+      tabindex="-1"
       aria-label="Top-down racing circuit. Use WASD to drive and Space to handbrake."
     >
       <div class="overlay top-left circuit-label">
@@ -1702,10 +1707,10 @@
       <div class="overlay hint" id="hint">
         <b>W</b> to get rolling. Brake before the bend. Find your apex.
       </div>
-      <div id="pause-screen">
+      <div id="pause-screen" role="region" aria-labelledby="pause-title">
         <div class="pause-box">
           <div class="eyebrow">TAKE A BREATHER</div>
-          <h2>In the pits.</h2>
+          <h2 id="pause-title">In the pits.</h2>
           <p>
             W / S · Accelerate & brake<br />A / D · Steer &nbsp; Space ·
             Handbrake<br />R · Recover car &nbsp; N · Restart<br />Esc ·
@@ -1789,7 +1794,7 @@
           ↻ Restart</button
         ><button class="action" id="sound" aria-pressed="false">
           ♪ Sound off</button
-        ><button class="action" id="pause">Ⅱ Pause</button>
+        ><button class="action" id="pause" aria-pressed="false">Ⅱ Pause</button>
       </div>
     </footer>
     <script src="assets/p5.min.js"></script>
