@@ -26,6 +26,7 @@ import {
   visibleGhostPose,
 } from './src/ghost.js';
 import { amazonRiver, amazonRiverFrame, updateJungle } from './src/jungle.js';
+import { buildRaceResultsModel } from './src/results.js';
 import { lerpTo } from './src/math.js';
 import { simulate } from './src/physics.js';
 import {
@@ -2347,4 +2348,39 @@ assert.equal(club.opponentRace.enabled, false);
 assert.equal(club.opponentRace.cars.length, 0);
 console.log(
   'PASS: three-lap club races, countdown/grid resets, road clearance, braking, deterministic pace, clean-lap validation, finish order, and mode cleanup.',
+);
+
+const winningResults = buildRaceResultsModel({
+  totalTime: 98.42,
+  bestLap: 32.7,
+  standings: [
+    { name: 'You', player: true, paint: 'red', finish: 98.42 },
+    { name: 'Alex', finish: 101.6 },
+    { name: 'Blair', finish: null },
+    { name: 'Casey', finish: null },
+  ],
+});
+assert.equal(winningResults.position, 1, 'Winner should receive first place');
+assert.equal(winningResults.totalTime, 98.42);
+assert.equal(winningResults.bestLap, 32.7);
+assert.equal(winningResults.rows[2].status, 'STILL RACING');
+assert.equal(winningResults.rows[2].time, null);
+const behindResults = buildRaceResultsModel({
+  totalTime: 105.1,
+  bestLap: 34.2,
+  standings: [
+    { name: 'Alex', finish: 98.4 },
+    { name: 'You', player: true, finish: 105.1 },
+    { name: 'Casey', finish: null },
+  ],
+});
+assert.equal(
+  behindResults.position,
+  2,
+  'Later finisher should be ranked behind',
+);
+assert.equal(behindResults.rows[2].status, 'STILL RACING');
+assert.equal(behindResults.rows[2].time, null);
+console.log(
+  'PASS: race results rank winners and later finishers, retain total and best-lap times, and never assign a time to an opponent still racing.',
 );

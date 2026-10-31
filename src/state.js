@@ -148,6 +148,7 @@ export const opponentRace = {
   elapsed: 0,
   finished: false,
   playerFinish: null,
+  bestLap: null,
   cars: [],
   profile: [],
   spacing: 80,
