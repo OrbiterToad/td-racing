@@ -24,6 +24,7 @@ import { pitAsphalt } from './terrain.js';
 import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
+import { rewind } from './rewind.js';
 import {
   $,
   applyPicker,
@@ -416,6 +417,7 @@ function pollGamepad() {
       if (action === 'pause') setPaused(!state.paused);
       if (action === 'back' && state.paused) setPaused(false);
       if (action === 'restart') restartRun();
+      if (action === 'rewind') rewind();
     }
   }
   const blocked = state.paused || pickerOpen;

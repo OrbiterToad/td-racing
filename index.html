@@ -1573,6 +1573,9 @@
         justify-content: space-between;
         pointer-events: none;
       }
+      #touch-rewind[hidden] {
+        display: none !important;
+      }
       .touch-steering,
       .touch-pedals {
         display: flex;
@@ -1848,6 +1851,13 @@
         </div>
         <button class="touch-button" id="touch-pause" aria-label="Pause">
           Ⅱ Pause
+        </button>
+        <button
+          class="touch-button"
+          id="touch-rewind"
+          aria-label="Flash back five seconds"
+        >
+          ↶ 5s
         </button>
       </div>
       <div

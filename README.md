@@ -187,7 +187,13 @@ run from your chosen grid spot while preserving saved times and ghosts.
 - **Space:** handbrake (hold while steering to initiate a slide)
 - **N:** quick restart with countdown
 - **R:** recover to the nearest track point (invalidates the current lap)
+- **B / Backspace:** flash back up to five seconds in solo practice/time trial
 - **Escape / P:** pause
+
+Flashback is also available with gamepad **X** and the on-screen **↶ 5s**
+touch button. Using it permanently marks the current track/car session as
+practice only: its laps cannot set a personal best or save a lap ghost. Club
+races do not expose flashback.
 
 Cross all three sector gates in order, then cross the start/finish line
 in the forward direction to record a lap. Timing lines span the full width

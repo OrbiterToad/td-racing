@@ -21,6 +21,7 @@ import {
 } from './state.js';
 import { nearest, nearestDriving, timingGateHalfWidth } from './tracks.js';
 import { formatSector, formatTime, notify } from './ui.js';
+import { resultEligible } from './rewind-core.js';
 
 export function beginLap(start) {
   timing.splits = [];
@@ -164,25 +165,31 @@ export function updateRace(dt, n) {
       }
       timing.last = timing.splits.slice();
       const firstGhost = !lapGhost.best,
-        ghostSaved = saveLapGhost(race.last, crossingFrame);
+        ghostSaved = state.rewindUsed
+          ? false
+          : saveLapGhost(race.last, crossingFrame);
       if (race.best === null || race.last < race.best) {
-        race.best = race.last;
-        timing.best = timing.splits.slice();
-        const session = {
-          version: 1,
-          time: race.best,
-          sectors: timing.best.slice(),
-        };
-        try {
-          localStorage.setItem(state.BEST_KEY, JSON.stringify(race.best));
-          localStorage.setItem(
-            state.BEST_KEY + '-sectors-v1',
-            JSON.stringify(session),
-          );
-        } catch (_) {
-          /* Timing remains available for this session. */
+        if (resultEligible(state.rewindUsed)) {
+          race.best = race.last;
+          timing.best = timing.splits.slice();
+          const session = {
+            version: 1,
+            time: race.best,
+            sectors: timing.best.slice(),
+          };
+          try {
+            localStorage.setItem(state.BEST_KEY, JSON.stringify(race.best));
+            localStorage.setItem(
+              state.BEST_KEY + '-sectors-v1',
+              JSON.stringify(session),
+            );
+          } catch (_) {
+            /* Timing remains available for this session. */
+          }
+          notify('PERSONAL BEST · ' + formatTime(race.best));
+        } else {
+          notify('PRACTICE LAP · ' + formatTime(race.last));
         }
-        notify('PERSONAL BEST · ' + formatTime(race.best));
       } else
         notify(
           (firstGhost && ghostSaved ? 'GHOST READY · ' : 'LAP COMPLETE · ') +

@@ -1,4 +1,5 @@
 import { keys } from './state.js';
+import { rewind } from './rewind.js';
 
 const pressedPointers = new Map();
 const counts = new Map();
@@ -89,4 +90,5 @@ export function initTouchControls() {
   controls.querySelector('#touch-pause')?.addEventListener('click', () => {
     document.querySelector('#pause')?.click();
   });
+  controls.querySelector('#touch-rewind')?.addEventListener('click', rewind);
 }

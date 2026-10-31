@@ -509,6 +509,7 @@ export function formatDelta(t) {
 
 export function updateHUD() {
   updateOpponentHUD();
+  $('touch-rewind').hidden = opponentRace.enabled;
   const speed = Math.hypot(car.vx, car.vy),
     signed = car.vx * Math.cos(car.angle) + car.vy * Math.sin(car.angle),
     kmh = Math.round(speed * 0.46);
