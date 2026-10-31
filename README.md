@@ -281,7 +281,7 @@ Use `npm run test:browser -- --project=firefox` to reproduce one engine.
 Browser failure reports are saved in `playwright-report/` and `test-results/`.
 
 The [GitHub Actions workflow](.github/workflows/ci.yml) runs on every branch
-push, every pull request, and manual runs. It reports five independent checks:
+push, every pull request, and manual runs. It reports the following checks:
 
 - **Formatting** checks Prettier formatting without changing files.
 - **Lint** checks JavaScript with ESLint and allows no warnings.
@@ -290,13 +290,15 @@ push, every pull request, and manual runs. It reports five independent checks:
   development tools, using `npm audit --audit-level=high`.
 - **Build and browser tests** packages the site and tests that exact output in
   Chromium, Firefox, and WebKit under `/td-racing/`, matching GitHub Pages hosting.
+  Each engine runs in a separate job; this required aggregate passes only when
+  all three browser jobs succeed.
 
 All jobs use Node.js 24, `npm ci`, the committed lockfile, and npm download
 caching. New commits cancel obsolete pull request runs. Browser reports,
 screenshots, and failure traces are available in the run's **Artifacts →
-browser-diagnostics** for seven days, including reports for successful runs.
+browser-diagnostics-<engine>** for seven days, including reports for successful runs.
 
-After all five checks pass on `master`, **Deploy to GitHub Pages** publishes
+After all required checks pass on `master`, **Deploy to GitHub Pages** publishes
 the tested `dist/` artifact without rebuilding it. Pull requests and other
 branches run checks only. The deployment job alone receives Pages write and
 OIDC permissions, and deployments run one at a time. `dist/` contains the game,
