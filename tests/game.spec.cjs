@@ -15,7 +15,10 @@ async function startSession(page) {
 test('packaged game loads, changes tracks and cars, and remembers selections', async ({
   page,
   baseURL,
+  browserName,
 }) => {
+  // Software canvas rendering makes the full circuit/car sweep slower in WebKit.
+  if (browserName === 'webkit') test.setTimeout(180_000);
   const origin = new URL(baseURL).origin + '/';
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -117,15 +120,19 @@ test('gamepad can navigate and confirm the session setup wizard', async ({
     'Controller connected',
   );
 
+  await expect(page.locator('#selection-dialog')).toBeVisible();
   const press = async (button) => {
-    await page.evaluate((index) => {
+    await page.evaluate(async (index) => {
+      // Let the animation-frame poll observe both edges even on slow renderers.
+      const frames = () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
       window.fakePad.buttons[index].pressed = true;
-    }, button);
-    await page.waitForTimeout(100);
-    await page.evaluate((index) => {
+      await frames();
       window.fakePad.buttons[index].pressed = false;
+      await frames();
     }, button);
-    await page.waitForTimeout(100);
   };
   await press(0);
   await expect(page.locator('#picker-title')).toHaveText(

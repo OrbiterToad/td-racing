@@ -4,6 +4,8 @@ const baseURL = `http://127.0.0.1:${port}/td-racing/`;
 
 module.exports = defineConfig({
   testDir: './tests',
+  // Each scenario has its own page; shard individual tests evenly in CI.
+  fullyParallel: true,
   // Node simulation tests use .test.mjs; browser tests use .spec.cjs.
   testMatch: '**/*.spec.cjs',
   forbidOnly: !!process.env.CI,
@@ -12,9 +14,12 @@ module.exports = defineConfig({
   timeout: 60_000,
   expect: { timeout: 15_000 },
   reporter: [['list'], ['html', { open: 'never' }]],
+  projects: ['chromium', 'firefox', 'webkit'].map((browserName) => ({
+    name: browserName,
+    use: { browserName },
+  })),
   use: {
     baseURL,
-    browserName: 'chromium',
     viewport: { width: 1440, height: 1000 },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

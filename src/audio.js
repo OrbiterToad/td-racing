@@ -81,9 +81,11 @@ export function ensureAudio() {
 }
 
 export function syncSoundButtons() {
+  const label = state.soundEnabled ? '♪ Sound on' : '♪ Sound off';
   for (const button of [$('sound'), $('settings-sound')]) {
     if (!button) continue;
-    button.textContent = state.soundEnabled ? '♪ Sound on' : '♪ Sound off';
+    // Keep the pointer target intact when gesture activation leaves sound on.
+    if (button.textContent !== label) button.textContent = label;
     button.classList.toggle('sound-on', state.soundEnabled);
     button.setAttribute('aria-pressed', String(state.soundEnabled));
   }

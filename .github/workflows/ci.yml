@@ -50,9 +50,25 @@ jobs:
         run: ${{ matrix.command }}
 
   browser:
-    name: Build and browser tests
+    name: Browser tests (${{ matrix.browser }}, ${{ matrix.shard }}/${{ matrix.shards }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            shard: 1
+            shards: 1
+          - browser: firefox
+            shard: 1
+            shards: 1
+          - browser: webkit
+            shard: 1
+            shards: 2
+          - browser: webkit
+            shard: 2
+            shards: 2
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -67,29 +83,38 @@ jobs:
         run: npm ci
       - name: Build static site
         run: npm run build
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install ${{ matrix.browser }}
+        run: npx playwright install --with-deps ${{ matrix.browser }}
       - name: Test packaged site at the Pages subpath
-        run: npm run test:browser
+        run: npm run test:browser -- --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/${{ matrix.shards }}
       - name: Upload browser diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: browser-diagnostics
+          name: browser-diagnostics-${{ matrix.browser }}-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
           if-no-files-found: ignore
           retention-days: 7
       - name: Upload tested site
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        if: matrix.browser == 'chromium' && github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
+  browser-checks:
+    name: Build and browser tests
+    needs: browser
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all three browser projects
+        run: test "${{ needs.browser.result }}" = success
+
   deploy:
     name: Deploy to GitHub Pages
-    needs: [checks, browser]
+    needs: [checks, browser-checks]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 10

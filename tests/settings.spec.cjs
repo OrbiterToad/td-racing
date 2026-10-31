@@ -330,25 +330,48 @@ test('settings open from play and pause preserve the in-progress lap', async ({
     input.value = '125';
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
+  // Settings must freeze the clock across rendered frames, before resuming play.
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  expect(
+    await page.evaluate(async () => {
+      const { race } = await import('./src/state.js');
+      return race.time;
+    }),
+  ).toBe(held.time);
   await page.keyboard.press('Escape');
   await expect(page.locator('#settings-session')).toBeFocused();
   await expect(page.locator('#pause-screen')).not.toHaveClass('open');
-  expect(
-    await page.evaluate(async () => {
-      const { car, race, state } = await import('./src/state.js');
-      return {
-        x: car.x,
-        y: car.y,
-        time: race.time,
-        lap: race.lap,
-        paused: state.paused,
-        sensitivity: state.settings.steeringSensitivity,
-      };
-    }),
-  ).toMatchObject({ ...held, paused: false, sensitivity: 1.25 });
+  const resumed = await page.evaluate(async () => {
+    const { car, race, state } = await import('./src/state.js');
+    return {
+      x: car.x,
+      y: car.y,
+      time: race.time,
+      lap: race.lap,
+      paused: state.paused,
+      sensitivity: state.settings.steeringSensitivity,
+    };
+  });
+  expect(resumed).toMatchObject({
+    x: held.x,
+    y: held.y,
+    lap: held.lap,
+    paused: false,
+    sensitivity: 1.25,
+  });
+  expect(resumed.time).toBeGreaterThanOrEqual(held.time);
 
   await page.locator('#pause').click();
   await expect(page.locator('#pause-screen')).toHaveClass('open');
+  const pausedTime = await page.evaluate(async () => {
+    const { race } = await import('./src/state.js');
+    return race.time;
+  });
   await page.locator('#settings-pause').click();
   await expect(page.locator('#settings-dialog')).toBeVisible();
   await page.locator('#settings-done').click();
@@ -359,7 +382,7 @@ test('settings open from play and pause preserve the in-progress lap', async ({
       const { race } = await import('./src/state.js');
       return race.time;
     }),
-  ).toBeCloseTo(42, 0);
+  ).toBe(pausedTime);
 });
 
 test('out-of-range saved values use safe defaults while valid mute persists', async ({
