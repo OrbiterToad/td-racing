@@ -36,6 +36,7 @@ import {
   updateHUD,
 } from './ui.js';
 import { buildWorld } from './world.js';
+import { initTouchControls } from './touch-controls.js';
 
 export function changeTrack(id, announce = true) {
   if (!configureTrack(id)) return;
@@ -150,6 +151,7 @@ export function initializeGame() {
   } catch (_) {}
   initModalKeyboard();
   initPicker();
+  initTouchControls();
   openSessionSetup();
   state.pendingTrack = initial;
   $('pause').onclick = () => setPaused(!state.paused);
