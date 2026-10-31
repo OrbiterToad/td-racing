@@ -108,22 +108,6 @@ export function paintPitRails(c) {
       c.lineWidth = 4;
       c.stroke();
     }
-  for (const [p, label] of [
-    [pitLane.points[18], street ? 'SERVICE ENTRY' : 'PIT ENTRY'],
-    [
-      pitLane.points[pitLane.points.length - 19],
-      street ? 'RETURN' : 'PIT EXIT',
-    ],
-  ]) {
-    c.save();
-    c.translate(p.x, p.y);
-    c.rotate(Math.atan2(p.ty, p.tx));
-    c.fillStyle = '#e5ebd8';
-    c.font = 'bold 12px Arial';
-    c.textAlign = 'center';
-    c.fillText(label, 0, -pitLane.road - 12);
-    c.restore();
-  }
   // The alternate route also crosses the timing line, so a pit lap counts.
   const index = pitLane.points.findIndex(
       (p) =>

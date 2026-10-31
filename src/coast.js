@@ -292,10 +292,6 @@ export function paintCoastLandmarks(c) {
   c.strokeStyle = '#f7e7bd';
   c.lineWidth = 3;
   c.stroke();
-  c.fillStyle = '#f4ebc9';
-  c.font = '600 13px Arial';
-  c.textAlign = 'center';
-  c.fillText('FAROL', 0, 112);
   c.restore();
   const harbor = coastShoreFrame(state.paddock.x, state.paddock.y),
     nx = harbor.ty,
@@ -327,13 +323,6 @@ export function paintCoastLandmarks(c) {
         side === 1 ? '#5a9da8' : '#c98262',
       );
   }
-  c.restore();
-  c.save();
-  c.translate(harbor.x - nx * 85, harbor.y - ny * 85);
-  c.fillStyle = '#f3ecd4';
-  c.font = 'bold 18px Arial';
-  c.textAlign = 'center';
-  c.fillText('MARINA AZUL', 0, 0);
   c.restore();
   paintCoastBoat(c, 2050, -450, 0.7, '#c98262');
   paintCoastBoat(c, 2110, 850, -0.4, '#5a9da8');
