@@ -1574,6 +1574,146 @@
       #race-mode[aria-pressed='true'] {
         color: var(--lime);
       }
+      #touch-controls {
+        display: none;
+        position: absolute;
+        z-index: 3;
+        inset: auto 12px 10px;
+        align-items: end;
+        justify-content: space-between;
+        pointer-events: none;
+      }
+      .touch-steering,
+      .touch-pedals {
+        display: flex;
+        gap: 8px;
+        pointer-events: auto;
+      }
+      .touch-pedals {
+        align-items: end;
+      }
+      .touch-button {
+        min-width: 58px;
+        min-height: 58px;
+        padding: 8px;
+        border: 1px solid #ffffff55;
+        border-radius: 10px;
+        color: #edf0e8;
+        background: #182123d9;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .touch-button[data-key='KeyW'] {
+        color: #182123;
+        background: var(--lime);
+        border-color: var(--lime);
+      }
+      .touch-button[data-key='Space'] {
+        min-width: 54px;
+        min-height: 42px;
+        margin-bottom: 66px;
+      }
+      .touch-button:active,
+      .touch-button[aria-pressed='true'] {
+        filter: brightness(1.25);
+        transform: translateY(1px);
+      }
+      body.touch-active #touch-controls {
+        touch-action: none;
+      }
+      @media (pointer: coarse), (max-width: 850px) {
+        #touch-controls {
+          display: flex;
+        }
+        .map-card {
+          display: none;
+        }
+        .bottom-left {
+          bottom: 80px;
+        }
+        .bottom-right {
+          left: 50%;
+          right: auto;
+          bottom: 81px;
+          transform: translateX(-50%);
+        }
+        .speed-panel {
+          width: 154px;
+          padding: 8px 10px;
+          background: #182123e8;
+        }
+        .speed-head,
+        .rpm,
+        .pedals {
+          display: none;
+        }
+        .speed-number {
+          font-size: 42px;
+        }
+        .surface-chip {
+          display: none;
+        }
+        #touch-pause {
+          position: absolute;
+          left: 50%;
+          bottom: 0;
+          transform: translateX(-50%);
+          min-width: 82px;
+          min-height: 38px;
+          pointer-events: auto;
+        }
+      }
+      @media (max-width: 560px) {
+        #touch-controls {
+          inset-inline: 7px;
+          bottom: 7px;
+        }
+        .touch-steering,
+        .touch-pedals {
+          gap: 5px;
+        }
+        .touch-button {
+          min-width: 51px;
+          min-height: 54px;
+          padding: 6px;
+          font-size: 10px;
+        }
+        .touch-button[data-key='Space'] {
+          min-width: 48px;
+          min-height: 38px;
+          margin-bottom: 59px;
+        }
+        .bottom-right {
+          bottom: 72px;
+        }
+        .speed-panel {
+          width: 126px;
+          padding: 5px 8px;
+        }
+        .speed-number {
+          font-size: 35px;
+        }
+      }
+      @media (max-height: 460px) and (pointer: coarse) {
+        #touch-controls {
+          bottom: 4px;
+        }
+        .touch-button {
+          min-width: 48px;
+          min-height: 48px;
+        }
+        .touch-button[data-key='Space'] {
+          min-height: 34px;
+          margin-bottom: 50px;
+        }
+        .bottom-right {
+          bottom: 57px;
+        }
+      }
     </style>
   </head>
   <body class="starting">
@@ -1695,6 +1835,30 @@
             </div>
           </div>
         </div>
+      </div>
+      <div id="touch-controls" aria-label="Touch driving controls">
+        <div class="touch-steering" aria-label="Steering">
+          <button class="touch-button" data-key="KeyA" aria-label="Steer left">
+            ◀
+          </button>
+          <button class="touch-button" data-key="KeyD" aria-label="Steer right">
+            ▶
+          </button>
+        </div>
+        <div class="touch-pedals" aria-label="Pedals and handbrake">
+          <button class="touch-button" data-key="Space" aria-label="Handbrake">
+            HANDBRAKE
+          </button>
+          <button class="touch-button" data-key="KeyS" aria-label="Brake">
+            BRAKE
+          </button>
+          <button class="touch-button" data-key="KeyW" aria-label="Throttle">
+            GO
+          </button>
+        </div>
+        <button class="touch-button" id="touch-pause" aria-label="Pause">
+          Ⅱ Pause
+        </button>
       </div>
       <div
         class="start-countdown"
