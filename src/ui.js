@@ -133,7 +133,7 @@ function selectChoice(id) {
   renderPicker();
 }
 
-function stepSelection(direction) {
+export function stepSelection(direction) {
   const ids = Object.keys(pickerChoices()).filter(
     (id) =>
       state.pickerMode !== 'modes' || id !== 'race' || clubRaceAvailable(),

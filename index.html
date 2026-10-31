@@ -401,6 +401,10 @@
         gap: 20px;
         align-items: center;
       }
+      #gamepad-status {
+        color: #98aaa0;
+        white-space: nowrap;
+      }
       .control {
         display: flex;
         gap: 7px;
@@ -1880,6 +1884,11 @@
             Handbrake<br />R · Recover car &nbsp; N · Restart<br />Esc ·
             Pause<br />Complete a clean lap to set your best time.
           </p>
+          <p>
+            Left stick · Steer &nbsp; RT / LT · Throttle / brake<br />LB / RB ·
+            Handbrake &nbsp; A / B · Select / back<br />Y · Restart &nbsp; Start
+            · Pause
+          </p>
           <button class="primary" id="resume">BACK ON TRACK →</button>
           <p>
             <a class="credits" href="ASSETS.txt" target="_blank" rel="noopener"
@@ -1935,6 +1944,9 @@
     </dialog>
     <footer>
       <div class="controls">
+        <span class="control" id="gamepad-status" role="status"
+          >No controller detected</span
+        >
         <span class="control"><kbd>W A S D</kbd> Drive</span
         ><span class="control"><kbd>SPACE</kbd> Handbrake</span
         ><span class="control"><kbd>R</kbd> Recover</span

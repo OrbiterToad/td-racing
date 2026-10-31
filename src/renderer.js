@@ -23,7 +23,15 @@ import {
 import { pitAsphalt } from './terrain.js';
 import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
-import { $, updateHUD } from './ui.js';
+import { restartRun } from './race.js';
+import {
+  $,
+  applyPicker,
+  closePicker,
+  setPaused,
+  stepSelection,
+  updateHUD,
+} from './ui.js';
 
 export function paintPitRoad(c) {
   const points = pitLane.points;
@@ -368,6 +376,56 @@ export function draw() {
     state.lastHUD = millis();
   }
   updateAudio();
+}
+
+let gamepadPolling = false;
+
+export function startGamepadPolling() {
+  if (gamepadPolling) return;
+  gamepadPolling = true;
+  const frame = () => {
+    pollGamepad();
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
+function pollGamepad() {
+  const input = state.gamepadInput;
+  if (!input || !navigator.getGamepads) return;
+  const now = performance.now();
+  if (input.padIndex === null && now < input.nextScan) return;
+  const frame = input.update(navigator.getGamepads(), now);
+  $('gamepad-status').textContent = frame.connected
+    ? 'Controller connected'
+    : 'No controller detected';
+  if (!state.gamepadReady) {
+    state.gamepadControls = { steer: 0, throttle: 0, brake: 0, handbrake: 0 };
+    return;
+  }
+  const pickerOpen = $('selection-dialog').open;
+  if (pickerOpen) {
+    for (const action of frame.actions) {
+      if (action === 'previous') stepSelection(-1);
+      if (action === 'next') stepSelection(1);
+      if (action === 'confirm') applyPicker();
+      if (action === 'back') closePicker();
+    }
+  } else {
+    for (const action of frame.actions) {
+      if (action === 'pause') setPaused(!state.paused);
+      if (action === 'back' && state.paused) setPaused(false);
+      if (action === 'restart') restartRun();
+    }
+  }
+  const blocked = state.paused || pickerOpen;
+  if (blocked) state.gamepadNeedsNeutral = true;
+  const neutral = Object.values(frame.controls).every((value) => !value);
+  if (state.gamepadNeedsNeutral && neutral) state.gamepadNeedsNeutral = false;
+  state.gamepadControls =
+    blocked || state.gamepadNeedsNeutral
+      ? { steer: 0, throttle: 0, brake: 0, handbrake: 0 }
+      : frame.controls;
 }
 
 export function drawCar(c) {
