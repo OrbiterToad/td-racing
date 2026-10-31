@@ -33,9 +33,9 @@ Suggested format:
 
 **Open**, sorted by progress (highest first):
 
-| Agent | Progress | Task / location | Latest state / next step |
-|---|---:|---|---|
-| Agent N | 🟢 90% | Task · `ai/branch` · `/path/to/worktree` · [PR #N](link) | Checks running; waiting for required CI |
+| Agent   | Progress | Task / location                                          | Latest state / next step                |
+| ------- | -------: | -------------------------------------------------------- | --------------------------------------- |
+| Agent N |   🟢 90% | Task · `ai/branch` · `/path/to/worktree` · [PR #N](link) | Checks running; waiting for required CI |
 
 **Done:** list completed assignments at ✅ 100%, with merged PR links where available.
 
