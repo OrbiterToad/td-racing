@@ -28,10 +28,11 @@ test('gamepad mapping applies a rescaled stick dead zone and maps driving contro
 
 test('button and directional actions fire once per press and again after release', () => {
   const input = new GamepadInput();
-  const held = pad({ pressed: [0, 9, 15] });
+  const held = pad({ pressed: [0, 2, 9, 15] });
   assert.deepEqual(input.update([held], 300).actions, [
     'confirm',
     'pause',
+    'rewind',
     'next',
   ]);
   assert.deepEqual(input.update([held], 320).actions, []);
@@ -39,6 +40,7 @@ test('button and directional actions fire once per press and again after release
   assert.deepEqual(input.update([held], 360).actions, [
     'confirm',
     'pause',
+    'rewind',
     'next',
   ]);
 });

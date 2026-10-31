@@ -21,6 +21,7 @@ import {
 import { nearestDriving, widthAt } from './tracks.js';
 import { driveVehicle } from './vehicle-physics.js';
 import { resolveCityTraffic, updateCityTraffic } from './traffic.js';
+import { recordRewindFrame } from './rewind.js';
 import { $ } from './ui.js';
 
 export function simulate(dt) {
@@ -168,6 +169,7 @@ export function simulate(dt) {
     p.r += dt * 7;
     if (p.life <= 0) particles.splice(i, 1);
   }
+  recordRewindFrame(dt);
 }
 
 export function triggerImpact(speed) {

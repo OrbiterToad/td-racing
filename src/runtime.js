@@ -38,9 +38,11 @@ import {
 } from './ui.js';
 import { buildWorld } from './world.js';
 import { initTouchControls } from './touch-controls.js';
+import { prepareRewindSession, rewind } from './rewind.js';
 
 export function changeTrack(id, announce = true) {
   if (!configureTrack(id)) return;
+  prepareRewindSession(id, state.activeCar.id);
   keys.clear();
   skidmarks.length = 0;
   particles.length = 0;
@@ -188,6 +190,7 @@ export function initializeGame() {
     if (state.paused) return;
     if (
       [
+        'Backspace',
         'KeyW',
         'KeyA',
         'KeyS',
@@ -207,6 +210,7 @@ export function initializeGame() {
       restartRun();
     }
     if (e.code === 'KeyR') recover(true);
+    if (e.code === 'KeyB' || e.code === 'Backspace') rewind();
   });
   window.addEventListener('keyup', (e) => keys.delete(e.code));
   window.addEventListener('blur', () => {
