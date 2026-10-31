@@ -5,6 +5,15 @@ async function openGame(page) {
   await page.goto('./');
   // Canvas creation precedes asynchronous scenery loading and event binding.
   await expect(page.locator('#race-mode')).toBeEnabled();
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#picker-title')).toHaveText(
+    'Choose your circuit.',
+  );
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#picker-title')).toHaveText('Choose your mode.');
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#selection-dialog')).not.toBeVisible();
 }
 
 async function renderedFrames(page) {
@@ -82,8 +91,8 @@ for (const picker of ['tracks', 'garage']) {
       await expect(
         page.locator(
           picker === 'tracks'
-            ? '[data-track="juniper"]'
-            : '[data-car="clubsport"]',
+            ? '[data-choice="juniper"]'
+            : '[data-choice="clubsport"]',
         ),
       ).toHaveAttribute('aria-pressed', 'true');
       if (picker === 'garage')
@@ -144,8 +153,7 @@ test('paint changes preserve an active club race and persist after reload', asyn
   expect(session.time).toBeGreaterThanOrEqual(42);
   expect(session.elapsed).toBeGreaterThanOrEqual(100);
   await page.reload();
-  await expect(page.locator('#race-mode')).toBeEnabled();
-  await page.locator('#open-garage').click();
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   await expect(
     page.getByRole('button', { name: 'Paint Ocean', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');

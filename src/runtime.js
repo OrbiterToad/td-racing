@@ -26,7 +26,14 @@ import {
 } from './state.js';
 import { configureTrack } from './tracks.js';
 import { loadTrafficArt } from './traffic.js';
-import { $, initPicker, notify, setPaused, updateHUD } from './ui.js';
+import {
+  $,
+  initPicker,
+  notify,
+  openSessionSetup,
+  setPaused,
+  updateHUD,
+} from './ui.js';
 import { buildWorld } from './world.js';
 
 export function changeTrack(id, announce = true) {
@@ -129,7 +136,7 @@ export function setup() {
   } catch (_) {}
   loadCarArt();
   noLoop();
-  $('hint').textContent = 'Loading the circuit…';
+  document.body.classList.add('starting');
   loadSceneryAssets().then(initializeGame);
 }
 
@@ -140,8 +147,9 @@ export function initializeGame() {
     const saved = localStorage.getItem('apex-selected-track');
     if (Object.hasOwn(MAPS, saved)) initial = saved;
   } catch (_) {}
-  changeTrack(initial, false);
   initPicker();
+  openSessionSetup();
+  state.pendingTrack = initial;
   $('pause').onclick = () => setPaused(!state.paused);
   $('resume').onclick = () => setPaused(false);
   $('sound').onclick = toggleSound;
