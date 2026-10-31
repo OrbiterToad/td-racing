@@ -1,6 +1,6 @@
 import { carImagePath, configureCar, loadCarArt } from './cars.js';
 import { CFG, PAINTS } from './config.js';
-import { clamp, lerpTo } from './math.js';
+import { clamp } from './math.js';
 import { inWorldView, roundedRect } from './renderer.js';
 import { changeTrack } from './runtime.js';
 import {
@@ -12,6 +12,11 @@ import {
   track,
 } from './state.js';
 import { nearestDriving, pointOnTrack } from './tracks.js';
+import {
+  driveVehicle,
+  resolveVehicleBarrier,
+  resolveVehicleCollision,
+} from './vehicle-physics.js';
 import { $, formatTime, notify, syncCarHUD } from './ui.js';
 
 export { opponentRace };
@@ -24,7 +29,7 @@ export function toggleOpponentRace() {
     loadCarArt();
     syncCarHUD();
     changeTrack('juniper', false);
-    notify('CLUB RACE · Three laps · Non-contact opponents');
+    notify('CLUB RACE · Three laps · Full contact');
   } else {
     changeTrack(state.activeMap.id, false);
     notify('TIME TRIAL · Find your next personal best');
@@ -42,8 +47,8 @@ export function resetOpponentRace() {
   if (!opponentRace.enabled) return;
   const count = Math.ceil(track.totalLength / 80);
   opponentRace.spacing = track.totalLength / count;
-  // A speed plan based on curvature and oil, with a braking envelope so the
-  // drivers slow before a corner. No speed changes depend on player position.
+  // Set safe target speeds for each corner, then let the shared car physics
+  // decide how the AI reaches those speeds.
   for (let i = 0; i < count; i++) {
     const s = i * opponentRace.spacing,
       p = pointOnTrack(s),
@@ -62,7 +67,7 @@ export function resetOpponentRace() {
     opponentRace.profile.push(
       Math.min(
         335,
-        Math.sqrt(300 / Math.max(turn / 80, 0.0001)),
+        Math.sqrt(40 / Math.max(turn / 80, 0.0001)),
         oily ? 155 : Infinity,
       ),
     );
@@ -72,7 +77,7 @@ export function resetOpponentRace() {
       const next = opponentRace.profile[(i + 1) % count];
       opponentRace.profile[i] = Math.min(
         opponentRace.profile[i],
-        Math.sqrt(next * next + 2 * 220 * opponentRace.spacing),
+        Math.sqrt(next * next + 2 * 10 * opponentRace.spacing),
       );
     }
   }
@@ -96,12 +101,19 @@ export function resetOpponentRace() {
       s: -90 - slot * 80,
       speed: 0,
       pace: [0.98, 0.91, 0.84][i],
-      lane: [-26, 26, 0][i],
-      offset: CFG.road * 0.4 * (slot % 2 ? 1 : -1),
+      lane: [-8, 8, 0][i],
+      offset: [-8, 8, 0][i],
+      vx: 0,
+      vy: 0,
+      yaw: 0,
+      steer: 0,
+      slickTime: 0,
       brake: false,
       finish: null,
     };
     positionOpponent(rival);
+    rival.trackS =
+      ((rival.s % track.totalLength) + track.totalLength) % track.totalLength;
     opponentRace.cars.push(rival);
   }
 }
@@ -120,17 +132,50 @@ export function updateOpponents(dt) {
     return;
   opponentRace.elapsed += dt;
   const length = track.totalLength,
-    finish = length * opponentRace.laps;
+    finish = length * opponentRace.laps,
+    vehicle = state.activeCar;
   for (const rival of opponentRace.cars) {
     if (rival.finish !== null) continue;
-    const s = ((rival.s % length) + length) % length,
+    const current = nearestDriving(rival.x, rival.y),
+      currentS = current.progress * length,
+      s = ((rival.s % length) + length) % length,
       index = Math.floor(s / opponentRace.spacing),
-      target = opponentRace.profile[index] * rival.pace,
-      previous = rival.s;
+      target = opponentRace.profile[index] * rival.pace * 0.7,
+      lookAhead = clamp(70 + rival.speed * 0.12, 70, 130),
+      ahead = pointOnTrack(currentS + lookAhead),
+      currentAngle = Math.atan2(current.ty, current.tx),
+      aheadAngle = Math.atan2(ahead.ty, ahead.tx),
+      turnAhead = Math.atan2(
+        Math.sin(aheadAngle - currentAngle),
+        Math.cos(aheadAngle - currentAngle),
+      ),
+      headingError = Math.atan2(
+        Math.sin(currentAngle - rival.angle),
+        Math.cos(currentAngle - rival.angle),
+      ),
+      lateralError = current.side * current.distance - rival.lane,
+      steeringRange =
+        (0.52 / (1 + Math.max(0, rival.speed) / 190)) * vehicle.steering,
+      desiredAngle =
+        Math.atan((vehicle.wheelbase * turnAhead) / lookAhead) +
+        headingError -
+        Math.atan2(4 * lateralError, rival.speed + 15),
+      steer = clamp(desiredAngle / steeringRange, -1, 1);
     rival.brake = rival.speed > target + 5;
-    rival.speed += clamp(target - rival.speed, -250 * dt, 150 * dt);
-    rival.offset = lerpTo(rival.offset, rival.lane, 1 - Math.exp(-dt));
-    rival.s += rival.speed * dt;
+    driveVehicle(
+      rival,
+      { steer, throttle: rival.speed < target - 4, brake: rival.brake },
+      dt,
+      vehicle,
+    );
+    const previous = rival.s,
+      progress = nearestDriving(rival.x, rival.y).progress * length;
+    let distance = progress - rival.trackS;
+    if (distance < -length / 2) distance += length;
+    else if (distance > length / 2) distance -= length;
+    rival.s += distance;
+    rival.trackS = progress;
+    rival.speed = Math.hypot(rival.vx, rival.vy);
     if (rival.s >= finish) {
       rival.finish =
         opponentRace.elapsed -
@@ -140,8 +185,25 @@ export function updateOpponents(dt) {
       rival.speed = 0;
       rival.brake = false;
     }
-    positionOpponent(rival);
   }
+}
+
+export function resolveOpponentCollisions() {
+  if (!opponentRace.enabled) return;
+  const vehicles = [
+    { vehicle: car, spec: state.activeCar },
+    ...opponentRace.cars.map((vehicle) => ({ vehicle, spec: state.activeCar })),
+  ];
+  for (let i = 0; i < vehicles.length; i++)
+    for (let j = i + 1; j < vehicles.length; j++)
+      resolveVehicleCollision(
+        vehicles[i].vehicle,
+        vehicles[j].vehicle,
+        vehicles[i].spec,
+        vehicles[j].spec,
+      );
+  for (const { vehicle, spec } of vehicles)
+    resolveVehicleBarrier(vehicle, spec);
 }
 
 export function opponentStandings() {
@@ -201,7 +263,7 @@ export function updateOpponentHUD() {
     .join('\n');
   $('race-help').textContent = opponentRace.finished
     ? 'N / Restart to race again · Time trial to leave'
-    : 'Non-contact · Pass every sector · R invalidates the lap';
+    : 'Full contact · Pass every sector · R invalidates the lap';
 }
 
 export function drawOpponents(c) {
