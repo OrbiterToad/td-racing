@@ -15,6 +15,7 @@ This file applies only to the Codex agent coordinating work across chats and age
 - Choose a model based on task difficulty to control token use: use `gpt-6-luna` for difficult or high-uncertainty tasks, and a lighter/basic model for easier tasks (for example, `gpt-5.6-luna` when available). Reassess if the task changes.
 - Format agent chat titles as `Agent N (Size) · Task`, keeping the agent number stable, choosing `Mini` for bounded tasks (such as documentation, tests, audits, or focused fixes) and `Big` for broader feature implementations. For example: `Agent 8 (Mini) · Coordinator documentation` or `Agent 5 (Big) · Gamepad support`.
 - Use the Codex chat tools to rename an agent's chat if its task or size changes, while keeping its number stable.
+- Give each assignment its own chat. When an agent finishes and is assigned different work, archive the completed task chat (the app supports archiving, not deleting), then create a fresh chat for the new task. Keep the agent number, and update the size label, task name, and model to fit the new assignment.
 
 ## Coordinating agents
 
