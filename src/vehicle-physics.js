@@ -136,6 +136,23 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
   vehicle.x += vehicle.vx * dt;
   vehicle.y += vehicle.vy * dt;
 
+  const barrier = resolveVehicleBarrier(vehicle, spec);
+  return {
+    ...barrier,
+    braking,
+    forward,
+    hand,
+    loose,
+    offroad,
+    lateral,
+    prevX,
+    prevY,
+    speed,
+    surface,
+  };
+}
+
+export function resolveVehicleBarrier(vehicle, spec = state.activeCar) {
   const after = nearestDriving(vehicle.x, vehicle.y),
     ax = Math.cos(vehicle.angle),
     ay = Math.sin(vehicle.angle),
@@ -158,22 +175,7 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
       vehicle.yaw *= 0.4;
     } else impact = 0;
   }
-  return {
-    after,
-    ax,
-    ay,
-    braking,
-    forward,
-    hand,
-    impact,
-    loose,
-    offroad,
-    lateral,
-    prevX,
-    prevY,
-    speed,
-    surface,
-  };
+  return { after, ax, ay, impact };
 }
 
 export function resolveVehicleCollision(a, b, specA, specB) {
