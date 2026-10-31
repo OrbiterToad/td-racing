@@ -54,10 +54,26 @@ export function simulate(dt) {
       { steer: steering, throttle: gas, brake: braking, handbrake: hand },
       dt,
     ),
-    { after, ax, ay, forward, lateral, loose, prevX, prevY, speed, surface } =
-      drive;
+    {
+      after,
+      ax,
+      ay,
+      forward,
+      lateral,
+      loose,
+      offroad,
+      prevX,
+      prevY,
+      speed,
+      surface,
+    } = drive;
   if (drive.impact > 65) {
-    burst(car.x + after.nx * after.side * 17, car.y + after.ny * after.side * 17, 'spark', 7);
+    burst(
+      car.x + after.nx * after.side * 17,
+      car.y + after.ny * after.side * 17,
+      'spark',
+      7,
+    );
     triggerImpact(drive.impact);
   }
   resolveCityTraffic();

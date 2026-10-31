@@ -84,11 +84,8 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
         : spec.power * (1 - clamp(forward / spec.ceiling, 0, 0.93));
   if (braking)
     acceleration +=
-      forward > 8
-        ? -spec.brakes
-        : -95 * (1 - clamp(-forward / 115, 0, 1));
-  if (hand && Math.abs(forward) > 2)
-    acceleration -= Math.sign(forward) * 105;
+      forward > 8 ? -spec.brakes : -95 * (1 - clamp(-forward / 115, 0, 1));
+  if (hand && Math.abs(forward) > 2) acceleration -= Math.sign(forward) * 105;
   if (surface === 'ICE') acceleration *= 0.3;
   if (surface === 'OIL') acceleration *= 0.55;
   acceleration -= forward * 0.12 + forward * Math.abs(forward) * spec.drag;
@@ -110,9 +107,7 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
   if (!gas && !braking && Math.abs(forward) < 3) forward = 0;
   forward += acceleration * dt;
   const steeringAngle =
-      vehicle.steer *
-      (0.52 / (1 + Math.abs(forward) / 190)) *
-      spec.steering,
+      vehicle.steer * (0.52 / (1 + Math.abs(forward) / 190)) * spec.steering,
     targetYaw =
       (forward / spec.wheelbase) * Math.tan(steeringAngle) * (hand ? 1.42 : 1);
   vehicle.yaw = lerpTo(
@@ -172,6 +167,7 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
     hand,
     impact,
     loose,
+    offroad,
     lateral,
     prevX,
     prevY,
