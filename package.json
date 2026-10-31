@@ -13,7 +13,8 @@
     "build": "node tools/build-site.cjs",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "check": "npm run format:check && npm run lint && npm test && npm run build && npm run test:browser"
+    "check": "npm run format:check && npm run lint && npm test && npm run build && npm run test:browser",
+    "benchmark": "node tools/benchmark.cjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
