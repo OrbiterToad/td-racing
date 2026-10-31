@@ -117,7 +117,6 @@ export function buildWorld() {
     c.fillStyle = '#e5e8d2';
     c.font = '600 18px Arial';
     c.textAlign = 'center';
-    c.fillText('CENTRAL PARK', 190, 780);
   }
   paintPitRoad(c);
   ribbon(
@@ -363,34 +362,6 @@ export function buildWorld() {
     c.restore();
   }
   paintPaddock(c);
-  // Circuit lettering is on the grass, read from directly overhead.
-  if (!urban) {
-    c.save();
-    c.translate(alpine ? -350 : -500, alpine ? 840 : -220);
-    c.fillStyle = desert ? '#ffe0a77a' : alpine ? '#829ea77a' : '#d1ddba70';
-    c.font = 'italic 900 92px Barlow Condensed, Impact, sans-serif';
-    c.textAlign = 'center';
-    c.fillText('APEX /', 0, 0);
-    c.font = '600 14px Barlow, sans-serif';
-    c.fillText(
-      urban
-        ? 'C I T Y   C I R C U I T'
-        : seaside
-          ? 'C O S T A   A Z U L'
-          : desert
-            ? 'D E S E R T   C A N Y O N'
-            : alpine
-              ? 'A L P I N E   P A S S'
-              : amazon
-                ? 'A M A Z O N A S'
-                : state.activeMap.id === 'rallycross'
-                  ? 'R I D G E W A Y   R X'
-                  : 'J U N I P E R   R A C E W A Y',
-      0,
-      30,
-    );
-    c.restore();
-  }
   if (seaside) paintCoastLandmarks(c);
   paintSceneryScene(c);
   // Direction arrows and numbered apex boards are flat markings.
@@ -408,34 +379,6 @@ export function buildWorld() {
     c.stroke();
     c.restore();
   }
-  // Braking references sit on the apron before the infield hairpin.
-  const markers = desert
-    ? [
-        [275, '150'],
-        [290, '100'],
-        [305, '50'],
-      ]
-    : [
-        [403, '150'],
-        [418, '100'],
-        [433, '50'],
-      ];
-  for (const [index, label] of markers) {
-    const p = track[index];
-    c.save();
-    c.translate(
-      p.x + p.nx * (widthAt('road', index / track.length) + 25),
-      p.y + p.ny * (widthAt('road', index / track.length) + 25),
-    );
-    c.rotate(Math.atan2(p.ty, p.tx));
-    c.fillStyle = '#e4e7cf';
-    c.fillRect(-13, -9, 26, 18);
-    c.fillStyle = '#263737';
-    c.font = 'bold 11px Arial';
-    c.textAlign = 'center';
-    c.fillText(label, 0, 4);
-    c.restore();
-  }
   if (desert)
     for (const progress of [0.15, 0.52]) {
       const p = track[Math.floor(progress * track.length)];
@@ -445,10 +388,6 @@ export function buildWorld() {
       for (const side of [-1, 1]) {
         c.fillStyle = '#f5c472';
         c.fillRect(-18, side * (CFG.road + 27) - 9, 36, 18);
-        c.fillStyle = '#5d4030';
-        c.font = 'bold 10px Arial';
-        c.textAlign = 'center';
-        c.fillText('NARROW', 0, side * (CFG.road + 27) + 3);
       }
       c.restore();
     }
