@@ -68,6 +68,10 @@ Scenery shares one placement plan: buildings reserve their full plots first,
 then small props and trees fill the remaining space without overlapping.
 Ground details render below props, rooftops, and tree canopies. City park
 paths and the fountain stay clear, as does the monkey’s perch in Amazonas.
+Homes, cabins, village buildings, and cafés get reserved driveways or gravel
+walks to the roadside verge where a clear route is available. Paddock garages
+are grouped into blue and red team zones, each with matching transport and
+service equipment.
 
 The pack loads once into a reusable raster cache. Static scenery remains
 baked into the world canvas, so the new detail does not add per-frame SVG
