@@ -390,6 +390,42 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
   await expect(page.locator('#pause-screen')).toHaveClass('open');
 });
 
+for (const pixelRatio of [1, 2]) {
+  test(`track preview uses device scale ${pixelRatio} and redraws on resize`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 1000 },
+      deviceScaleFactor: pixelRatio,
+    });
+    const page = await context.newPage();
+    await page.route('https://**/*', (route) => route.abort());
+    await page.goto(
+      `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || 4173}/td-racing/`,
+    );
+    await page.locator('#picker-apply').click();
+    const preview = page.locator('#selected-preview');
+    const assertResolution = async () => {
+      await page.waitForTimeout(50);
+      const dimensions = await preview.evaluate((canvas) => {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          width: canvas.width,
+          height: canvas.height,
+          expectedWidth: Math.round(rect.width * devicePixelRatio),
+          expectedHeight: Math.round(rect.height * devicePixelRatio),
+        };
+      });
+      expect(dimensions.width).toBe(dimensions.expectedWidth);
+      expect(dimensions.height).toBe(dimensions.expectedHeight);
+    };
+    await assertResolution();
+    await page.setViewportSize({ width: 1200, height: 900 });
+    await assertResolution();
+    await context.close();
+  });
+}
+
 for (const viewport of [
   { width: 1920, height: 1080 },
   { width: 1280, height: 720 },
