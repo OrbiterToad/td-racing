@@ -2,11 +2,20 @@
 
 This file applies only to the Codex agent coordinating work across chats and agents. It is not project-agent guidance. Project agents should follow `AGENTS.md` and their assigned task; the coordinator must not send or assign this file to them.
 
+## Handling user requests
+
+- First distinguish an information request from an actionable request. Answer ordinary questions and requests for information directly in the coordinating chat.
+- Treat feature requests, bug reports, feedback, and other instructions that call for project work as tracked tasks. Capture the requested outcome and relevant acceptance criteria, then assign the task to an agent.
+- If every agent is occupied, add the task to the tracked queue and assign it when an agent next becomes free. Keep the queued task visible in coordinator status updates.
+- The coordinator owns assignment, coordination, dependencies, status reporting, and review/merge follow-through. Agents carry out repository implementation under their assigned task instructions. The coordinator must not implement project tasks directly.
+- Keep this routing rule scoped to the coordinator role. Project agents should follow their assigned task and repository guidance; they do not route ordinary questions through this process.
+
 ## Creating agent chats
 
-- When creating a new agent chat, select the `gpt-6-luna` model.
-- Keep each agent chat title numbered using the next available agent number and a concise task name, such as `Agent 8 · Tutorial & onboarding`.
-- Use the Codex chat tools to rename an agent's chat if its task changes, and keep its number stable.
+- Choose a model based on task difficulty to control token use: use `gpt-6-luna` for difficult or high-uncertainty tasks, and a lighter/basic model for easier tasks (for example, `gpt-5.6-luna` when available). Reassess if the task changes.
+- Format agent chat titles as `Agent N (Size) · Task`, keeping the agent number stable, choosing `Mini` for bounded tasks (such as documentation, tests, audits, or focused fixes) and `Big` for broader feature implementations. For example: `Agent 8 (Mini) · Coordinator documentation` or `Agent 5 (Big) · Gamepad support`.
+- Use the Codex chat tools to rename an agent's chat if its task or size changes, while keeping its number stable.
+- Give each assignment its own chat. When an agent finishes and is assigned different work, archive the completed task chat (the app supports archiving, not deleting), then create a fresh chat for the new task. Keep the agent number, and update the size label, task name, and model to fit the new assignment.
 
 ## Coordinating agents
 
