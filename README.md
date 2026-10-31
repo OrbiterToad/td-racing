@@ -68,6 +68,10 @@ Scenery shares one placement plan: buildings reserve their full plots first,
 then small props and trees fill the remaining space without overlapping.
 Ground details render below props, rooftops, and tree canopies. City park
 paths and the fountain stay clear, as does the monkey’s perch in Amazonas.
+Homes, cabins, village buildings, and cafés get reserved driveways or gravel
+walks to the roadside verge where a clear route is available. Paddock garages
+are grouped into blue and red team zones, each with matching transport and
+service equipment.
 
 The pack loads once into a reusable raster cache. Static scenery remains
 baked into the world canvas, so the new detail does not add per-frame SVG
@@ -252,6 +256,9 @@ ESLint checks project JavaScript and excludes bundled assets. `npm test` runs
 the simulation assertions in `verify.mjs`. The browser test serves the packaged
 site at `/td-racing/`, checks every circuit, changes cars, checks saved selections
 and pause controls, and reports missing local assets or JavaScript errors.
+Session tests cover canceling track/car/paint drafts, restoring pause state,
+keeping club-race progress when changing paint, clearing held controls on focus
+loss, and playing with malformed, blocked, or full browser storage.
 External requests are blocked to verify the game works with bundled p5.js.
 Set `PLAYWRIGHT_PORT` to use another local browser-test port when needed.
 Browser failure reports are saved in `playwright-report/` and `test-results/`.

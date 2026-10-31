@@ -133,6 +133,8 @@ export const sceneryTrees = [];
 
 export const sceneryScene = [];
 
+export const sceneryAccess = [];
+
 // Club races run physics-driven opponents with vehicle contact enabled.
 export const opponentRace = {
   enabled: false,
