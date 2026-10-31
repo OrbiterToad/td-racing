@@ -87,10 +87,7 @@ test('module callbacks keep driving, resize, pause, and restart working', async 
   await page.route('https://**/*', (route) => route.abort());
   await page.goto('./');
   await expect(page.locator('#game canvas.p5Canvas')).toBeVisible();
-  await page.waitForFunction(async () => {
-    const { race } = await import('./src/state.js');
-    return race.countdown === 0;
-  });
+  await expect(page.locator('#start-countdown')).toHaveText(/^[123]$|^GO!$/);
   await page.keyboard.down('KeyW');
   await expect
     .poll(() =>
