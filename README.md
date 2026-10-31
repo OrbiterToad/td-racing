@@ -451,5 +451,5 @@ checks and require a merge before they reach production.
 
 If deployment fails, check **Settings → Pages** uses GitHub Actions and the
 `github-pages` environment allows `master`. If a check fails, open that job's
-logs; for browser failures, download `browser-diagnostics` and open the HTML
+logs; for browser failures, download `browser-diagnostics-<engine>` and open the HTML
 report with `npx playwright show-report <path-to-playwright-report>`.
