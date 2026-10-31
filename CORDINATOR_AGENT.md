@@ -12,7 +12,7 @@ This file applies only to the Codex agent coordinating work across chats and age
 
 ## Creating agent chats
 
-- When creating a new agent chat, select the `gpt-6-luna` model.
+- Choose a model based on task difficulty to control token use: use `gpt-6-luna` for difficult or high-uncertainty tasks, and a lighter/basic model for easier tasks (for example, `gpt-5.6-luna` when available). Reassess if the task changes.
 - Keep each agent chat title numbered using the next available agent number and a concise task name, such as `Agent 8 · Tutorial & onboarding`.
 - Use the Codex chat tools to rename an agent's chat if its task changes, and keep its number stable.
 
