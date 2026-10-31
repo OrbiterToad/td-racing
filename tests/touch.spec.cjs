@@ -1,7 +1,13 @@
 const { test, expect } = require('@playwright/test');
 
 test.describe('touch driving controls', () => {
-  test.use({ isMobile: true, hasTouch: true });
+  test.use({
+    hasTouch: true,
+    // Firefox supports touch input, but Playwright cannot emulate isMobile there.
+    isMobile: async ({ browserName }, use) => {
+      await use(browserName !== 'firefox');
+    },
+  });
 
   async function startSession(page, viewport) {
     await page.setViewportSize(viewport);
