@@ -1,0 +1,203 @@
+#tutorial-dialog {
+  --tutorial-lime: #d5f578;
+  box-sizing: border-box;
+  width: min(640px, calc(100vw - 32px));
+  max-width: none;
+  max-height: min(680px, calc(100dvh - 32px));
+  padding: 0;
+  overflow: auto;
+  border: 1px solid #9cae8d55;
+  border-radius: 8px;
+  color: #edf0e8;
+  background:
+    radial-gradient(ellipse at 90% 0, #d5f57814, transparent 46%),
+    linear-gradient(145deg, #243637, #111a1d 78%);
+  box-shadow: 0 24px 90px #000a;
+}
+
+#tutorial-dialog::backdrop {
+  background: #071012d9;
+  backdrop-filter: blur(5px);
+}
+
+.tutorial-shell {
+  display: flex;
+  min-height: 390px;
+  flex-direction: column;
+  padding: clamp(20px, 5vw, 38px);
+}
+
+.tutorial-topline,
+.tutorial-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tutorial-topline {
+  color: #a8b8ae;
+  font: 700 11px/1.2 monospace;
+  letter-spacing: 0.12em;
+}
+
+.tutorial-skip,
+.tutorial-secondary,
+.tutorial-primary,
+.guide-link {
+  min-height: 44px;
+  border: 1px solid #a8b8ae55;
+  border-radius: 4px;
+  color: #dce8d6;
+  background: #172426;
+  font: 700 12px/1.2 monospace;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.tutorial-skip {
+  min-height: 40px;
+  padding: 0 13px;
+  border-color: transparent;
+  color: #a8b8ae;
+  background: transparent;
+}
+
+#tutorial-dialog progress {
+  width: 100%;
+  height: 4px;
+  margin: 28px 0 30px;
+  appearance: none;
+  border: 0;
+  background: #ffffff20;
+}
+
+#tutorial-dialog progress::-webkit-progress-bar {
+  background: #ffffff20;
+}
+
+#tutorial-dialog progress::-webkit-progress-value {
+  background: var(--tutorial-lime);
+}
+
+#tutorial-dialog progress::-moz-progress-bar {
+  background: var(--tutorial-lime);
+}
+
+.tutorial-content {
+  flex: 1;
+}
+
+.tutorial-kicker {
+  color: var(--tutorial-lime);
+  font: 700 11px/1.3 monospace;
+  letter-spacing: 0.15em;
+}
+
+.tutorial-content h2 {
+  margin: 10px 0 12px;
+  color: #f2f3ec;
+  font:
+    800 clamp(34px, 7vw, 56px)/0.98 'Barlow Condensed',
+    Impact,
+    sans-serif;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.tutorial-content p {
+  max-width: 500px;
+  margin: 0;
+  color: #bdc9c1;
+  font-size: clamp(15px, 2.4vw, 18px);
+  line-height: 1.6;
+}
+
+.tutorial-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.tutorial-keys kbd {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid #d5f57855;
+  border-radius: 3px;
+  color: #e8f1d2;
+  background: #d5f5780c;
+  font: 700 11px/1.2 monospace;
+  letter-spacing: 0.04em;
+}
+
+.tutorial-navigation {
+  margin-top: 32px;
+}
+
+.tutorial-secondary,
+.tutorial-primary {
+  min-width: 112px;
+  padding: 0 16px;
+}
+
+.tutorial-primary {
+  border-color: var(--tutorial-lime);
+  color: #14201d;
+  background: var(--tutorial-lime);
+}
+
+.tutorial-secondary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.tutorial-skip:hover,
+.tutorial-secondary:not(:disabled):hover,
+.guide-link:hover {
+  border-color: var(--tutorial-lime);
+  color: var(--tutorial-lime);
+}
+
+.tutorial-primary:hover {
+  background: #e4ffa1;
+}
+
+#tutorial-dialog button:focus-visible,
+#tutorial-help:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.guide-link {
+  margin: 12px 0 0;
+  padding: 0 14px;
+}
+
+@media (max-width: 520px) {
+  .tutorial-shell {
+    min-height: 0;
+    padding: 18px;
+  }
+
+  #tutorial-dialog progress {
+    margin: 18px 0 22px;
+  }
+
+  .tutorial-navigation {
+    margin-top: 24px;
+  }
+
+  .tutorial-secondary,
+  .tutorial-primary {
+    min-width: 0;
+    flex: 1;
+    padding: 0 10px;
+  }
+
+  .tutorial-skip {
+    padding: 0 4px;
+  }
+}

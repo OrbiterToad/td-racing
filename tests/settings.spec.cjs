@@ -72,6 +72,8 @@ async function startSession(page) {
   await page.locator('#picker-apply').click();
   await page.locator('#picker-apply').click();
   await expect(page.locator('#selection-dialog')).not.toBeVisible();
+  if (await page.locator('#tutorial-dialog').isVisible())
+    await page.locator('#tutorial-skip').click();
 }
 
 test('fresh preferences keep sound on, activate on a gesture, and save mute and volume', async ({
