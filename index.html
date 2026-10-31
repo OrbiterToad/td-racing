@@ -624,363 +624,787 @@
       }
       .header-actions {
         display: flex;
-        gap: 8px;
+        gap: 10px;
       }
-      .header-choice {
-        border: 1px solid #ffffff27;
-        color: #e7ece2;
-        background: #263235;
+      .header-choice,
+      .action {
+        min-height: 48px;
+        padding: 0 20px;
+        border: 1px solid #ffffff30;
         border-radius: 4px;
-        padding: 10px 13px;
-        font-size: 11px;
-        font-weight: 600;
+        background: #263235;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 700;
       }
-      .header-choice:hover {
+      .header-choice:hover,
+      .action:hover {
         border-color: var(--lime);
         color: var(--lime);
       }
-      dialog {
-        padding: 0;
-        border: 1px solid #ffffff26;
-        border-radius: 12px;
-        background: #192326;
-        color: var(--ink);
-        width: min(900px, calc(100vw - 36px));
-        max-height: calc(100vh - 36px);
-        box-shadow: 0 35px 100px #0007;
+      footer {
+        height: 74px;
       }
-      dialog::backdrop {
-        background: #10201be0;
-        backdrop-filter: blur(7px);
+      #game {
+        bottom: 74px;
+      }
+      .actions {
+        gap: 10px;
+      }
+      .pause-box {
+        width: min(460px, calc(100vw - 32px));
+        padding: 36px;
+      }
+      .pause-box .primary {
+        width: 100%;
+        min-height: 60px;
+        font-size: 16px;
+      }
+      body.starting > header,
+      body.starting > footer,
+      body.starting #game > :not(canvas) {
+        visibility: hidden;
+      }
+      body.starting #game {
+        background: #10191c !important;
+      }
+      #selection-dialog {
+        --lime: #d5f578;
+        position: fixed;
+        inset: 0;
+        margin: 0;
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        padding: clamp(20px, 3.5vw, 56px) clamp(24px, 5vw, 88px);
+        border: 0;
+        border-radius: 0;
+        color: #edf0e8;
+        background: radial-gradient(
+          ellipse at 18% 40%,
+          #2d4142 0,
+          #172326 45%,
+          #10191c 100%
+        );
+        overflow: hidden;
+      }
+      #selection-dialog[open] {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(12px, 2vh, 24px);
+      }
+      #selection-dialog::backdrop {
+        background: #10191c;
+      }
+      #selection-dialog::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          115deg,
+          transparent 40%,
+          #d5f57808 40.05%,
+          transparent 40.1%,
+          transparent 60%,
+          #d5f57808 60.05%,
+          transparent 60.1%
+        );
+        pointer-events: none;
       }
       .choosing #pause-screen {
         visibility: hidden;
       }
-      .picker-head {
-        padding: 24px 26px 18px;
+      .picker-head,
+      .picker-content,
+      .picker-bottom,
+      .picker-navigation {
         position: relative;
+        z-index: 1;
+      }
+      .picker-head {
+        flex: none;
+        padding-right: 180px;
       }
       .picker-head h2 {
         font:
-          700 41px/1 'Barlow Condensed',
+          800 clamp(32px, 4.8vw, 72px)/1 'Barlow Condensed',
           Impact,
           sans-serif;
-        margin: 8px 0 9px;
+        margin: 12px 0 10px;
+        text-transform: uppercase;
+        letter-spacing: -0.5px;
       }
       .picker-head p {
-        font-size: 12px;
-        color: #aebeb2;
+        color: #a9bbb7;
+        font-size: 14px;
         margin: 0;
-        max-width: 85%;
-        line-height: 1.5;
+      }
+      .picker-steps {
+        position: absolute;
+        right: 0;
+        bottom: 4px;
+        display: flex;
+        gap: 24px;
+        font-size: 12px;
+        color: #82938f;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+      .picker-steps span {
+        padding-bottom: 10px;
+        border-bottom: 2px solid #ffffff18;
+      }
+      .picker-steps .active {
+        color: var(--lime);
+        border-color: var(--lime);
       }
       .picker-close {
         position: absolute;
-        right: 20px;
-        top: 20px;
-        border: 1px solid #ffffff25;
+        right: 0;
+        top: 0;
+        min-height: 48px;
+        padding: 0 20px;
+        color: #dbe4da;
         background: #ffffff08;
-        color: #cad5c9;
-        border-radius: 50%;
-        width: 31px;
-        height: 31px;
-        font-size: 21px;
+        border: 1px solid #ffffff30;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+      .picker-close[hidden] {
+        display: none;
       }
       .picker-content {
-        padding: 0 24px 20px;
-        max-height: calc(100vh - 265px);
-        overflow: auto;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
       }
-      .choice-grid {
+      .selection-feature {
+        flex: 1;
+        min-height: 0;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-      }
-      .track-choice,
-      .car-choice {
-        display: block;
-        padding: 0;
-        text-align: left;
-        position: relative;
-        border: 1px solid #ffffff22;
-        border-radius: 7px;
-        background: #233033;
-        color: #eef1e8;
+        grid-template-columns: 58% 42%;
+        border: 1px solid #ffffff18;
+        background: #ffffff03;
+        border-radius: 6px;
         overflow: hidden;
-        transition:
-          transform 0.15s,
-          border-color 0.15s;
       }
-      .track-choice:hover,
-      .car-choice:hover {
-        transform: translateY(-2px);
-        border-color: #ffffff60;
-      }
-      .track-choice.selected {
-        border-color: var(--card-accent);
-        box-shadow: inset 0 0 0 1px var(--card-accent);
-      }
-      .car-choice.selected {
-        border-color: var(--lime);
-        box-shadow: inset 0 0 0 1px var(--lime);
-      }
-      .choice-number {
-        position: absolute;
-        left: 12px;
-        top: 12px;
-        font-size: 8px;
-        letter-spacing: 1.5px;
-        font-weight: 600;
-        color: #edf0e0;
-      }
-      .choice-check {
-        position: absolute;
-        right: 12px;
-        top: 10px;
-        font-size: 16px;
-        color: var(--card-accent, var(--lime));
-        z-index: 1;
-      }
-      .track-choice canvas {
-        display: block;
-        width: 100%;
-        height: 145px;
-        object-fit: cover;
-      }
-      .choice-body {
-        display: flex;
-        flex-direction: column;
-        padding: 15px 14px 13px;
-        gap: 7px;
-      }
-      .choice-tag {
-        font-size: 8px;
-        letter-spacing: 1.1px;
-        font-weight: 700;
-        color: var(--card-accent, var(--lime));
-      }
-      .choice-body strong {
-        font:
-          700 27px/1.1 'Barlow Condensed',
-          Impact,
-          sans-serif;
-      }
-      .choice-description {
-        font-size: 11px;
-        line-height: 1.5;
-        color: #b0c0b4;
-        min-height: 50px;
-      }
-      .choice-details {
-        border-top: 1px solid #ffffff15;
-        padding-top: 11px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        font-size: 8px;
-        letter-spacing: 0.5px;
-        color: #b7c5b8;
-      }
-      .choice-best {
-        color: var(--card-accent, var(--lime));
-        font-size: 10px;
-        font-variant-numeric: tabular-nums;
-      }
-      .picker-bottom {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-        justify-content: space-between;
-        padding: 15px 25px 20px;
-        border-top: 1px solid #ffffff15;
-      }
-      .picker-bottom p {
-        margin: 0;
-        font-size: 10px;
-        line-height: 1.5;
-        color: #a1b5a6;
-        max-width: 48%;
-      }
-      .picker-bottom .primary {
-        margin: 0;
-        white-space: nowrap;
-        font-size: 10px;
-        padding: 13px 19px;
-      }
-      .car-platform {
-        height: 115px;
+      .feature-art {
+        position: relative;
+        min-height: 0;
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
         background: radial-gradient(
           ellipse at center,
-          #5c706a66 0%,
-          #35474488 35%,
-          #1c292b 70%
+          #758e7940,
+          #22323455 50%,
+          #17232688
         );
       }
+      .feature-art::after {
+        content: '';
+        position: absolute;
+        inset: 12%;
+        border: 1px solid #ffffff0c;
+        border-radius: 50%;
+        transform: rotate(-15deg) scaleY(0.7);
+        pointer-events: none;
+      }
       .car-platform img {
-        height: 88px;
-        max-width: 80%;
+        height: min(29vh, 300px);
+        max-width: 60%;
+        max-height: 65%;
         object-fit: contain;
         transform: rotate(65deg);
-        filter: drop-shadow(5px 6px 1px #0004);
+        filter: drop-shadow(15px 18px 8px #0006);
+        z-index: 1;
+      }
+      .feature-watermark {
+        position: absolute;
+        bottom: -0.12em;
+        left: 0.06em;
+        font:
+          italic 900 clamp(60px, 10vw, 160px)/1 'Barlow Condensed',
+          Impact,
+          sans-serif;
+        color: #ffffff04;
+        letter-spacing: -0.03em;
+      }
+      .track-art canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .feature-copy {
+        padding: clamp(20px, 3vw, 48px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        border-left: 1px solid #ffffff0c;
+      }
+      .choice-tag {
+        font-size: 11px;
+        color: var(--card-accent);
+        font-weight: 700;
+        letter-spacing: 2px;
+      }
+      .feature-copy h3 {
+        font:
+          800 clamp(32px, 4vw, 64px)/1 'Barlow Condensed',
+          Impact,
+          sans-serif;
+        margin: 12px 0 16px;
+        text-transform: uppercase;
+      }
+      .feature-copy p {
+        color: #b5c5bf;
+        font-size: clamp(12px, 1.1vw, 16px);
+        line-height: 1.6;
+        margin: 0 0 24px;
+        max-width: 38ch;
       }
       .car-stats {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        font-size: 8px;
-        letter-spacing: 0.8px;
-        color: #adbdaf;
+        gap: 14px;
+        width: 100%;
+        max-width: 360px;
+        font-size: 10px;
+        letter-spacing: 1px;
+        color: #a9bbb4;
       }
       .car-stats > span {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
+        gap: 16px;
       }
       .car-stats i {
-        height: 4px;
-        width: 55%;
-        background: #ffffff17;
         display: block;
+        width: 58%;
+        height: 6px;
+        background: #ffffff12;
       }
       .car-stats b {
         display: block;
         height: 100%;
         background: var(--lime);
       }
+      .feature-record {
+        border-top: 1px solid #ffffff18;
+        padding-top: 18px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 10px;
+        color: #9caea8;
+        letter-spacing: 1px;
+      }
+      .feature-record strong {
+        color: var(--card-accent);
+        font:
+          600 32px/1 'Barlow Condensed',
+          Impact,
+          sans-serif;
+      }
+      .feature-condition {
+        margin-top: 16px;
+        color: #a9bbb4;
+        font-size: 11px;
+        letter-spacing: 1px;
+      }
+      .picker-steps[hidden] {
+        display: none;
+      }
+      .mode-banner {
+        position: absolute;
+        bottom: 24px;
+        left: 24px;
+        padding: 12px 16px;
+        color: #d5f578;
+        background: #10191ced;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 2px;
+      }
+      .mode-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        border-top: 1px solid #ffffff18;
+        padding-top: 18px;
+        font-size: 11px;
+        color: #98afa5;
+      }
+      .mode-summary b {
+        color: #edf0e8;
+        font-weight: 600;
+      }
+      .mode-tile {
+        flex-wrap: wrap;
+        align-content: flex-end;
+        column-gap: 24px;
+      }
+      .mode-note {
+        font-size: 12px;
+        color: #a9bbb4;
+      }
+      .mode-tile:disabled {
+        opacity: 0.48;
+        cursor: default;
+      }
+      .mode-tile:disabled:hover {
+        background: #203033;
+        border-color: #ffffff20;
+      }
+      #selection-dialog[data-mode='modes'] .choice-rail {
+        display: grid;
+      }
+      .choice-rail {
+        display: grid;
+        grid-template-columns: repeat(var(--choice-count), minmax(0, 1fr));
+        gap: 10px;
+        flex: none;
+      }
+      .choice-tile {
+        position: relative;
+        min-width: 0;
+        min-height: 94px;
+        padding: 16px 12px;
+        color: #d4dfd9;
+        background: #203033;
+        border: 1px solid #ffffff20;
+        border-radius: 4px;
+        text-align: left;
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+      }
+      .choice-tile:hover {
+        background: #2c3d3d;
+        border-color: #ffffff60;
+      }
+      .choice-tile.selected {
+        background: #d5f57814;
+        border: 2px solid var(--lime);
+        padding: 15px 11px;
+        color: var(--lime);
+      }
+      .choice-tile strong {
+        font:
+          700 clamp(14px, 1.4vw, 22px)/1.1 'Barlow Condensed',
+          Impact,
+          sans-serif;
+      }
+      .tile-number {
+        position: absolute;
+        top: 10px;
+        left: 12px;
+        color: #8ea39b;
+        font-size: 10px;
+        letter-spacing: 1px;
+      }
+      .tile-check {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        font-size: 14px;
+        color: var(--lime);
+      }
+      .choice-tile img {
+        height: 44px;
+        width: 26px;
+        object-fit: contain;
+        flex: none;
+      }
+      .tile-biome {
+        color: var(--card-accent);
+        font-size: 18px;
+      }
       .paint-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 14px;
-        padding: 18px 2px 0;
-        font-size: 10px;
+        gap: 16px;
+        color: #98afa5;
+        font-size: 11px;
         letter-spacing: 1px;
-        color: #a9bcb0;
+        flex: none;
       }
       .paint-row b {
-        color: #e1e9df;
+        color: #edf0e8;
       }
       .swatches {
         display: flex;
-        gap: 9px;
+        gap: 12px;
       }
       .swatch {
-        width: 30px;
-        height: 30px;
+        width: 44px;
+        height: 44px;
         border: 2px solid transparent;
         background: var(--paint);
         border-radius: 50%;
+        box-shadow: inset 0 0 0 4px #192326;
         color: white;
         font-weight: 700;
-        box-shadow: inset 0 0 0 3px #192326;
       }
       .swatch.selected {
-        border-color: #edf0df;
+        border-color: #edf0e8;
       }
       .swatch:hover {
-        transform: scale(1.1);
+        border-color: #ffffff80;
       }
-      @media (max-width: 760px) {
-        .header-choice {
-          font-size: 10px;
-          padding: 9px 10px;
+      .picker-navigation {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: none;
+      }
+      .browse-button {
+        width: 56px;
+        height: 48px;
+        background: #ffffff08;
+        color: #edf0e8;
+        border: 1px solid #ffffff30;
+        border-radius: 4px;
+        font-size: 24px;
+      }
+      .browse-button:hover,
+      .picker-close:hover {
+        background: #d5f57814;
+        border-color: var(--lime);
+      }
+      #picker-count {
+        font-size: 13px;
+        letter-spacing: 2px;
+        font-variant-numeric: tabular-nums;
+        min-width: 76px;
+        text-align: center;
+      }
+      .navigation-hint {
+        color: #91a59b;
+        font-size: 11px;
+        letter-spacing: 1px;
+        margin-left: 10px;
+      }
+      .picker-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding-top: 18px;
+        border-top: 1px solid #ffffff20;
+        flex: none;
+      }
+      .picker-bottom p {
+        font-size: 10px;
+        letter-spacing: 1px;
+        line-height: 1.6;
+        color: #9eb3a7;
+        margin: 0;
+      }
+      .picker-bottom .primary {
+        margin: 0;
+        min-height: 64px;
+        padding: 0 36px;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        border-radius: 3px;
+      }
+      .primary:hover {
+        background: #e4ffa3;
+      }
+      @media (max-width: 1000px) {
+        .choice-tile {
+          min-height: 88px;
         }
-        .picker-head {
-          padding: 20px;
+        .choice-tile img,
+        .tile-biome {
+          display: none;
+        }
+        .session {
+          display: none;
+        }
+        footer .controls {
+          display: none;
+        }
+        footer {
+          justify-content: center;
+        }
+        .feature-copy {
+          padding: 22px;
+        }
+      }
+      @media (max-height: 740px) {
+        #selection-dialog {
+          padding-top: 20px;
+          padding-bottom: 20px;
+        }
+        #selection-dialog[open] {
+          gap: 12px;
         }
         .picker-head h2 {
-          font-size: 34px;
+          font-size: 40px;
+          margin: 8px 0;
         }
         .picker-content {
-          padding: 0 16px 15px;
+          gap: 10px;
         }
-        .choice-grid {
-          gap: 8px;
+        .choice-tile {
+          min-height: 70px;
+          padding-top: 24px;
         }
-        .choice-body {
-          padding: 12px 10px;
+        .choice-tile.selected {
+          padding-top: 23px;
         }
-        .choice-body strong {
-          font-size: 25px;
+        .feature-copy h3 {
+          font-size: 36px;
+          margin: 8px 0;
         }
-        .choice-description {
-          font-size: 10px;
-          min-height: 62px;
-        }
-        .track-choice canvas {
-          height: 125px;
-        }
-        .picker-bottom {
-          padding: 14px 18px;
-        }
-        .session .live {
-          display: none;
-        }
-      }
-      @media (max-width: 560px) {
-        .choice-grid {
-          grid-template-columns: 1fr;
-        }
-        .track-choice {
-          display: grid;
-          grid-template-columns: 40% 60%;
-        }
-        .track-choice canvas {
-          height: 100%;
-          min-height: 190px;
-        }
-        .choice-number {
-          font-size: 7px;
-          left: 8px;
-        }
-        .choice-description {
-          min-height: 0;
-        }
-        .garage-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-        .garage-grid .choice-body {
-          padding: 9px 7px;
-        }
-        .garage-grid .choice-body strong {
-          font-size: 21px;
-        }
-        .garage-grid .choice-description {
-          display: none;
-        }
-        .garage-grid .choice-tag {
-          font-size: 7px;
-          letter-spacing: 0;
-        }
-        .car-platform {
-          height: 90px;
-        }
-        .car-platform img {
-          height: 65px;
+        .feature-copy p {
+          margin-bottom: 12px;
         }
         .car-stats {
-          font-size: 7px;
-          letter-spacing: 0;
+          gap: 8px;
+        }
+        .feature-copy {
+          padding: 18px 24px;
+        }
+        .feature-record {
+          padding-top: 10px;
+        }
+        .feature-condition {
+          margin-top: 10px;
+        }
+        .picker-bottom {
+          padding-top: 12px;
+        }
+        .picker-bottom .primary {
+          min-height: 54px;
+        }
+      }
+      @media (min-width: 651px) and (max-height: 650px) {
+        .selection-feature {
+          grid-template-columns: 50% 50%;
+        }
+        .feature-copy h3 {
+          font-size: 28px;
+          margin: 6px 0;
+        }
+        .feature-copy p {
+          font-size: 11px;
+          line-height: 1.4;
+          margin-bottom: 10px;
+        }
+        .feature-copy {
+          padding: 12px 20px;
+        }
+        .choice-tag {
+          font-size: 9px;
+        }
+        .car-stats {
+          gap: 7px;
+          font-size: 9px;
+        }
+      }
+      @media (max-height: 650px) {
+        .mode-summary {
+          gap: 8px;
+          padding-top: 10px;
+          font-size: 10px;
+        }
+      }
+      @media (max-width: 650px) {
+        #selection-dialog {
+          padding: 20px;
+        }
+        .picker-head {
+          padding-right: 0;
+        }
+        .picker-head .eyebrow {
+          font-size: 8px;
+          min-height: 36px;
+          display: flex;
+          align-items: center;
+        }
+        .picker-head h2 {
+          font-size: clamp(27px, 7vw, 36px);
+          margin: 8px 0;
+        }
+        .picker-head p {
+          display: none;
+        }
+        .picker-steps {
+          position: static;
+          margin-top: 16px;
+          font-size: 10px;
+        }
+        .picker-close {
+          min-height: 36px;
+          padding: 0 12px;
+          top: 0;
+          font-size: 10px;
+        }
+        .selection-feature {
+          grid-template-columns: 1fr;
+          grid-template-rows: minmax(0, 1fr) auto;
+        }
+        .feature-copy {
+          border-left: 0;
+          border-top: 1px solid #ffffff0c;
+          padding: 18px;
+        }
+        .feature-copy h3 {
+          font-size: 36px;
+          margin: 8px 0;
+        }
+        .feature-copy p {
+          font-size: 12px;
+          margin-bottom: 12px;
+          max-width: none;
+        }
+        .feature-record {
+          padding-top: 8px;
+        }
+        .feature-record strong {
+          font-size: 24px;
+        }
+        .feature-condition {
+          margin-top: 8px;
+        }
+        .car-platform img {
+          height: min(24vh, 240px);
+        }
+        .car-stats {
+          gap: 8px;
+        }
+        .choice-rail {
+          display: none;
         }
         .paint-row {
-          flex-direction: column;
-          align-items: flex-start;
+          font-size: 9px;
+        }
+        .swatches {
+          gap: 6px;
+        }
+        .swatch {
+          width: 36px;
+          height: 36px;
+        }
+        .navigation-hint {
+          font-size: 9px;
+          margin-left: 0;
         }
         .picker-bottom p {
           display: none;
         }
-        .picker-bottom {
-          justify-content: flex-end;
+        .picker-bottom .primary {
+          width: 100%;
+          font-size: 13px;
+          padding: 0 16px;
         }
-        .picker-head p {
+        .header-choice {
+          padding: 0 12px;
+          font-size: 11px;
+        }
+        footer {
+          padding: 0 8px;
+        }
+        .actions {
+          width: 100%;
+          gap: 6px;
+        }
+        .action {
+          flex: 1;
+          padding: 0 6px;
           font-size: 10px;
         }
+      }
+      @media (max-width: 650px) {
+        .picker-steps {
+          gap: 16px;
+        }
+        .mode-summary {
+          gap: 8px;
+          padding-top: 10px;
+          font-size: 10px;
+        }
+        .mode-banner {
+          bottom: 10px;
+          left: 10px;
+          font-size: 9px;
+          padding: 8px;
+          letter-spacing: 1px;
+        }
+        .mode-note {
+          font-size: 9px;
+        }
+        .mode-tile {
+          min-height: 76px;
+          gap: 6px;
+          padding-top: 26px;
+        }
+        .mode-tile.selected {
+          padding-top: 25px;
+        }
+        .mode-tile strong {
+          font-size: 18px;
+        }
+      }
+      @media (max-height: 500px) and (min-width: 651px) {
+        #selection-dialog {
+          padding: 12px 24px;
+        }
+        .picker-steps {
+          top: 0;
+          bottom: auto;
+          right: 120px;
+          font-size: 10px;
+          gap: 16px;
+        }
+        #selection-dialog[data-mode='modes'] .picker-navigation {
+          display: none;
+        }
+        .mode-banner {
+          bottom: 10px;
+          left: 10px;
+          padding: 8px;
+          font-size: 9px;
+        }
+
+        .picker-head h2 {
+          font-size: 30px;
+        }
+        .picker-head p,
+        .choice-rail,
+        .feature-copy p,
+        .navigation-hint {
+          display: none;
+        }
         .picker-content {
-          max-height: calc(100vh - 240px);
+          gap: 6px;
+        }
+        .feature-copy h3 {
+          font-size: 28px;
+        }
+        .picker-bottom .primary {
+          min-height: 48px;
+        }
+        .picker-bottom {
+          padding-top: 8px;
+        }
+        .swatch {
+          width: 36px;
+          height: 36px;
         }
       }
       .sector-grid {
@@ -1050,32 +1474,6 @@
         letter-spacing: 0.8px;
         color: var(--lime);
       }
-      .choice-grid:not(.garage-grid) {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .track-choice {
-        display: grid;
-        grid-template-columns: 38% 62%;
-      }
-      .track-choice canvas {
-        height: 100%;
-        min-height: 195px;
-      }
-      .track-choice .choice-body {
-        gap: 6px;
-      }
-      .track-choice .choice-description {
-        min-height: 0;
-      }
-      .track-choice .choice-number {
-        font-size: 7px;
-        letter-spacing: 0.5px;
-        left: 8px;
-      }
-      .track-choice .choice-details {
-        padding-top: 7px;
-        gap: 5px;
-      }
       @media (max-width: 850px) {
         .surface-readout {
           top: 116px;
@@ -1099,25 +1497,10 @@
           gap: 4px;
           margin-top: 8px;
         }
-        .track-choice .choice-body strong {
-          font-size: 23px;
-        }
-        .track-choice .choice-body {
-          padding: 11px 9px;
-        }
       }
       @media (max-width: 560px) {
-        .choice-grid:not(.garage-grid) {
-          grid-template-columns: 1fr;
-        }
         .surface-readout {
           max-width: 160px;
-        }
-        .track-choice canvas {
-          min-height: 170px;
-        }
-        .actions {
-          gap: 10px;
         }
       }
       .ghost-status {
@@ -1175,7 +1558,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="starting">
     <header>
       <div class="identity">
         <div class="brand">APEX<em> /</em></div>
@@ -1328,15 +1711,40 @@
         <div class="eyebrow" id="picker-eyebrow">THE CIRCUIT COLLECTION</div>
         <h2 id="picker-title">Find your next apex.</h2>
         <p id="picker-description"></p>
+        <div class="picker-steps" aria-label="Session setup">
+          <span id="step-car" class="active">01 / CAR</span
+          ><span id="step-track">02 / CIRCUIT</span
+          ><span id="step-mode">03 / MODE</span>
+        </div>
         <button
           class="picker-close"
           id="picker-close"
           aria-label="Close selection"
         >
-          ×
+          ESC / BACK
         </button>
       </div>
       <div class="picker-content" id="picker-content"></div>
+      <div class="picker-navigation" aria-label="Browse selections">
+        <button
+          class="browse-button"
+          id="picker-prev"
+          aria-label="Previous selection"
+        >
+          ←
+        </button>
+        <span id="picker-count" aria-live="polite"></span>
+        <button
+          class="browse-button"
+          id="picker-next"
+          aria-label="Next selection"
+        >
+          →
+        </button>
+        <span class="navigation-hint"
+          >← → / SELECT &nbsp; · &nbsp; ENTER / CONFIRM</span
+        >
+      </div>
       <div class="picker-bottom">
         <p id="picker-footnote"></p>
         <button class="primary" id="picker-apply">DRIVE →</button>

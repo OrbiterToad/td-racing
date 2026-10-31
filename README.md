@@ -1,7 +1,18 @@
 # APEX / The Circuit Collection
 
-Click the track name in the header to open the circuit picker. Preview
-cards show the route, biome, challenge, hazards, and best time for your car.
+Start in the full-screen garage: choose a car and paint, then select a circuit
+and game mode on separate screens. Press **Start driving** to load the circuit
+and begin the countdown. Time trial supports every car and circuit; Club race
+requires Juniper Raceway and the Clubsport R.
+Your saved car, paint, and circuit are preselected on your next visit.
+
+Large selection tiles and a featured preview keep the menus on one screen,
+without scrolling. Use the arrow keys or Previous / Next buttons to browse;
+on narrow screens these buttons replace the tile row. Enter confirms a focused
+selection or continue button. Escape goes back one step during setup, preserving your choices.
+
+During a session, open **Garage** or the track button in the header to change
+selections. Escape or Back cancels these pickers and preserves your run.
 Changing circuits resets the run, tire marks, and vehicle position.
 
 ## Circuits
@@ -203,6 +214,10 @@ The module layout is:
 | World construction and scenery            | `world.js`, `scenery.js`, `terrain.js`, `jungle.js`, `coast.js` |
 | Frame rendering, HUD, picker, and minimap | `renderer.js`, `ui.js`, `minimap.js`                            |
 | Audio and math helpers                    | `audio.js`, `math.js`                                           |
+
+`openSessionSetup()` in `src/ui.js` opens the Car → Circuit → Game mode wizard
+from startup or an existing session, preserving the current car, paint, and
+circuit as initial choices. Confirming the final screen starts a fresh session.
 
 Modules import the stable simulation objects (such as `car` and `track`) by
 name. Replaceable values (such as the selected circuit and canvas contexts)
