@@ -178,7 +178,7 @@ async function main() {
       }
       await page.goto(`${origin}/tools/performance.html?frames=${frames}`);
       await page.waitForFunction(() => window.performanceResult, null, {
-        timeout: 300_000,
+        timeout: Math.max(300_000, ((frames + 30) * 15 * 1000) / 30 + 60_000),
       });
       const result = await page.evaluate(() => window.performanceResult);
       if (!result.ok) throw new Error(result.error);

@@ -65,6 +65,7 @@
       frame.srcdoc = html;
     } catch (error) {
       output.textContent = error.stack;
+      window.performanceResult = { ok: false, error: error.stack };
     }
   </script>
 </html>
