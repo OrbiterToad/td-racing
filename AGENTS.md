@@ -2,6 +2,9 @@ Commit every change you make locally and push your commits to `origin`.
 After completing the task and passing the required checks, you may merge your
 changes into the repository's default branch and push the merge to `origin`
 yourself, once the task is complete and all required checks pass.
+Keep the task open while its pull request is pending. Follow up on review and
+required checks, address failures, and complete the merge into `master` before
+considering the task finished.
 
 Use the following commit message format:
 
