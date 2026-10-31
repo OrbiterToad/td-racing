@@ -25,6 +25,7 @@ const maps = [
 ];
 
 async function main() {
+  const profileEnabled = process.env.BENCHMARK_PROFILE === '1';
   const frames = Number(process.env.BENCHMARK_FRAMES || 240);
   const repeats = Number(process.env.BENCHMARK_REPEATS || 3);
   if (!Number.isInteger(repeats) || repeats < 1 || repeats > 10)
@@ -85,6 +86,7 @@ async function main() {
       }).trim(),
       capturedAt: new Date().toISOString(),
       launch: { headless: true, extraFlags: [] },
+      profileEnabled,
       machine: {
         platform: os.platform(),
         release: os.release(),
@@ -169,9 +171,11 @@ async function main() {
         await context.close();
       }
       const { context, page } = await newContext();
-      const cdp = await context.newCDPSession(page);
-      await cdp.send('Profiler.enable');
-      await cdp.send('Profiler.start');
+      const cdp = profileEnabled ? await context.newCDPSession(page) : null;
+      if (cdp) {
+        await cdp.send('Profiler.enable');
+        await cdp.send('Profiler.start');
+      }
       await page.goto(`${origin}/tools/performance.html?frames=${frames}`);
       await page.waitForFunction(() => window.performanceResult, null, {
         timeout: 300_000,
@@ -181,25 +185,27 @@ async function main() {
       if (result.benchmark.results.length !== maps.length * 2 + 1)
         throw new Error('Missing benchmark scenarios');
       report.runs.push(result.benchmark);
-      const { profile } = await cdp.send('Profiler.stop');
-      const nodes = new Map(
-        profile.nodes.map((node) => [node.id, node.callFrame]),
-      );
-      const samples = new Map();
-      profile.samples.forEach((id, i) => {
-        const frame = nodes.get(id);
-        const key = `${frame.functionName || '(anonymous)'} ${frame.url.replace(origin, '')}`;
-        samples.set(
-          key,
-          (samples.get(key) || 0) + profile.timeDeltas[i] / 1000,
+      if (cdp) {
+        const { profile } = await cdp.send('Profiler.stop');
+        const nodes = new Map(
+          profile.nodes.map((node) => [node.id, node.callFrame]),
         );
-      });
-      report.profiles.push(
-        [...samples]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 25)
-          .map(([frame, selfMs]) => ({ frame, selfMs })),
-      );
+        const samples = new Map();
+        profile.samples.forEach((id, i) => {
+          const frame = nodes.get(id);
+          const key = `${frame.functionName || '(anonymous)'} ${frame.url.replace(origin, '')}`;
+          samples.set(
+            key,
+            (samples.get(key) || 0) + profile.timeDeltas[i] / 1000,
+          );
+        });
+        report.profiles.push(
+          [...samples]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 25)
+            .map(([frame, selfMs]) => ({ frame, selfMs })),
+        );
+      }
       await page
         .frameLocator('#game')
         .locator('#game canvas.p5Canvas')
