@@ -11,7 +11,7 @@ import {
   restartRun,
   startCountdown,
 } from './race.js';
-import { desiredZoom } from './renderer.js';
+import { desiredZoom, startGamepadPolling } from './renderer.js';
 import { loadSceneryAssets } from './scenery.js';
 import {
   camera,
@@ -26,6 +26,7 @@ import {
   timing,
 } from './state.js';
 import { configureTrack } from './tracks.js';
+import { GamepadInput } from './gamepad.js';
 import { loadTrafficArt } from './traffic.js';
 import {
   $,
@@ -138,6 +139,8 @@ export function setup() {
   } catch (_) {}
   loadCarArt();
   noLoop();
+  state.gamepadInput = new GamepadInput();
+  startGamepadPolling();
   document.body.classList.add('starting');
   loadSceneryAssets().then(initializeGame);
 }
@@ -160,6 +163,14 @@ export function initializeGame() {
   $('restart').onclick = restartRun;
   $('race-mode').onclick = toggleOpponentRace;
   $('race-mode').disabled = false;
+  state.gamepadReady = true;
+  window.addEventListener('gamepadconnected', () => {
+    $('gamepad-status').textContent = 'Controller connected';
+  });
+  window.addEventListener('gamepaddisconnected', () => {
+    $('gamepad-status').textContent = 'No controller detected';
+    state.gamepadControls = state.gamepadInput.disconnect(performance.now());
+  });
   window.addEventListener('keydown', (e) => {
     if (document.querySelector('dialog[open]')) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;

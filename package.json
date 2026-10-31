@@ -8,7 +8,7 @@
   },
   "scripts": {
     "lint": "eslint \"*.{js,cjs,mjs}\" src tools tests --max-warnings 0",
-    "test": "node verify.mjs && node --test tests/collisions.test.mjs",
+    "test": "node verify.mjs && node --test tests/collisions.test.mjs tests/gamepad.test.mjs",
     "test:browser": "playwright test",
     "build": "node tools/build-site.cjs",
     "format": "prettier . --write",

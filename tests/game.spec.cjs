@@ -97,6 +97,52 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
   expect(errors).toEqual([]);
 });
 
+test('gamepad can navigate and confirm the session setup wizard', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.fakePad = {
+      connected: true,
+      index: 0,
+      axes: [0, 0],
+      buttons: Array.from({ length: 16 }, () => ({ pressed: false, value: 0 })),
+    };
+    Object.defineProperty(navigator, 'getGamepads', {
+      value: () => [window.fakePad],
+    });
+  });
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  await expect(page.locator('#gamepad-status')).toHaveText(
+    'Controller connected',
+  );
+
+  const press = async (button) => {
+    await page.evaluate((index) => {
+      window.fakePad.buttons[index].pressed = true;
+    }, button);
+    await page.waitForTimeout(100);
+    await page.evaluate((index) => {
+      window.fakePad.buttons[index].pressed = false;
+    }, button);
+    await page.waitForTimeout(100);
+  };
+  await press(0);
+  await expect(page.locator('#picker-title')).toHaveText(
+    'Choose your circuit.',
+  );
+  await press(0);
+  await expect(page.locator('#picker-title')).toHaveText('Choose your mode.');
+  await press(0);
+  await expect(page.locator('#selection-dialog')).not.toBeVisible();
+  await page.locator('#pause').click();
+  await expect(page.locator('#pause-screen')).toHaveClass('open');
+  await press(9);
+  await expect(page.locator('#pause-screen')).not.toHaveClass('open');
+  await press(3);
+  await expect(page.locator('#start-countdown')).toHaveText(/^[123]$|^GO!$/);
+});
+
 test('module callbacks keep driving, resize, pause, and restart working', async ({
   page,
 }) => {

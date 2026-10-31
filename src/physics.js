@@ -33,7 +33,10 @@ export function simulate(dt) {
     car.vx = 0;
     car.vy = 0;
     car.yaw = 0;
-    car.throttle = keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0;
+    car.throttle =
+      keys.has('KeyW') || keys.has('ArrowUp')
+        ? 1
+        : state.gamepadControls.throttle;
     if (race.countdown === 0) race.goTime = 0.8;
     return;
   }
@@ -43,12 +46,19 @@ export function simulate(dt) {
   feedback.impact *= Math.exp(-7 * dt);
   feedback.impactCooldown = Math.max(0, feedback.impactCooldown - dt);
   timing.flashTime = Math.max(0, timing.flashTime - dt);
-  const gas = keys.has('KeyW') || keys.has('ArrowUp'),
-    braking = keys.has('KeyS') || keys.has('ArrowDown'),
-    hand = keys.has('Space'),
-    steering =
-      (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) -
-      (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0),
+  const gamepad = state.gamepadControls,
+    gas = keys.has('KeyW') || keys.has('ArrowUp') ? 1 : gamepad.throttle,
+    braking = keys.has('KeyS') || keys.has('ArrowDown') ? 1 : gamepad.brake,
+    hand = keys.has('Space') || gamepad.handbrake > 0,
+    steering = Math.max(
+      -1,
+      Math.min(
+        1,
+        (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) -
+          (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) +
+          gamepad.steer,
+      ),
+    ),
     drive = driveVehicle(
       car,
       { steer: steering, throttle: gas, brake: braking, handbrake: hand },
