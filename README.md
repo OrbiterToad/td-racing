@@ -256,6 +256,9 @@ ESLint checks project JavaScript and excludes bundled assets. `npm test` runs
 the simulation assertions in `verify.mjs`. The browser test serves the packaged
 site at `/td-racing/`, checks every circuit, changes cars, checks saved selections
 and pause controls, and reports missing local assets or JavaScript errors.
+Session tests cover canceling track/car/paint drafts, restoring pause state,
+keeping club-race progress when changing paint, clearing held controls on focus
+loss, and playing with malformed, blocked, or full browser storage.
 External requests are blocked to verify the game works with bundled p5.js.
 Set `PLAYWRIGHT_PORT` to use another local browser-test port when needed.
 Browser failure reports are saved in `playwright-report/` and `test-results/`.
