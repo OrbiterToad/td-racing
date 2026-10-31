@@ -232,10 +232,123 @@ See [ASSETS.txt](ASSETS.txt) for asset sources and licenses.
 
 ## Performance check
 
-Open [the performance tool](http://localhost:8000/tools/performance.html) while the local server is
-running to compare map generation, road lookups, minimap updates, physics
-with 4,200 tire marks, and rendering at a fixed 1280 × 900 viewport.
-Results are milliseconds per operation, not an FPS estimate.
+Run `npm run benchmark` after installing the development tools and Chromium.
+The optional runner serves source on its own OS-assigned loopback port, uses
+headless Chromium at 1280 × 900 with device scale 1, blocks external requests,
+and writes `test-results/performance/report.json` plus a game-canvas screenshot
+per repeat. It does not change the packaged game or add a timing gate to CI.
+The same route workloads can be inspected in
+[the performance tool](http://localhost:8000/tools/performance.html) with the local
+server running.
+
+The default run collects three repeats. Each repeat measures fresh browser
+contexts for all seven circuits, then runs a complete route sweep on every
+circuit with normal physics, a separate 4,200 tire-mark workload, and a Juniper
+race with three AI opponents. Each scenario warms up for 30 frames and measures
+240 frames, with two 120 Hz physics steps per rendered frame. Input and effect
+randomness are seeded. The sweep spans warmup and measurement frames. Player velocity is set to
+220 world units/s at each route placement before the two physics steps; this covers scenery and surfaces consistently,
+but is not an autonomous clean lap. Opponents and City traffic advance through
+their normal update paths. Sound is off and there is no saved ghost.
+
+The runner verifies circuit selection, finite player physics, scenario coverage,
+and three advancing AI opponents, and rejects JavaScript errors and missing
+local responses. Existing simulation and browser tests cover driving, collisions,
+race completion, and menus; the benchmark is an additional repeatable workload.
+
+Startup records navigation-to-menu-ready and navigation-to-readable-game-canvas,
+automatically exercising Car → Circuit → Mode → Start without user think time.
+Start-to-canvas measures the three synchronous wizard handlers and the following
+animation frame. Circuit-change timing includes geometry, world construction,
+HUD/minimap setup and a canvas readback to flush queued raster work. Rendering
+submission time excludes those readbacks and GPU completion; rAF intervals
+include browser scheduling. The renderer's accumulator is bypassed in the route
+workload to hold simulation work fixed when wall-clock scheduling varies.
+
+Use environment variables to select frames, repeats, output and optional CPU
+profiling. Keep profiling separate from timing comparisons:
+
+```sh
+BENCHMARK_OUTPUT=/tmp/apex-baseline.json npm run benchmark
+BENCHMARK_PROFILE=1 BENCHMARK_REPEATS=1 BENCHMARK_FRAMES=60 \
+  BENCHMARK_OUTPUT=/tmp/apex-profile.json npm run benchmark
+```
+
+### Recorded baseline
+
+[Raw timing distributions](docs/performance-baseline.json) and
+[a separate sampled CPU profile summary](docs/performance-profile.json) record
+revision `374aee5` (production base `ba8cf3c`, including shared AI physics), with
+a clean checkout, Node 24.22.2, Playwright 1.64.1 and headless Chromium
+156.0.8078.4. The host was Linux x64, kernel 7.2.11, Intel i7-7700K (8 logical
+CPUs), with 31.13 GiB RAM. WebGL reported ANGLE/SwiftShader; the Canvas 2D backend
+was not independently pinned. The game canvas was 1280 × 748 at density 1.
+This was a shared workstation: load average was 11.74/10.80/7.36 at the start
+and 11.95/11.15/8.37 at the end. No benchmark-owned test suite ran concurrently.
+Browser cache and storage were fresh per startup; OS file caches were warm and
+localhost serving excludes internet latency. Fonts were blocked with other
+external requests.
+
+All values below are milliseconds. Startup/change columns are medians of three
+samples; runtime columns are the median of the three per-run percentiles, not
+percentiles pooled across runs. Each runtime distribution has 240 samples per
+run. Raw data also includes p99, maxima, world size, and environment metadata.
+
+| Circuit       | Menu ready | Start → canvas | Navigation → canvas | Circuit change |
+| ------------- | ---------: | -------------: | ------------------: | -------------: |
+| Juniper       |        806 |            845 |                1650 |            747 |
+| Desert Canyon |        450 |            695 |                1116 |            665 |
+| Alpine Pass   |        451 |            941 |                1355 |            898 |
+| Ridgeway      |        466 |            568 |                1034 |            516 |
+| Amazonas      |        464 |            984 |                1447 |            890 |
+| Costa Azul    |        508 |           1184 |                1693 |           1144 |
+| City Streets  |        537 |            795 |                1332 |            690 |
+
+| Circuit / workload    | Render p50 | Render p95 | Two physics steps p95 | rAF interval p95 |
+| --------------------- | ---------: | ---------: | --------------------: | ---------------: |
+| Juniper / route       |        5.4 |        7.3 |                   0.2 |             16.8 |
+| Juniper / skids       |        6.2 |       11.3 |                   0.3 |             16.7 |
+| Juniper / ai          |        5.3 |        7.2 |                   0.5 |             16.7 |
+| Desert Canyon / route |        4.9 |        8.9 |                   0.2 |             16.7 |
+| Desert Canyon / skids |        5.5 |        9.9 |                   0.5 |             16.8 |
+| Alpine Pass / route   |        5.3 |       10.9 |                   0.2 |             16.7 |
+| Alpine Pass / skids   |        6.3 |       11.2 |                   0.5 |             16.7 |
+| Ridgeway / route      |        5.6 |        9.8 |                   0.2 |             16.7 |
+| Ridgeway / skids      |        5.8 |       10.5 |                   0.5 |             16.8 |
+| Amazonas / route      |        5.8 |       12.2 |                   0.2 |             16.8 |
+| Amazonas / skids      |        5.5 |        9.0 |                   0.4 |             16.8 |
+| Costa Azul / route    |        5.5 |        9.5 |                   0.1 |             16.8 |
+| Costa Azul / skids    |        5.7 |       10.3 |                   0.4 |             16.7 |
+| City Streets / route  |        5.6 |       10.3 |                   0.2 |             16.8 |
+| City Streets / skids  |        6.1 |       10.6 |                   0.4 |             16.8 |
+
+Individual rAF p99 values reached 49.9 ms and the worst interval was 66.7 ms;
+render submission reached 50.5 ms. The medians do not imply stall-free 60 FPS.
+Captured canvases were inspected for the route, car, scenery, HUD and minimap;
+all local browser checks passed.
+
+The largest evidenced loading cost is synchronous circuit/world construction:
+route circuit changes take roughly 516–1,144 ms, versus 0.1–0.2 ms p95 for two
+player physics steps. In the separate 60-frame sampled run, `buildWorld` was the largest named
+self-time entry (4,446 ms aggregated across the initial world and 15 circuit
+changes), followed by `drawSkidmarks` (2,479 ms across ordinary and stress
+workloads). Static `ribbon` painting accumulated 1,868 ms. Spatial lookup helpers
+`cell`/`check` accumulated 1,901/1,571 ms across loading, explicit queries and
+simulation; those totals should not be mistaken for player physics costs.
+Canvas drawing dominates the active route workload relative to physics; nearest
+road queries are recorded separately in the raw report. Profiling combines
+loading and gameplay and attributes native canvas work to calling JavaScript
+stacks, so aggregate self times are not per-frame costs.
+
+Production physics, rendering and scenery are unchanged by this benchmark PR.
+No speedup is claimed: there is no demonstrated isolated change warranting the
+visual/behavior risk of altering world painting or AI physics. For a future
+before/after comparison, use identical benchmark code, browser, machine,
+viewport and frame counts, run timing passes without profiling, and compare
+per-circuit distributions across repeats. Treat host contention, raster backend,
+real input/camera behavior, audio, recorded ghosts, long races and other browsers
+as limits of this baseline. Browser-matrix CI and keyboard behavior have their
+own checks.
 
 ## Automated checks and deployment
 
