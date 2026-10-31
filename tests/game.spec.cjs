@@ -18,7 +18,7 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
   browserName,
 }) => {
   // Software canvas rendering makes the full circuit/car sweep slower in WebKit.
-  if (browserName === 'webkit') test.setTimeout(120_000);
+  if (browserName === 'webkit') test.setTimeout(180_000);
   const origin = new URL(baseURL).origin + '/';
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
