@@ -7,6 +7,7 @@ import {
 } from './ghost.js';
 import { clamp, lerpTo } from './math.js';
 import { configureRaceResultsActions } from './results.js';
+import { awardMedal, earnedMedalFor } from './medals.js';
 import { changeTrack } from './runtime.js';
 import {
   camera,
@@ -159,6 +160,20 @@ export function updateRace(dt, n) {
       )
         opponentRace.bestLap = crossingTime;
       race.lap++;
+      const medalAward = !opponentRace.enabled
+        ? awardMedal(state.activeMap.id, state.activeCar.id, race.last, {
+            valid: true,
+            timeTrial: true,
+          })
+        : null;
+      const earnedMedal = !opponentRace.enabled
+        ? (earnedMedalFor(state.activeMap.id, state.activeCar.id) ??
+          medalAward?.medal ??
+          null)
+        : null;
+      const medalResult = earnedMedal
+        ? `${medalAward?.improved ? 'NEW ' : ''}${earnedMedal.toUpperCase()} MEDAL · `
+        : '';
       if (opponentRace.enabled && race.lap > opponentRace.laps) {
         opponentRace.playerFinish = opponentRace.elapsed - dt + dt * fraction;
         opponentRace.finished = true;
@@ -188,10 +203,11 @@ export function updateRace(dt, n) {
         } catch (_) {
           /* Timing remains available for this session. */
         }
-        notify('PERSONAL BEST · ' + formatTime(race.best));
+        notify(medalResult + 'PERSONAL BEST · ' + formatTime(race.best));
       } else
         notify(
-          (firstGhost && ghostSaved ? 'GHOST READY · ' : 'LAP COMPLETE · ') +
+          medalResult +
+            (firstGhost && ghostSaved ? 'GHOST READY · ' : 'LAP COMPLETE · ') +
             formatTime(race.last),
         );
     } else if (race.invalid) notify('FRESH LAP · Make it a clean one');
