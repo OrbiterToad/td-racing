@@ -19,8 +19,10 @@
   </style>
   <h1>APEX performance check</h1>
   <p>
-    Runs local assets at a fixed 1280 × 900 viewport. Times are milliseconds per
-    operation; lower is better. The simulation sample includes 4,200 tire marks.
+    Runs local assets at a fixed 1280 × 900 viewport. Measures all circuits with
+    a deterministic route sweep, two physics steps per frame, and separate 4,200
+    tire-mark and Juniper AI workloads. Frame intervals include browser
+    scheduling; rendering times measure CPU submission only.
   </p>
   <pre id="results">Loading the game…</pre>
   <iframe id="game" title="Benchmark game"></iframe>
@@ -37,13 +39,8 @@
       output.textContent = result.ok
         ? JSON.stringify(result.benchmark, null, 2)
         : result.error;
+      window.performanceResult = result;
       if (result.ok) window.benchmarkResults = result.benchmark;
-      if (new URLSearchParams(location.search).has('report')) {
-        await fetch('/__result', {
-          method: 'POST',
-          body: JSON.stringify(result),
-        });
-      }
     });
     try {
       let html = await (await fetch('../index.html')).text();
@@ -55,8 +52,15 @@
         .replace(/<link[^>]+href="https:\/\/[^>]+>/g, '')
         .replace(
           '</body>',
-          '<script type="module" src="tools/performance-game.js"><' +
-            '/script></body>',
+          `<script type="module">
+            import { runPerformanceCheck } from './tools/performance-game.js';
+            try {
+              const benchmark = await runPerformanceCheck(${JSON.stringify({ frames: Number(new URLSearchParams(location.search).get('frames') || 240) })});
+              parent.postMessage({ type: 'apex-performance', ok: true, benchmark }, parent.location.origin);
+            } catch (error) {
+              parent.postMessage({ type: 'apex-performance', ok: false, error: error.stack }, parent.location.origin);
+            }
+          <` + '/script></body>',
         );
       frame.srcdoc = html;
     } catch (error) {
