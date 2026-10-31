@@ -15,6 +15,16 @@ export const $ = (id) => document.getElementById(id);
 
 let pickerOpener;
 let pauseOpener;
+let previewCanvas = null;
+let previewMap = null;
+let previewObserver = null;
+
+function redrawTrackPreview() {
+  if (previewCanvas && previewMap) paintTrackPreview(previewCanvas, previewMap);
+}
+
+if (typeof window !== 'undefined')
+  window.addEventListener('resize', redrawTrackPreview);
 
 const GAME_MODES = {
   trial: {
@@ -29,7 +39,7 @@ const GAME_MODES = {
     name: 'Club race',
     tag: '4 DRIVERS / 3 LAPS',
     description:
-      'Line up against Alex, Blair and Casey. Three laps, fixed opponent pace and a race to the finish. Non-contact racing.',
+      'Line up against Alex, Blair and Casey. Three laps, fixed opponent pace, and full vehicle contact.',
   },
 };
 
@@ -104,8 +114,8 @@ export function openPicker(mode) {
   state.pickerWasPaused = state.paused;
   setPaused(true, false);
   document.body.classList.add('choosing');
-  renderPicker();
   $('selection-dialog').showModal();
+  renderPicker();
   $('picker-apply').focus();
 }
 
@@ -240,7 +250,7 @@ export function renderPicker() {
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
       : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;
   const details = modes
-    ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · NON-CONTACT OPPONENTS' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
+    ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
     : tracks
       ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div><span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
       : `<div class="car-stats">${['PACE', 'HANDLING', 'OFF ROAD'].map((label, i) => `<span>${label}<i><b style="width:${selected.bars[i] * 100}%"></b></i></span>`).join('')}</div>`;
@@ -333,7 +343,30 @@ export function applyPicker() {
 }
 
 export function drawTrackPreview(canvas, map) {
+  previewCanvas = canvas;
+  previewMap = map;
+  if (typeof ResizeObserver !== 'undefined') {
+    if (!previewObserver) {
+      previewObserver = new ResizeObserver(redrawTrackPreview);
+    }
+    previewObserver.disconnect();
+    previewObserver.observe(canvas);
+  }
+  paintTrackPreview(canvas, map);
+}
+
+function paintTrackPreview(canvas, map) {
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const pixelRatio = window.devicePixelRatio || 1;
+  const pixelWidth = Math.max(1, Math.round(rect.width * pixelRatio));
+  const pixelHeight = Math.max(1, Math.round(rect.height * pixelRatio));
+  if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+  if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
   const c = canvas.getContext('2d'),
+    scaleToFit = Math.min(canvas.width / 480, canvas.height / 270),
+    offsetX = (canvas.width - 480 * scaleToFit) / 2,
+    offsetY = (canvas.height - 270 * scaleToFit) / 2,
     points = sampleMap(map, 16),
     xs = points.map((p) => p.x),
     ys = points.map((p) => p.y),
@@ -342,6 +375,8 @@ export function drawTrackPreview(canvas, map) {
     top = Math.min(...ys),
     bottom = Math.max(...ys),
     scale = Math.min(380 / (right - left), 205 / (bottom - top));
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, canvas.width, canvas.height);
   c.fillStyle =
     map.id === 'city'
       ? '#687d75'
@@ -356,7 +391,10 @@ export function drawTrackPreview(canvas, map) {
               : map.id === 'rallycross'
                 ? '#5b5b3e'
                 : '#354b3d';
-  c.fillRect(0, 0, 480, 270);
+  c.fillRect(0, 0, canvas.width, canvas.height);
+  c.save();
+  c.translate(offsetX, offsetY);
+  c.scale(scaleToFit, scaleToFit);
   const rand = seededRandom(
     map.id === 'canyon' ? 513 : map.id === 'alpine' ? 719 : 318,
   );
@@ -451,6 +489,7 @@ export function drawTrackPreview(canvas, map) {
   c.arc(start.x, start.y, 4 / scale, 0, 6.28);
   c.fill();
   c.restore();
+  c.restore();
 }
 
 export function setPaused(value, moveFocus = true) {
@@ -471,7 +510,7 @@ export function setPaused(value, moveFocus = true) {
   }
   if (state.engineGain)
     state.engineGain.gain.setTargetAtTime(
-      state.paused ? 0 : 0.025,
+      !state.paused && state.soundEnabled ? 0.018 + car.throttle * 0.014 : 0,
       state.audioCtx.currentTime,
       0.05,
     );

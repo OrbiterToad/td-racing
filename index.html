@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#161e21" />
     <title>APEX — The Circuit Collection</title>
+    <link rel="stylesheet" href="./src/settings.css" />
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
       :root {
@@ -1875,6 +1876,13 @@
             Handbrake &nbsp; A / B · Select / back<br />Y · Restart &nbsp; Start
             · Pause
           </p>
+          <button
+            class="secondary-settings"
+            id="settings-pause"
+            aria-haspopup="dialog"
+          >
+            ⚙ SETTINGS
+          </button>
           <button class="primary" id="resume">BACK ON TRACK →</button>
           <p>
             <a class="credits" href="ASSETS.txt" target="_blank" rel="noopener"
@@ -1894,6 +1902,14 @@
           ><span id="step-track">02 / CIRCUIT</span
           ><span id="step-mode">03 / MODE</span>
         </div>
+        <button
+          class="picker-settings"
+          id="settings-setup"
+          aria-label="Open settings"
+          aria-haspopup="dialog"
+        >
+          ⚙ SETTINGS
+        </button>
         <button
           class="picker-close"
           id="picker-close"
@@ -1928,6 +1944,105 @@
         <button class="primary" id="picker-apply">DRIVE →</button>
       </div>
     </dialog>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <div class="settings-panel">
+        <header class="settings-heading">
+          <div>
+            <div class="eyebrow">APEX / PERSONAL PREFERENCES</div>
+            <h2 id="settings-title">Settings</h2>
+            <p>Fine tune your session. Changes save automatically.</p>
+          </div>
+          <button
+            id="settings-close"
+            class="settings-close"
+            aria-label="Close settings"
+          >
+            ESC / BACK
+          </button>
+        </header>
+        <div class="settings-list">
+          <section class="setting-row">
+            <div class="setting-copy">
+              <label for="settings-volume">Sound volume</label>
+              <p>Sound is on by default. Mute it from anywhere.</p>
+            </div>
+            <div class="setting-control slider-control">
+              <output id="settings-volume-value" for="settings-volume"
+                >70%</output
+              >
+              <input
+                id="settings-volume"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value="70"
+                aria-label="Sound volume"
+                aria-describedby="settings-volume-value"
+              />
+            </div>
+          </section>
+          <section class="setting-row">
+            <div class="setting-copy">
+              <label for="settings-sensitivity">Steering sensitivity</label>
+              <p>Adjust how strongly your steering inputs turn the car.</p>
+            </div>
+            <div class="setting-control slider-control">
+              <output id="settings-sensitivity-value" for="settings-sensitivity"
+                >100%</output
+              >
+              <input
+                id="settings-sensitivity"
+                type="range"
+                min="60"
+                max="140"
+                step="5"
+                value="100"
+                aria-label="Steering sensitivity"
+                aria-describedby="settings-sensitivity-value"
+              />
+            </div>
+          </section>
+          <section class="setting-row">
+            <div class="setting-copy">
+              <span id="settings-motion-label" class="setting-label"
+                >Reduced motion</span
+              >
+              <p id="settings-motion-description">
+                Follows your device preference until you choose a setting.
+              </p>
+            </div>
+            <div class="setting-control motion-control">
+              <span id="settings-motion-value">Reduced motion off</span>
+              <button
+                id="settings-motion"
+                type="button"
+                class="motion-switch"
+                role="switch"
+                aria-labelledby="settings-motion-label"
+                aria-describedby="settings-motion-description"
+                aria-checked="false"
+              >
+                OFF
+              </button>
+            </div>
+          </section>
+        </div>
+        <footer class="settings-footer">
+          <button
+            id="settings-sound"
+            class="settings-sound"
+            type="button"
+            aria-pressed="true"
+          >
+            ♪ Sound on
+          </button>
+          <button id="settings-done" class="settings-done" type="button">
+            DONE / BACK
+          </button>
+        </footer>
+      </div>
+    </dialog>
     <footer>
       <div class="controls">
         <span class="control" id="gamepad-status" role="status"
@@ -1940,11 +2055,21 @@
       </div>
       <div class="actions">
         <button
+          class="action settings-session"
+          id="settings-session"
+          type="button"
+          aria-label="Open settings"
+          aria-haspopup="dialog"
+          title="Settings"
+        >
+          ⚙ Settings
+        </button>
+        <button
           class="action"
           id="race-mode"
           disabled
           aria-pressed="false"
-          title="Three-lap contact race on Juniper in Clubsport R"
+          title="Three-lap full-contact race on Juniper in Clubsport R"
         >
           Race AI · Juniper
         </button>
