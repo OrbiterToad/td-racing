@@ -21,6 +21,8 @@ async function startTrial(page) {
   await openSetup(page);
   for (let step = 0; step < 3; step++) await page.keyboard.press('Enter');
   await expect(page.locator('#selection-dialog')).not.toBeVisible();
+  if (await page.locator('#tutorial-dialog').isVisible())
+    await page.locator('#tutorial-skip').click();
   await expect(page.locator('#game')).toBeFocused();
 }
 

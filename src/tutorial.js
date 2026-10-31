@@ -41,6 +41,7 @@ const steps = [
 let status = null;
 let decided = false;
 let currentStep = 0;
+let returnFocus = null;
 
 export function initTutorial() {
   const dialog = document.getElementById('tutorial-dialog'),
@@ -53,11 +54,10 @@ export function initTutorial() {
   status = readStatus();
   decided = status !== null;
 
-  document
-    .getElementById('tutorial-help')
-    .addEventListener('click', () => openTutorial());
+  const help = document.getElementById('tutorial-help');
+  help.addEventListener('click', () => openTutorial(help));
   document.getElementById('selection-dialog').addEventListener('close', () => {
-    if (!decided && !dialog.open) openTutorial();
+    if (!decided && !dialog.open) openTutorial(document.getElementById('game'));
   });
   back.addEventListener('click', () => renderStep(currentStep - 1));
   next.addEventListener('click', () => renderStep(currentStep + 1));
@@ -87,8 +87,9 @@ function saveStatus(nextStatus) {
   } catch (_) {}
 }
 
-function openTutorial() {
+function openTutorial(focusAfterClose = document.activeElement) {
   currentStep = 0;
+  returnFocus = focusAfterClose;
   renderStep(currentStep);
   const dialog = document.getElementById('tutorial-dialog');
   if (!dialog.open) dialog.showModal();
@@ -99,6 +100,8 @@ function closeTutorial(outcome) {
   saveStatus(outcome);
   const dialog = document.getElementById('tutorial-dialog');
   if (dialog.open) dialog.close();
+  if (returnFocus?.isConnected) returnFocus.focus();
+  returnFocus = null;
 }
 
 function renderStep(index) {
