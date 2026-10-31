@@ -3,6 +3,7 @@ import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
 import { coast, paintCoastGround } from './coast.js';
 import { MAPS, PAINTS, VEHICLES } from './config.js';
 import { ghostStatus, liveGhostDelta } from './ghost.js';
+import { earnedMedalFor, medalTargetsFor } from './medals.js';
 import { paintAmazonRiver } from './jungle.js';
 import { seededRandom } from './math.js';
 import { ribbon } from './renderer.js';
@@ -235,6 +236,7 @@ export function renderPicker() {
     String(choices.length).padStart(2, '0');
 
   let best = null;
+  let medalDetails = '';
   if (tracks) {
     try {
       const value = JSON.parse(
@@ -243,6 +245,9 @@ export function renderPicker() {
       if (typeof value === 'number' && value > 0 && Number.isFinite(value))
         best = value;
     } catch (_) {}
+    const targets = medalTargetsFor(selected.id, vehicle.id);
+    const earned = earnedMedalFor(selected.id, vehicle.id);
+    medalDetails = `<div class="medal-progress" aria-label="Medal progress for ${selected.name} and ${vehicle.name}"><span class="medal-earned">EARNED / <b>${earned ? earned.toUpperCase() : 'NONE'}</b></span><div class="medal-targets" aria-label="Medal target times">${['bronze', 'silver', 'gold'].map((medal) => `<span class="medal-target ${medal}" data-medal="${medal}"><b>${medal.toUpperCase()}</b><time>${formatTime(targets[medal])}</time></span>`).join('')}</div></div>`;
   }
   const art = modes
     ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : 'YOUR TRACK. YOUR PACE.'}</span>`
@@ -252,7 +257,7 @@ export function renderPicker() {
   const details = modes
     ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
     : tracks
-      ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div><span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
+      ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div>${medalDetails}<span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
       : `<div class="car-stats">${['PACE', 'HANDLING', 'OFF ROAD'].map((label, i) => `<span>${label}<i><b style="width:${selected.bars[i] * 100}%"></b></i></span>`).join('')}</div>`;
   $('picker-content').innerHTML = `
     <div class="selection-feature" style="--card-accent:${tracks ? selected.accent : '#d5f578'}">
