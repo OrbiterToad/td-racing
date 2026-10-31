@@ -50,13 +50,25 @@ jobs:
         run: ${{ matrix.command }}
 
   browser:
-    name: Browser tests (${{ matrix.browser }})
+    name: Browser tests (${{ matrix.browser }}, ${{ matrix.shard }}/${{ matrix.shards }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
+        include:
+          - browser: chromium
+            shard: 1
+            shards: 1
+          - browser: firefox
+            shard: 1
+            shards: 1
+          - browser: webkit
+            shard: 1
+            shards: 2
+          - browser: webkit
+            shard: 2
+            shards: 2
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -74,12 +86,12 @@ jobs:
       - name: Install ${{ matrix.browser }}
         run: npx playwright install --with-deps ${{ matrix.browser }}
       - name: Test packaged site at the Pages subpath
-        run: npm run test:browser -- --project=${{ matrix.browser }}
+        run: npm run test:browser -- --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/${{ matrix.shards }}
       - name: Upload browser diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: browser-diagnostics-${{ matrix.browser }}
+          name: browser-diagnostics-${{ matrix.browser }}-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/

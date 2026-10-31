@@ -409,13 +409,14 @@ push, every pull request, and manual runs. It reports the following checks:
   development tools, using `npm audit --audit-level=high`.
 - **Build and browser tests** packages the site and tests that exact output in
   Chromium, Firefox, and WebKit under `/td-racing/`, matching GitHub Pages hosting.
-  Each engine runs in a separate job; this required aggregate passes only when
-  all three browser jobs succeed.
+  Each engine runs independently; WebKit uses two shards to keep software-rendered
+  runs within the job limit. This required aggregate passes only when every
+  engine and shard succeeds.
 
 All jobs use Node.js 24, `npm ci`, the committed lockfile, and npm download
 caching. New commits cancel obsolete pull request runs. Browser reports,
 screenshots, and failure traces are available in the run's **Artifacts →
-browser-diagnostics-<engine>** for seven days, including reports for successful runs.
+browser-diagnostics-<engine>-<shard>** for seven days, including reports for successful runs.
 
 After all required checks pass on `master`, **Deploy to GitHub Pages** publishes
 the tested `dist/` artifact without rebuilding it. Pull requests and other
@@ -451,5 +452,5 @@ checks and require a merge before they reach production.
 
 If deployment fails, check **Settings → Pages** uses GitHub Actions and the
 `github-pages` environment allows `master`. If a check fails, open that job's
-logs; for browser failures, download `browser-diagnostics-<engine>` and open the HTML
+logs; for browser failures, download `browser-diagnostics-<engine>-<shard>` and open the HTML
 report with `npx playwright show-report <path-to-playwright-report>`.
