@@ -1,6 +1,7 @@
 import { clamp } from './math.js';
 import { car, feedback, state } from './state.js';
 import { $, notify } from './ui.js';
+import { saveSettings } from './settings-preferences.js';
 
 export function playImpact(strength) {
   if (!state.soundEnabled || !state.audioCtx || !state.audioLayers) return;
@@ -20,7 +21,7 @@ export function playImpact(strength) {
   );
   source.connect(filter);
   filter.connect(gain);
-  gain.connect(state.audioCtx.destination);
+  gain.connect(state.audioMasterGain);
   source.start();
   source.stop(state.audioCtx.currentTime + 0.14);
   source.onended = () => {
@@ -30,16 +31,26 @@ export function playImpact(strength) {
   };
 }
 
-export function toggleSound() {
-  state.soundEnabled = !state.soundEnabled;
-  if (state.soundEnabled && !state.audioCtx) {
+export function ensureAudio() {
+  if (!state.soundEnabled) return false;
+  if (state.audioCtx) {
+    const resumed = state.audioCtx.resume();
+    resumed?.catch?.(() => {});
+    updateAudio();
+    return true;
+  }
+  try {
     const Audio = window.AudioContext || window.webkitAudioContext;
     if (!Audio) {
       state.soundEnabled = false;
+      syncSoundButtons();
       notify('Audio is unavailable in this browser');
-      return;
+      return false;
     }
     state.audioCtx = new Audio();
+    state.audioMasterGain = state.audioCtx.createGain();
+    state.audioMasterGain.gain.value = state.settings.volume;
+    state.audioMasterGain.connect(state.audioCtx.destination);
     state.engine = state.audioCtx.createOscillator();
     state.engine.type = 'sawtooth';
     const filter = state.audioCtx.createBiquadFilter();
@@ -49,15 +60,58 @@ export function toggleSound() {
     state.engineGain.gain.value = 0.025;
     state.engine.connect(filter);
     filter.connect(state.engineGain);
-    state.engineGain.connect(state.audioCtx.destination);
+    state.engineGain.connect(state.audioMasterGain);
     state.engine.start();
+    if (!state.audioLayers) createFeedbackAudio();
+    const resumed = state.audioCtx.resume();
+    resumed?.catch?.(() => {});
+    updateAudio();
+    return true;
+  } catch (_) {
+    state.audioCtx = undefined;
+    state.audioMasterGain = undefined;
+    state.engine = undefined;
+    state.engineGain = undefined;
+    state.audioLayers = null;
+    state.soundEnabled = false;
+    syncSoundButtons();
+    notify('Audio is unavailable in this browser');
+    return false;
   }
-  if (state.audioCtx && !state.audioLayers) createFeedbackAudio();
-  if (state.audioCtx && state.soundEnabled) state.audioCtx.resume();
-  $('sound').textContent = state.soundEnabled ? '♪ Sound on' : '♪ Sound off';
-  $('sound').classList.toggle('sound-on', state.soundEnabled);
-  $('sound').setAttribute('aria-pressed', String(state.soundEnabled));
+}
+
+export function syncSoundButtons() {
+  for (const button of [$('sound'), $('settings-sound')]) {
+    if (!button) continue;
+    button.textContent = state.soundEnabled ? '♪ Sound on' : '♪ Sound off';
+    button.classList.toggle('sound-on', state.soundEnabled);
+    button.setAttribute('aria-pressed', String(state.soundEnabled));
+  }
+}
+
+export function setMasterVolume(volume) {
+  if (!state.audioMasterGain || !state.audioCtx) return;
+  state.audioMasterGain.gain.setTargetAtTime(
+    volume,
+    state.audioCtx.currentTime,
+    0.04,
+  );
+}
+
+export function setSoundEnabled(enabled, { persist = true } = {}) {
+  state.soundEnabled = enabled;
+  if (enabled) ensureAudio();
+  syncSoundButtons();
   updateAudio();
+  if (persist)
+    saveSettings({
+      ...state.settings,
+      soundEnabled: state.soundEnabled,
+    });
+}
+
+export function toggleSound() {
+  setSoundEnabled(!state.soundEnabled);
 }
 
 export function createFeedbackAudio() {
@@ -88,7 +142,7 @@ export function createFeedbackAudio() {
   looseFilter.frequency.value = 550;
   for (const gain of [tireGain, looseGain, rumbleGain]) {
     gain.gain.value = 0;
-    gain.connect(state.audioCtx.destination);
+    gain.connect(state.audioMasterGain);
   }
   source.connect(tireFilter);
   source.connect(looseFilter);
