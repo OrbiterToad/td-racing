@@ -63,7 +63,7 @@ export function resetOpponentRace() {
     opponentRace.profile.push(
       Math.min(
         335,
-        Math.sqrt(300 / Math.max(turn / 80, 0.0001)),
+        Math.sqrt(40 / Math.max(turn / 80, 0.0001)),
         oily ? 155 : Infinity,
       ),
     );
@@ -73,7 +73,7 @@ export function resetOpponentRace() {
       const next = opponentRace.profile[(i + 1) % count];
       opponentRace.profile[i] = Math.min(
         opponentRace.profile[i],
-        Math.sqrt(next * next + 2 * 220 * opponentRace.spacing),
+        Math.sqrt(next * next + 2 * 10 * opponentRace.spacing),
       );
     }
   }
@@ -97,8 +97,8 @@ export function resetOpponentRace() {
       s: -90 - slot * 80,
       speed: 0,
       pace: [0.98, 0.91, 0.84][i],
-      lane: [-26, 26, 0][i],
-      offset: CFG.road * 0.4 * (slot % 2 ? 1 : -1),
+      lane: [-8, 8, 0][i],
+      offset: [-8, 8, 0][i],
       vx: 0,
       vy: 0,
       yaw: 0,
@@ -132,26 +132,30 @@ export function updateOpponents(dt) {
     vehicle = state.activeCar;
   for (const rival of opponentRace.cars) {
     if (rival.finish !== null) continue;
-    const s = ((rival.s % length) + length) % length,
+    const current = nearestDriving(rival.x, rival.y),
+      currentS = current.progress * length,
+      s = ((rival.s % length) + length) % length,
       index = Math.floor(s / opponentRace.spacing),
-      target = opponentRace.profile[index] * rival.pace,
-      lookAhead = clamp(92 + rival.speed * 0.28, 92, 190),
-      aim = pointOnTrack(s + lookAhead),
-      targetX = aim.x - aim.ty * rival.lane,
-      targetY = aim.y + aim.tx * rival.lane,
-      toX = targetX - rival.x,
-      toY = targetY - rival.y,
-      targetAngle = Math.atan2(toY, toX),
-      alpha = Math.atan2(
-        Math.sin(targetAngle - rival.angle),
-        Math.cos(targetAngle - rival.angle),
+      target = opponentRace.profile[index] * rival.pace * 0.7,
+      lookAhead = clamp(70 + rival.speed * 0.12, 70, 130),
+      ahead = pointOnTrack(currentS + lookAhead),
+      currentAngle = Math.atan2(current.ty, current.tx),
+      aheadAngle = Math.atan2(ahead.ty, ahead.tx),
+      turnAhead = Math.atan2(
+        Math.sin(aheadAngle - currentAngle),
+        Math.cos(aheadAngle - currentAngle),
       ),
+      headingError = Math.atan2(
+        Math.sin(currentAngle - rival.angle),
+        Math.cos(currentAngle - rival.angle),
+      ),
+      lateralError = current.side * current.distance - rival.lane,
       steeringRange =
         (0.52 / (1 + Math.max(0, rival.speed) / 190)) * vehicle.steering,
-      desiredAngle = Math.atan2(
-        2 * vehicle.wheelbase * Math.sin(alpha),
-        Math.max(40, Math.hypot(toX, toY)),
-      ),
+      desiredAngle =
+        Math.atan((vehicle.wheelbase * turnAhead) / lookAhead) +
+        headingError -
+        Math.atan2(4 * lateralError, rival.speed + 15),
       steer = clamp(desiredAngle / steeringRange, -1, 1);
     rival.brake = rival.speed > target + 5;
     driveVehicle(
