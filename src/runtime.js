@@ -1,3 +1,4 @@
+import { initModalKeyboard } from './accessibility.js';
 import { toggleOpponentRace } from './opponents.js';
 import { toggleSound } from './audio.js';
 import { configureCar, loadCarArt, readBest } from './cars.js';
@@ -147,6 +148,7 @@ export function initializeGame() {
     const saved = localStorage.getItem('apex-selected-track');
     if (Object.hasOwn(MAPS, saved)) initial = saved;
   } catch (_) {}
+  initModalKeyboard();
   initPicker();
   openSessionSetup();
   state.pendingTrack = initial;
@@ -157,7 +159,20 @@ export function initializeGame() {
   $('race-mode').onclick = toggleOpponentRace;
   $('race-mode').disabled = false;
   window.addEventListener('keydown', (e) => {
-    if ($('selection-dialog').open) return;
+    if (document.querySelector('dialog[open]')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+      if (!e.repeat) setPaused(!state.paused);
+      e.preventDefault();
+      return;
+    }
+    // Leave native activation intact, including Space on Resume and menus.
+    if (
+      e.code === 'Space' &&
+      e.target.closest('button, a, input, select, textarea')
+    )
+      return;
+    if (state.paused) return;
     if (
       [
         'KeyW',
@@ -179,7 +194,6 @@ export function initializeGame() {
       restartRun();
     }
     if (e.code === 'KeyR') recover(true);
-    if (e.code === 'Escape' || e.code === 'KeyP') setPaused(!state.paused);
   });
   window.addEventListener('keyup', (e) => keys.delete(e.code));
   window.addEventListener('blur', () => {

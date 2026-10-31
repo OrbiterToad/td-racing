@@ -13,6 +13,9 @@ import { dirtProgress, sampleMap } from './tracks.js';
 
 export const $ = (id) => document.getElementById(id);
 
+let pickerOpener;
+let pauseOpener;
+
 const GAME_MODES = {
   trial: {
     id: 'trial',
@@ -93,12 +96,13 @@ export function openSessionSetup() {
 }
 
 export function openPicker(mode) {
+  pickerOpener = document.activeElement;
   state.pickerMode = mode;
   state.pendingTrack = state.activeMap.id;
   state.pendingCar = state.activeCar.id;
   state.pendingPaint = state.paint;
   state.pickerWasPaused = state.paused;
-  setPaused(true);
+  setPaused(true, false);
   document.body.classList.add('choosing');
   renderPicker();
   $('selection-dialog').showModal();
@@ -116,7 +120,10 @@ export function closePicker(resume = false) {
   }
   $('selection-dialog').close();
   document.body.classList.remove('choosing');
-  setPaused(resume ? false : state.pickerWasPaused);
+  setPaused(resume ? false : state.pickerWasPaused, false);
+  if (pickerOpener?.isConnected && pickerOpener !== document.body)
+    pickerOpener.focus();
+  else $('open-garage').focus();
 }
 
 function selectChoice(id) {
@@ -247,7 +254,7 @@ export function renderPicker() {
       </div>
     </div>
     <div class="choice-rail" aria-label="${modes ? 'Game modes' : tracks ? 'Circuits' : 'Cars'}" style="--choice-count:${choices.length}">
-      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? '' : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note">${item.id === 'trial' ? 'Solo / any car & circuit' : clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R'}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
+      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? '' : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R'}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
 
     </div>
     ${
@@ -283,6 +290,7 @@ export function renderPicker() {
 }
 
 export function applyPicker() {
+  const startingSession = state.selectingSession;
   if (state.selectingSession && state.pickerMode !== 'modes') {
     state.pickerMode = state.pickerMode === 'garage' ? 'tracks' : 'modes';
     renderPicker();
@@ -315,6 +323,7 @@ export function applyPicker() {
   state.selectingSession = false;
   document.body.classList.remove('starting');
   closePicker(true);
+  if (startingSession) $('game').focus();
   syncCarHUD();
   notify(
     state.activeMap.name.toUpperCase() +
@@ -444,12 +453,22 @@ export function drawTrackPreview(canvas, map) {
   c.restore();
 }
 
-export function setPaused(value) {
+export function setPaused(value, moveFocus = true) {
+  const changed = state.paused !== value;
   state.paused = value;
   keys.clear();
   state.accumulator = 0;
   $('pause-screen').classList.toggle('open', state.paused);
   $('pause').textContent = state.paused ? '▶ Resume' : 'Ⅱ Pause';
+  $('pause').setAttribute('aria-pressed', String(state.paused));
+  if (changed && moveFocus && !$('selection-dialog').open) {
+    if (state.paused) {
+      pauseOpener = document.activeElement;
+      $('resume').focus();
+    } else if (pauseOpener?.isConnected && pauseOpener !== document.body) {
+      pauseOpener.focus();
+    } else $('pause').focus();
+  }
   if (state.engineGain)
     state.engineGain.gain.setTargetAtTime(
       state.paused ? 0 : 0.025,
