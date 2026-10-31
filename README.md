@@ -99,8 +99,8 @@ Both openings are drivable; the pit lane has its own finish timing line.
 Click **Race AI · Juniper** in the bottom bar for a three-lap race against Alex,
 Blair, and Casey. Everyone drives a Clubsport R on Juniper. The three opponents
 have different fixed paces, brake ahead of bends, and slow around oil. Their pace
-does not change to catch or wait for you. This first version uses non-contact,
-path-following opponents; cars can pass through each other.
+does not change to catch or wait for you. They share the player's driving
+physics and collide with the player and one another.
 
 The timing panel shows live positions, total race time, and the finishing result.
 Opponent colors and name labels match the minimap dots. Cross the start line,
