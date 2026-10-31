@@ -6,6 +6,7 @@ import {
   saveLapGhost,
 } from './ghost.js';
 import { clamp, lerpTo } from './math.js';
+import { configureRaceResultsActions } from './results.js';
 import { changeTrack } from './runtime.js';
 import {
   camera,
@@ -20,7 +21,7 @@ import {
   track,
 } from './state.js';
 import { nearest, nearestDriving, timingGateHalfWidth } from './tracks.js';
-import { formatSector, formatTime, notify } from './ui.js';
+import { formatSector, formatTime, notify, openSessionSetup } from './ui.js';
 
 export function beginLap(start) {
   timing.splits = [];
@@ -152,6 +153,11 @@ export function updateRace(dt, n) {
     if (race.next === 4 && race.travel > 0.85 && !race.invalid) {
       finishSector(crossingTime, 3);
       race.last = crossingTime;
+      if (
+        opponentRace.enabled &&
+        (opponentRace.bestLap === null || crossingTime < opponentRace.bestLap)
+      )
+        opponentRace.bestLap = crossingTime;
       race.lap++;
       if (opponentRace.enabled && race.lap > opponentRace.laps) {
         opponentRace.playerFinish = opponentRace.elapsed - dt + dt * fraction;
@@ -210,3 +216,8 @@ export function finishSector(time, index) {
     timing.best[index] !== undefined ? elapsed - timing.best[index] : null;
   timing.flashTime = 3.5;
 }
+
+configureRaceResultsActions({
+  raceAgain: restartRun,
+  backToSetup: openSessionSetup,
+});

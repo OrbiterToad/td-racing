@@ -304,7 +304,7 @@ test('club race starts, pauses, restarts, finishes, and returns to time trial', 
   await expect(page.locator('#race-help')).toContainText(
     'Restart to race again',
   );
-  await page.locator('#restart').click();
+  await page.locator('[data-action="again"]').click();
   await expect(page.locator('#race-position')).toContainText('POSITION');
   await expect(page.locator('#start-countdown')).toHaveText(/^[123]$/);
   await page.locator('#race-mode').click();
