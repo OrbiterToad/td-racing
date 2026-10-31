@@ -1,4 +1,9 @@
 Commit every change you make locally and push your commits to `origin`.
+Commit and push regular, incremental milestones during implementation rather
+than accumulating the entire task in an uncommitted working tree. Each commit
+should be a coherent, reviewable increment that is not knowingly broken and
+does not include secrets or generated noise; keep using the required commit
+message format and run relevant checks before handoff.
 After completing the task and passing the required checks, you may merge your
 changes into the repository's default branch and push the merge to `origin`
 yourself, once the task is complete and all required checks pass.
