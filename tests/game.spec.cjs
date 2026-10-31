@@ -15,7 +15,10 @@ async function startSession(page) {
 test('packaged game loads, changes tracks and cars, and remembers selections', async ({
   page,
   baseURL,
+  browserName,
 }) => {
+  // Software canvas rendering makes the full circuit/car sweep slower in WebKit.
+  if (browserName === 'webkit') test.setTimeout(120_000);
   const origin = new URL(baseURL).origin + '/';
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
