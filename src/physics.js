@@ -1,4 +1,4 @@
-import { updateOpponents } from './opponents.js';
+import { resolveOpponentCollisions, updateOpponents } from './opponents.js';
 import { playImpact } from './audio.js';
 import { coast } from './coast.js';
 import { recordGhostFrame } from './ghost.js';
@@ -215,6 +215,7 @@ export function simulate(dt) {
     }
   }
   resolveCityTraffic();
+  if (opponentRace.enabled) resolveOpponentCollisions();
   car.slip = Math.abs(lateral);
   const leavingMarks =
     surface !== 'FORD' &&

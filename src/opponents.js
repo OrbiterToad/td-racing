@@ -1,5 +1,5 @@
 import { carImagePath, configureCar, loadCarArt } from './cars.js';
-import { CFG, PAINTS } from './config.js';
+import { CFG, PAINTS, VEHICLES } from './config.js';
 import { clamp, lerpTo } from './math.js';
 import { inWorldView, roundedRect } from './renderer.js';
 import { changeTrack } from './runtime.js';
@@ -11,7 +11,7 @@ import {
   state,
   track,
 } from './state.js';
-import { nearestDriving, pointOnTrack } from './tracks.js';
+import { nearestDriving, pointOnTrack, surfaceAt } from './tracks.js';
 import { $, formatTime, notify, syncCarHUD } from './ui.js';
 
 export { opponentRace };
@@ -24,7 +24,7 @@ export function toggleOpponentRace() {
     loadCarArt();
     syncCarHUD();
     changeTrack('juniper', false);
-    notify('CLUB RACE · Three laps · Non-contact opponents');
+    notify('CLUB RACE · Three laps · Contact racing');
   } else {
     changeTrack(state.activeMap.id, false);
     notify('TIME TRIAL · Find your next personal best');
@@ -95,13 +95,17 @@ export function resetOpponentRace() {
       paint: color,
       s: -90 - slot * 80,
       speed: 0,
+      vx: 0,
+      vy: 0,
+      yaw: 0,
+      steer: 0,
+      slickTime: 0,
       pace: [0.98, 0.91, 0.84][i],
       lane: [-26, 26, 0][i],
       offset: CFG.road * 0.4 * (slot % 2 ? 1 : -1),
       brake: false,
       finish: null,
     };
-    positionOpponent(rival);
     opponentRace.cars.push(rival);
   }
 }
@@ -127,10 +131,137 @@ export function updateOpponents(dt) {
       index = Math.floor(s / opponentRace.spacing),
       target = opponentRace.profile[index] * rival.pace,
       previous = rival.s;
-    rival.brake = rival.speed > target + 5;
-    rival.speed += clamp(target - rival.speed, -250 * dt, 150 * dt);
+    const aim = pointOnTrack(rival.s + 75),
+      aimX = aim.x - aim.ty * rival.lane,
+      aimY = aim.y + aim.tx * rival.lane,
+      desired = Math.atan2(aimY - rival.y, aimX - rival.x),
+      error = Math.atan2(
+        Math.sin(desired - rival.angle),
+        Math.cos(desired - rival.angle),
+      ),
+      steering = clamp(error * 2.8, -1, 1),
+      config = VEHICLES.clubsport;
+    const nearest = nearestDriving(rival.x, rival.y),
+      surface = surfaceAt(nearest, rival.x, rival.y);
+    rival.slickTime =
+      surface === 'OIL' ? 1.15 : Math.max(0, rival.slickTime - dt);
+    rival.steer = lerpTo(rival.steer, steering, 1 - Math.exp(-9 * dt));
+    const fx = Math.cos(rival.angle),
+      fy = Math.sin(rival.angle),
+      rx = -fy,
+      ry = fx;
+    let forward = rival.vx * fx + rival.vy * fy,
+      lateral = rival.vx * rx + rival.vy * ry;
+    const speed = Math.hypot(rival.vx, rival.vy),
+      gas = forward < target - 5,
+      braking = forward > target + 5,
+      offroad = ['GRASS', 'GRAVEL', 'SAND', 'SAND PATCH', 'SNOW'].includes(
+        surface,
+      ),
+      baseGrip =
+        surface === 'FORD'
+          ? 0.55
+          : surface === 'DIRT'
+            ? 0.62
+            : surface === 'ICE'
+              ? 0.13
+              : surface === 'OIL'
+                ? 0.12
+                : surface === 'SAND PATCH'
+                  ? 0.48
+                  : surface === 'SAND'
+                    ? 0.32
+                    : surface === 'SNOW'
+                      ? 0.4
+                      : surface === 'GRASS'
+                        ? 0.58
+                        : surface === 'GRAVEL'
+                          ? 0.43
+                          : surface === 'RUNOFF'
+                            ? 0.9
+                            : 1,
+      oilGrip = 1 - 0.8 * clamp(rival.slickTime / 1.15, 0, 1),
+      aeroSurface = ['ASPHALT', 'PIT LANE', 'RUNOFF'].includes(surface),
+      aeroGrip =
+        1 +
+        (aeroSurface
+          ? (config.downforce || 0) * clamp(speed / 730, 0, 1) ** 2
+          : 0),
+      powerSlide =
+        1 -
+        (config.powerSlide || 0) *
+          (gas ? 1 : 0) *
+          clamp(Math.abs(forward) / 160, 0, 1) *
+          clamp(Math.abs(rival.steer) * 2, 0, 1),
+      grip = baseGrip * config.grip * oilGrip * aeroGrip * powerSlide;
+    let acceleration = 0;
+    if (gas)
+      acceleration +=
+        forward < -8
+          ? config.brakes
+          : config.power * (1 - clamp(forward / config.ceiling, 0, 0.93));
+    if (braking)
+      acceleration +=
+        forward > 8 ? -config.brakes : -95 * (1 - clamp(-forward / 115, 0, 1));
+    if (surface === 'ICE') acceleration *= 0.3;
+    if (surface === 'OIL') acceleration *= 0.55;
+    acceleration -= forward * 0.12 + forward * Math.abs(forward) * config.drag;
+    if (offroad)
+      acceleration -=
+        forward *
+        (surface === 'SAND'
+          ? 1.4
+          : surface === 'SAND PATCH' || surface === 'SNOW'
+            ? 0.85
+            : surface === 'GRAVEL'
+              ? 1.15
+              : 0.58) *
+        config.offroad;
+    if (surface === 'DIRT') acceleration -= forward * 0.23 * config.offroad;
+    if (!gas && !braking && Math.abs(forward) < 3) forward = 0;
+    forward += acceleration * dt;
+    const steeringAngle =
+        rival.steer * (0.52 / (1 + Math.abs(forward) / 190)) * config.steering,
+      targetYaw = (forward / config.wheelbase) * Math.tan(steeringAngle);
+    rival.yaw = lerpTo(
+      rival.yaw,
+      targetYaw,
+      1 - Math.exp(-(config.yawResponse || 8) * dt),
+    );
+    const availableGrip = 420 * grip * (braking ? 0.83 : 1);
+    lateral += clamp(-lateral * 9.5 * grip, -availableGrip, availableGrip) * dt;
+    rival.vx = fx * forward + rx * lateral;
+    rival.vy = fy * forward + ry * lateral;
+    rival.angle += rival.yaw * dt;
+    rival.x += rival.vx * dt;
+    rival.y += rival.vy * dt;
+    const wall = nearestDriving(rival.x, rival.y),
+      axisX = Math.cos(rival.angle),
+      axisY = Math.sin(rival.angle),
+      support =
+        (Math.abs(axisX * wall.nx + axisY * wall.ny) * config.length) / 2 +
+        (Math.abs(-axisY * wall.nx + axisX * wall.ny) * config.width) / 2,
+      limit = wall.wall - 6 - support;
+    if (wall.distance > limit) {
+      const nx = wall.nx * wall.side,
+        ny = wall.ny * wall.side;
+      rival.x = wall.x + nx * limit;
+      rival.y = wall.y + ny * limit;
+      const impact = rival.vx * nx + rival.vy * ny;
+      if (impact > 0) {
+        rival.vx -= nx * impact * 1.26;
+        rival.vy -= ny * impact * 1.26;
+        rival.vx *= 0.84;
+        rival.vy *= 0.84;
+        rival.yaw *= 0.4;
+      }
+    }
+    rival.speed = Math.hypot(rival.vx, rival.vy);
+    rival.brake = braking;
     rival.offset = lerpTo(rival.offset, rival.lane, 1 - Math.exp(-dt));
-    rival.s += rival.speed * dt;
+    const progress = nearestDriving(rival.x, rival.y).progress;
+    rival.s = Math.floor(previous / length) * length + progress * length;
+    while (rival.s < previous - length / 2) rival.s += length;
     if (rival.s >= finish) {
       rival.finish =
         opponentRace.elapsed -
@@ -140,7 +271,81 @@ export function updateOpponents(dt) {
       rival.speed = 0;
       rival.brake = false;
     }
-    positionOpponent(rival);
+  }
+  resolveOpponentCollisions();
+}
+
+export function resolveOpponentCollisions() {
+  const vehicles = [
+    { car, config: VEHICLES.clubsport, player: true },
+    ...opponentRace.cars
+      .filter((rival) => rival.finish === null)
+      .map((rival) => ({ car: rival, config: VEHICLES.clubsport })),
+  ];
+  for (let i = 0; i < vehicles.length; i++) {
+    for (let j = i + 1; j < vehicles.length; j++) {
+      const a = vehicles[i],
+        b = vehicles[j],
+        dx = b.car.x - a.car.x,
+        dy = b.car.y - a.car.y;
+      if (dx * dx + dy * dy > 75 * 75) continue;
+      let depth = Infinity,
+        nx = 0,
+        ny = 0,
+        separated = false;
+      for (const angle of [
+        a.car.angle,
+        a.car.angle + Math.PI / 2,
+        b.car.angle,
+        b.car.angle + Math.PI / 2,
+      ]) {
+        const ax = Math.cos(angle),
+          ay = Math.sin(angle),
+          extent = (vehicle, axis) =>
+            (Math.abs(
+              Math.cos(vehicle.car.angle) * axis[0] +
+                Math.sin(vehicle.car.angle) * axis[1],
+            ) *
+              vehicle.config.length) /
+              2 +
+            (Math.abs(
+              -Math.sin(vehicle.car.angle) * axis[0] +
+                Math.cos(vehicle.car.angle) * axis[1],
+            ) *
+              vehicle.config.width) /
+              2,
+          overlap =
+            extent(a, [ax, ay]) +
+            extent(b, [ax, ay]) -
+            Math.abs(dx * ax + dy * ay);
+        if (overlap <= 0) {
+          separated = true;
+          break;
+        }
+        if (overlap < depth) {
+          depth = overlap;
+          const sign = dx * ax + dy * ay >= 0 ? 1 : -1;
+          nx = ax * sign;
+          ny = ay * sign;
+        }
+      }
+      if (separated) continue;
+      a.car.x -= nx * (depth / 2 + 0.5);
+      a.car.y -= ny * (depth / 2 + 0.5);
+      b.car.x += nx * (depth / 2 + 0.5);
+      b.car.y += ny * (depth / 2 + 0.5);
+      const impact = (b.car.vx - a.car.vx) * nx + (b.car.vy - a.car.vy) * ny;
+      if (impact < 0) {
+        a.car.vx += nx * impact * 0.65;
+        a.car.vy += ny * impact * 0.65;
+        b.car.vx -= nx * impact * 0.65;
+        b.car.vy -= ny * impact * 0.65;
+      }
+      a.car.vx *= 0.88;
+      a.car.vy *= 0.88;
+      b.car.vx *= 0.88;
+      b.car.vy *= 0.88;
+    }
   }
 }
 
