@@ -26,6 +26,7 @@ import {
   visibleGhostPose,
 } from './src/ghost.js';
 import { amazonRiver, amazonRiverFrame, updateJungle } from './src/jungle.js';
+import { lerpTo } from './src/math.js';
 import { simulate } from './src/physics.js';
 import {
   beginLap,
@@ -36,8 +37,11 @@ import {
 } from './src/race.js';
 import {
   paddockAssetLayout,
+  paddockTeamLayout,
+  sceneryAccessDistance,
   sceneryClear,
   sceneryDetailLayer,
+  sceneryEntrance,
 } from './src/scenery.js';
 import {
   car,
@@ -48,6 +52,7 @@ import {
   pitLane,
   race,
   sceneryBuildings,
+  sceneryAccess,
   sceneryDetails,
   sceneryScene,
   sceneryTrees,
@@ -2096,6 +2101,127 @@ for (const key of [
   );
 console.log(
   'PASS: shared footprint reservations, rotated sprite bounds, deterministic placement, park/monkey clearance, layered draw order, and new asset coverage across all seven maps.',
+);
+
+for (const id of Object.keys(MAPS)) {
+  configureTrack(id);
+  if (id !== 'rallycross')
+    assert(
+      sceneryAccess.length >= 10,
+      'Maps with homes, cabins, or cafés need access paths: ' + id,
+    );
+  if (id === 'city')
+    assert(
+      sceneryAccess.filter((access) => access.owner.kind === 'home').length >=
+        15,
+      'Suburban homes need visible driveways',
+    );
+  if (id === 'city' || id === 'coast')
+    assert(
+      sceneryAccess.some((access) => access.owner.kind === 'cafe-terrace'),
+      'Cafés need a pedestrian approach',
+    );
+  for (const access of sceneryAccess) {
+    assert.equal(access.layer, SCENERY_LAYERS.ground);
+    assert(sceneryScene.includes(access.owner));
+    const entrance = sceneryEntrance(access.owner),
+      first = access.points[0],
+      last = access.points.at(-1),
+      n = nearest(last.x, last.y);
+    assert(
+      Math.hypot(first.x - entrance.x, first.y - entrance.y) < entrance.h / 2,
+      'Access must start at the building frontage',
+    );
+    assert(
+      Math.abs(
+        n.distance - widthAt('wall', n.progress) - access.width / 2 - 10,
+      ) < 1,
+      'Access must end at the outside verge',
+    );
+    for (const home of sceneryBuildings)
+      if (home.kind === 'home')
+        assert(
+          sceneryAccessDistance(access, home.x + 60, home.y + 55) >=
+            36 * 0.85 + access.width / 2 + 1.9,
+          'Driveways must clear every garden tree',
+        );
+    for (const prop of sceneryScene)
+      if (prop !== access.owner)
+        assert(
+          sceneryAccessDistance(access, prop.x, prop.y) >=
+            prop.radius + access.width / 2 + 1.9,
+          'Paths must clear other scenery footprints',
+        );
+    for (let i = 1; i < access.points.length; i++) {
+      const a = access.points[i - 1],
+        b = access.points[i],
+        steps = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 4));
+      for (let j = 0; j <= steps; j++) {
+        const x = lerpTo(a.x, b.x, j / steps),
+          y = lerpTo(a.y, b.y, j / steps),
+          m = nearest(x, y),
+          dx = x - entrance.x,
+          dy = y - entrance.y,
+          localX =
+            dx * Math.cos(entrance.angle) + dy * Math.sin(entrance.angle),
+          localY =
+            -dx * Math.sin(entrance.angle) + dy * Math.cos(entrance.angle);
+        assert(
+          m.distance > widthAt('wall', m.progress) + access.width / 2 + 2,
+          'Paths must stay outside the main barriers',
+        );
+        assert(
+          nearestPit(x, y).distance > pitLane.wall + access.width / 2 + 2,
+          'Paths must stay outside pit barriers',
+        );
+        assert(
+          !(
+            Math.abs(localX) < entrance.w / 2 &&
+            localY < entrance.h * 0.39 &&
+            localY > -entrance.h / 2
+          ),
+          'Paths must route around roofs',
+        );
+      }
+    }
+  }
+  const paths = JSON.stringify(sceneryAccess);
+  configureTrack(id);
+  assert.equal(JSON.stringify(sceneryAccess), paths);
+
+  const props = paddockAssetLayout(),
+    teams = paddockTeamLayout();
+  assert.equal(teams.length, 2);
+  for (const team of teams) {
+    const members = props.filter((prop) => prop.team === team.id);
+    assert.equal(
+      members.filter((prop) => prop.bay).length,
+      2,
+      'Each team needs two neighboring garages',
+    );
+    for (const key of [
+      'service-transporter',
+      'service-tent-' + team.id,
+      'tool-trolley',
+    ])
+      assert(
+        members.some((prop) => prop.key === key),
+        'Each team needs matching transport and service equipment',
+      );
+  }
+  for (let i = 0; i < props.length; i++)
+    for (let j = 0; j < i; j++) {
+      const a = props[i],
+        b = props[j];
+      assert(
+        Math.abs(a.x - b.x) >= (a.w + b.w) / 2 ||
+          Math.abs(a.y - b.y) >= (a.h + b.h) / 2,
+        'Paddock garages and equipment must not overlap',
+      );
+    }
+}
+console.log(
+  'PASS: frontage-to-verge paths clear roofs, scenery, roads, and pits; paddocks have two complete, non-overlapping team zones on every map.',
 );
 
 // Complete club races use the production AI controller and lap validation.
