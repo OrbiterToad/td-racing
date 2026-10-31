@@ -249,7 +249,9 @@ race with three AI opponents. Each scenario warms up for 30 frames and measures
 randomness are seeded. The sweep spans warmup and measurement frames. Player velocity is set to
 220 world units/s at each route placement before the two physics steps; this covers scenery and surfaces consistently,
 but is not an autonomous clean lap. Opponents and City traffic advance through
-their normal update paths. Sound is off and there is no saved ghost.
+their normal update paths. City's initial four-second spawn delay means traffic
+only enters near the end of the default run; this is not a steady-traffic stress
+case. Sound is off and there is no saved ghost.
 
 The runner verifies circuit selection, finite player physics, scenario coverage,
 and three advancing AI opponents, and rejects JavaScript errors and missing
