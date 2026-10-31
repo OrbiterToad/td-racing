@@ -5,6 +5,7 @@ import { resetOpponentRace } from '../src/opponents.js';
 import { simulate } from '../src/physics.js';
 import { draw } from '../src/renderer.js';
 import { changeTrack } from '../src/runtime.js';
+import { applyPicker } from '../src/ui.js';
 import {
   camera,
   car,
@@ -46,6 +47,7 @@ export async function runPerformanceCheck({ frames = 240, warmup = 30 } = {}) {
       throw new Error('Game initialization timed out');
     await nextFrame();
   }
+  for (let step = 0; state.selectingSession && step < 3; step++) applyPicker();
   window.noLoop();
   // Menu versions may have an open dialog; the tool owns this disposable page.
   for (const dialog of document.querySelectorAll('dialog[open]'))
