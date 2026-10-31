@@ -2,6 +2,7 @@ import { carImagePath, configureCar, loadCarArt } from './cars.js';
 import { CFG, PAINTS } from './config.js';
 import { clamp } from './math.js';
 import { inWorldView, roundedRect } from './renderer.js';
+import { syncRaceResults } from './results.js';
 import { changeTrack } from './runtime.js';
 import {
   car,
@@ -41,6 +42,7 @@ export function resetOpponentRace() {
     elapsed: 0,
     finished: false,
     playerFinish: null,
+    bestLap: null,
     cars: [],
     profile: [],
   });
@@ -242,7 +244,10 @@ export function updateOpponentHUD() {
   $('session-drivers').textContent = enabled
     ? '04 DRIVERS · 03 LAPS'
     : '01 DRIVER · NO LIMITS';
-  if (!enabled) return;
+  if (!enabled) {
+    syncRaceResults({ finished: false });
+    return;
+  }
   const standings = opponentStandings(),
     place = standings.findIndex((entry) => entry.player) + 1;
   $('race-position').textContent = opponentRace.finished
@@ -264,6 +269,12 @@ export function updateOpponentHUD() {
   $('race-help').textContent = opponentRace.finished
     ? 'N / Restart to race again · Time trial to leave'
     : 'Full contact · Pass every sector · R invalidates the lap';
+  syncRaceResults({
+    finished: opponentRace.finished,
+    totalTime: opponentRace.playerFinish,
+    bestLap: opponentRace.bestLap,
+    standings,
+  });
 }
 
 export function drawOpponents(c) {
