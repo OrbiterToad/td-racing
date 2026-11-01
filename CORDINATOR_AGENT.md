@@ -36,7 +36,7 @@ The issue size-labeling policy below is also published in `docs/COORDINATOR_GUID
 ## Agent task start preflight
 
 - Before assigning work, confirm the source issue's scope, acceptance criteria, out-of-scope items, size, status, and ownership. Put the issue link and these requirements in the assignment so the issue remains the source of truth.
-- At task start, require the agent to fetch `origin/master` and record the base SHA. Have it inspect relevant open PRs, branches, and worktrees for existing assignments, conflicts, and uncommitted changes before creating an isolated `ai/` worktree. It must not alter another agent's worktree or dirty files.
+- At task start, require the agent to fetch `origin/master` and record the base SHA. Have it inspect relevant open PRs, branches, and worktrees to avoid duplicate issue ownership and understand integration risks before creating an isolated `ai/` worktree. It must not alter another agent's worktree or dirty files; shared-file overlap does not block its implementation.
 - Identify the repository-required checks from its CI workflow and any task-specific checks, and include them in the assignment. Do not run a redundant full suite before edits unless a baseline is needed to distinguish a pre-existing failure.
 - Require prompt coordinator escalation for blockers, ambiguity, scope conflicts, unavailable dependencies, or unsafe decisions. The agent must wait for coordination rather than silently stall, start competing work, or contact the user or other agents directly.
 - After implementation, require the agent to run relevant targeted checks and the repository-required CI suite. If it rebases or otherwise changes the tested head, rerun the required checks on that final head before opening or updating the PR.
@@ -44,7 +44,7 @@ The issue size-labeling policy below is also published in `docs/COORDINATOR_GUID
 
 ## Parallel work and browser checks
 
-- If an agent is blocked because another task owns a shared file, allow strictly isolated preparatory work in new files or tests only when it does not touch or depend on edits to the owned shared file. Defer integration until the owner or coordinator confirms the shared-file work is available; do not create conflicting edits.
+- Agents work concurrently in their isolated branches, including on the same files. Do not hold an assignment or restrict implementation to preparatory files solely to avoid possible conflicts. Track overlaps for merge sequencing, not task assignment. The coordinator resolves integration conflicts when PRs are ready.
 - Before starting browser checks, choose a free `PLAYWRIGHT_PORT`. Track and poll the running command session until it completes instead of launching duplicate runs. Never stop or reuse a development server owned by another worktree.
 
 ## Canceling assignments
