@@ -28,8 +28,8 @@ The issue size-labeling policy below is also published in `docs/COORDINATOR_GUID
 ## Creating agent chats
 
 - Choose a model based on task difficulty to control token use: use `gpt-6-luna` for difficult or high-uncertainty tasks, and a lighter/basic model for easier tasks (for example, `gpt-5.6-luna` when available). Reassess if the task changes.
-- Before creating or renaming an active agent chat, inspect the active title/slot map. Use one unique reusable slot from `Agent 1` through `Agent 8`; never create or rename an active chat to `Agent 9` or higher. Format titles as `Agent N (Size) · Task`, choosing `Mini` for bounded tasks (such as documentation, tests, audits, or focused fixes) and `Big` for broader feature implementations. For example: `Agent 8 (Mini) · Coordinator documentation` or `Agent 5 (Big) · Gamepad support`.
-- Use the Codex chat tools to rename an agent's chat if its task or size changes, while keeping its number stable.
+- Before creating or renaming an active agent chat, inspect the active title/slot map. Use one unique reusable slot from `Agent 1` through `Agent 8`; never create or rename an active chat to `Agent 9` or higher. Format titles as `Agent N (Mini/Big) · <state> · <short task>`, using the task's size and a concise current state. For example: `Agent 8 (Mini) · Working · Coordinator documentation` or `Agent 5 (Big) · Blocked · Gamepad support`.
+- Update a chat title whenever its state or task changes, keeping its agent number stable and its size accurate.
 - Give each assignment its own chat. When an agent finishes, archive the completed task chat (the app supports archiving, not deleting) before assigning a new task. Reuse that freed number for the next task, keeping active numbers unique and within 1–8; update the size label, task name, and model to fit the new assignment.
 - Reserve Agent 1 for agent-instruction maintenance. Keep Agent 1's chat open after this task finishes and mark it idle/reserved for future changes to agent or coordinator instructions; do not archive it or repurpose it for feature work.
 
@@ -41,6 +41,15 @@ The issue size-labeling policy below is also published in `docs/COORDINATOR_GUID
 - Require prompt coordinator escalation for blockers, ambiguity, scope conflicts, unavailable dependencies, or unsafe decisions. The agent must wait for coordination rather than silently stall, start competing work, or contact the user or other agents directly.
 - After implementation, require the agent to run relevant targeted checks and the repository-required CI suite. If it rebases or otherwise changes the tested head, rerun the required checks on that final head before opening or updating the PR.
 - Before PR creation or update, have the agent report the exact tested commit SHA, base SHA, check results, and any known baseline failures or flaky checks. The coordinator tracks the PR's refreshed check and review state after publication.
+
+## Parallel work and browser checks
+
+- If an agent is blocked because another task owns a shared file, allow strictly isolated preparatory work in new files or tests only when it does not touch or depend on edits to the owned shared file. Defer integration until the owner or coordinator confirms the shared-file work is available; do not create conflicting edits.
+- Before starting browser checks, choose a free `PLAYWRIGHT_PORT`. Track and poll the running command session until it completes instead of launching duplicate runs. Never stop or reuse a development server owned by another worktree.
+
+## Canceling assignments
+
+- When the user or coordinator cancels an assignment, stop its work, close its PR, and delete only that task's remote branch. Then archive the canceled chat and reuse its agent number for a replacement task with the correct size and model. Preserve work and branches belonging to other tasks.
 
 ## Coordinating agents
 
