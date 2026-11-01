@@ -1,9 +1,18 @@
 import { clamp, lerpTo } from './math.js';
-import { car, lapGhost, opponentRace, race, state, timing } from './state.js';
+import { ghostMatchesPair } from './ghost-transfer.js';
+import {
+  car,
+  ghostLibrary,
+  lapGhost,
+  opponentRace,
+  race,
+  state,
+  timing,
+} from './state.js';
 import { formatTime } from './ui.js';
 
 export function liveGhostDelta() {
-  const ghost = lapGhost.best;
+  const ghost = currentReferenceGhost();
   if (
     !ghost ||
     !race.started ||
@@ -151,7 +160,7 @@ export function saveLapGhost(time, last) {
 }
 
 export function ghostPose(time) {
-  const best = lapGhost.best;
+  const best = currentReferenceGhost();
   if (!best || time < 0 || time > best.time) return null;
   const frames = best.frames;
   let i = lapGhost.cursor;
@@ -170,21 +179,47 @@ export function ghostPose(time) {
 }
 
 export function ghostStatus() {
-  if (!lapGhost.best)
+  const ghost = currentReferenceGhost();
+  if (!ghost)
     return race.invalid
       ? 'GHOST · Cross the finish, then drive a clean lap'
       : 'GHOST · Complete a clean lap to record';
   if (!race.crossedStart) return 'GHOST READY · Cross the start line';
   return (
-    'GHOST ' +
-    (!race.started
-      ? 'READY'
-      : race.time > lapGhost.best.time
-        ? 'FINISHED'
-        : 'RACING') +
+    (ghostLibrary.reference === 'imported' ? 'RIVAL GHOST ' : 'GHOST ') +
+    (!race.started ? 'READY' : race.time > ghost.time ? 'FINISHED' : 'RACING') +
     ' · ' +
-    formatTime(lapGhost.best.time)
+    formatTime(ghost.time)
   );
+}
+
+export function currentReferenceGhost() {
+  if (
+    ghostLibrary.reference === 'imported' &&
+    ghostMatchesPair(
+      ghostLibrary.imported,
+      state.activeMap.id,
+      state.activeCar.id,
+    )
+  )
+    return ghostLibrary.imported.ghost;
+  return lapGhost.best;
+}
+
+export function selectGhostReference(reference) {
+  if (reference !== 'best' && reference !== 'imported') return false;
+  if (
+    reference === 'imported' &&
+    !ghostMatchesPair(
+      ghostLibrary.imported,
+      state.activeMap.id,
+      state.activeCar.id,
+    )
+  )
+    return false;
+  ghostLibrary.reference = reference;
+  lapGhost.cursor = 0;
+  return true;
 }
 
 export function visibleGhostPose() {
