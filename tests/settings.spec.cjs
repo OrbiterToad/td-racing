@@ -358,6 +358,10 @@ test('settings open from play and pause preserve the in-progress lap', async ({
 
   await page.locator('#pause').click();
   await expect(page.locator('#pause-screen')).toHaveClass('open');
+  const pausedTime = await page.evaluate(async () => {
+    const { race } = await import('./src/state.js');
+    return race.time;
+  });
   await page.locator('#settings-pause').click();
   await expect(page.locator('#settings-dialog')).toBeVisible();
   await page.locator('#settings-done').click();
@@ -368,7 +372,7 @@ test('settings open from play and pause preserve the in-progress lap', async ({
       const { race } = await import('./src/state.js');
       return race.time;
     }),
-  ).toBeCloseTo(42, 0);
+  ).toBe(pausedTime);
 });
 
 test('out-of-range saved values use safe defaults while valid mute persists', async ({
