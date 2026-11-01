@@ -2,6 +2,7 @@ node_modules/
 dist/
 playwright-report/
 test-results/
+preview-profile/
 
 # Local GitHub administration token
 /GITHUB_TOKEN
