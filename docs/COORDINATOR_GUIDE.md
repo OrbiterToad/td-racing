@@ -63,3 +63,35 @@ Agent status updates report each task's size consistent with its issue's
 current `Mini`/`Big` label. If the coordinator relabels an issue because its
 true scope became clear only after investigation, the same status update
 reflects the new label.
+
+## Coordinator handoff messages
+
+Every agent-to-coordinator message starts with this first line:
+
+`[Agent <number>] [#<issue> <short task>] [<current state>]`
+
+Every coordinator-to-agent message uses the same fields with `[Coordinator]`
+in the first field. Put details on the next line, beginning with `Further info:`.
+Use concise state labels such as `preflight complete`, `progress`,
+`blocked`, `merge request`, `merged`, and `ready for new task`.
+
+At preflight, progress, blocker or ambiguity, merge request, authorized merge,
+and task-completion milestones, send a direct message to the coordinator chat;
+a final answer in an agent's own chat is not a handoff. A merge request keeps
+the exact phrase “I want to merge PR #<number>” in its details and includes
+the PR link, tested head SHA, current base SHA, check/review state, and any
+freshness or conflict blocker. The coordinator owns the merge decision.
+
+Example agent merge request:
+
+```text
+[Agent <number>] [#<issue> <short task>] [merge request]
+Further info: I want to merge PR #<number>. Head `<sha>`, base `<sha>`; checks: <results>; review: <state>; mergeability: <state>.
+```
+
+Example coordinator sync message:
+
+```text
+[Coordinator] [#<issue> <short task>] [sync checkpoint]
+Further info: PR #<number> merged; current default-branch SHA is `<sha>`. Resume the queued work from that base.
+```
