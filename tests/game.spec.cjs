@@ -516,7 +516,7 @@ for (const viewport of [
           ? '02 / 06'
           : mode === 'tracks'
             ? '02 / 07'
-            : '01 / 02',
+            : '04 / 06',
       );
       await page.locator('#picker-apply').click();
     }
@@ -627,4 +627,35 @@ test('club race can be selected on the final wizard page and survives back navig
   await page.locator('#picker-apply').click();
   await expect(page.locator('#race-panel')).toBeVisible();
   await expect(page.locator('#start-countdown')).toHaveText(/^[123]$/);
+});
+
+test('skill trials explain the selected event and start outside time-trial records', async ({
+  page,
+}) => {
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  await page.locator('#picker-apply').click();
+  await page.locator('#picker-apply').click();
+  await page.locator('[data-choice="slalom"]').click();
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
+  await expect(page.locator('#skill-trial-copy')).toContainText(
+    'Pass all five alternating gates',
+  );
+  await page.locator('#skill-trial-primary').click();
+  const session = await page.evaluate(async () => {
+    const { skillTrial, state } = await import('./src/state.js');
+    return {
+      active: skillTrial.active,
+      id: skillTrial.id,
+      ordinaryBest: localStorage.getItem(state.BEST_KEY),
+      skillBest: localStorage.getItem('apex-skill-trials-v1'),
+    };
+  });
+  expect(session).toEqual({
+    active: true,
+    id: 'slalom',
+    ordinaryBest: null,
+    skillBest: null,
+  });
 });

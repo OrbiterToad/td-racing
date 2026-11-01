@@ -293,7 +293,9 @@ export function renderPicker() {
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
       : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;
   const details = modes
-    ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : SKILL_TRIALS[selectedId] ? 'SHORT EVENT · LOCAL SKILL PROGRESS' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span>${SKILL_TRIALS[selectedId] ? `<span>PROGRESS / <b>${readSkillProgress()[selectedId]?.completions || 0} COMPLETED · BEST ${readSkillProgress()[selectedId]?.best ?? '—'}%</b></span>` : ''}</div>`
+    ? SKILL_TRIALS[selectedId]
+      ? `<div class="mode-summary"><span>${vehicle.name} / ${MAPS[state.pendingTrack].name}</span><span>LOCAL SKILL PROGRESS / ${readSkillProgress()[selectedId]?.completions || 0} COMPLETED · BEST ${readSkillProgress()[selectedId]?.best ?? '—'}%</span></div>`
+      : `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
     : tracks
       ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div>${medalDetails}<span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
       : `<div class="car-stats">${['PACE', 'HANDLING', 'OFF ROAD'].map((label, i) => `<span>${label}<i><b style="width:${selected.bars[i] * 100}%"></b></i></span>`).join('')}</div>`;
@@ -344,6 +346,7 @@ export function renderPicker() {
 
 export function applyPicker() {
   const startingSession = state.selectingSession;
+  const selectedSkill = startingSession ? state.pendingGameMode : null;
   if (state.selectingSession && state.pickerMode !== 'modes') {
     state.pickerMode = state.pickerMode === 'garage' ? 'tracks' : 'modes';
     renderPicker();
@@ -373,13 +376,12 @@ export function applyPicker() {
         state.pendingGameMode === 'race' && clubRaceAvailable();
     changeTrack(state.pendingTrack, false);
   }
-  if (startingSession && SKILL_TRIALS[state.pendingGameMode]) {
+  if (startingSession && SKILL_TRIALS[state.pendingGameMode])
     opponentRace.enabled = false;
-    beginSkillTrial(state.pendingGameMode);
-  }
   state.selectingSession = false;
   document.body.classList.remove('starting');
   closePicker(true);
+  if (SKILL_TRIALS[selectedSkill]) beginSkillTrial(selectedSkill);
   if (startingSession) $('game').focus();
   syncCarHUD();
   notify(

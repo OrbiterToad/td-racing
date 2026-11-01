@@ -74,6 +74,10 @@ function dialog() {
     'width:min(620px,calc(100vw - 28px));padding:0;border:1px solid #ffffff26;border-radius:8px;background:#182123;color:#edf0e8;box-shadow:0 28px 90px #000a';
   node.setAttribute('aria-labelledby', 'skill-trial-title');
   node.innerHTML = `<style>#skill-trial-dialog::backdrop{background:#091011c9;backdrop-filter:blur(5px)}.skill-panel{padding:32px}.skill-panel h2{font:700 42px 'Barlow Condensed',Impact,sans-serif;margin:8px 0}.skill-panel p{color:#c2cec6;line-height:1.6}.skill-panel #skill-trial-stats{border-top:1px solid #ffffff20;padding-top:16px;margin:20px 0;color:#d5f578;font-size:12px;letter-spacing:1px}.skill-actions{display:flex;justify-content:space-between;gap:12px}.skill-actions button{min-height:46px;padding:10px 16px}</style><div class="skill-panel"><span class="eyebrow" id="skill-trial-kicker">APEX / SKILL TRIAL</span><h2 id="skill-trial-title"></h2><p id="skill-trial-copy"></p><div id="skill-trial-stats"></div><div class="skill-actions"><button id="skill-trial-secondary" class="picker-close">BACK</button><button id="skill-trial-primary" class="primary">START TRIAL →</button></div></div>`;
+  node.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    node.querySelector('#skill-trial-secondary').click();
+  });
   document.body.append(node);
   return node;
 }
