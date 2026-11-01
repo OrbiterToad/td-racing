@@ -16,6 +16,7 @@ import {
   lapGhost,
   pitLane,
   race,
+  opponentRace,
   spatial,
   state,
   track,
@@ -49,6 +50,9 @@ export function configureTrack(id) {
   if (!Object.hasOwn(MAPS, id)) return false;
   state.activeMap = MAPS[id];
   state.controlPoints = state.activeMap.points;
+  if (id !== 'juniper' || state.activeCar.id !== 'clubsport')
+    opponentRace.enabled = false;
+  opponentRace.cars.length = 0;
   state.BEST_KEY = bestKeyFor();
   for (const key of ['road', 'runoff', 'wall']) CFG[key] = state.activeMap[key];
   resetCityTraffic();

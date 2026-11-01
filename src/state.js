@@ -6,10 +6,19 @@ export const state = {
   BEST_KEY: 'apex-juniper-corner-oil-v6',
   activeCar: VEHICLES.clubsport,
   paint: 'red',
-  pickerMode: 'tracks',
+  selectingSession: true,
+  pickerMode: 'garage',
   pendingTrack: 'juniper',
   pendingCar: 'clubsport',
   pendingPaint: 'red',
+  pendingGameMode: 'trial',
+  settings: {
+    volume: 0.7,
+    steeringSensitivity: 1,
+    reducedMotion: false,
+    reducedMotionSaved: false,
+  },
+  audioMasterGain: undefined,
   pickerWasPaused: false,
   activeMap: MAPS.juniper,
   controlPoints: MAPS.juniper.points,
@@ -31,6 +40,10 @@ export const state = {
   engineGain: undefined,
   soundEnabled: false,
   mapCtx: undefined,
+  gamepadControls: { steer: 0, throttle: 0, brake: 0, handbrake: 0 },
+  gamepadInput: undefined,
+  gamepadReady: false,
+  gamepadNeedsNeutral: false,
   trackBounds: undefined,
   worldBounds: undefined,
   paddock: undefined,
@@ -132,3 +145,18 @@ export const sceneryBuildings = [];
 export const sceneryTrees = [];
 
 export const sceneryScene = [];
+
+export const sceneryAccess = [];
+
+// Club races run physics-driven opponents with vehicle contact enabled.
+export const opponentRace = {
+  enabled: false,
+  laps: 3,
+  elapsed: 0,
+  finished: false,
+  playerFinish: null,
+  bestLap: null,
+  cars: [],
+  profile: [],
+  spacing: 80,
+};

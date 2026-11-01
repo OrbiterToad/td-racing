@@ -1,0 +1,746 @@
+{
+  "revision": "374aee58fec0bdd8ac720f441db66924bc6684fb",
+  "dirty": false,
+  "capturedAt": "2026-10-31T13:39:42.113Z",
+  "launch": {
+    "headless": true,
+    "extraFlags": []
+  },
+  "profileEnabled": true,
+  "machine": {
+    "platform": "linux",
+    "release": "7.2.11-100.fc43.x86_64",
+    "arch": "x64",
+    "cpu": "Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz",
+    "logicalCpus": 8,
+    "memoryGiB": 31.134075164794922,
+    "loadAverage": [11.87, 11.15, 8.39]
+  },
+  "node": "v24.22.2",
+  "browser": "156.0.8078.4",
+  "playwright": "1.64.1",
+  "context": {
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "deviceScaleFactor": 1,
+    "reducedMotion": "reduce"
+  },
+  "startup": [
+    {
+      "repeat": 0,
+      "readyMs": 1536.7000000001863,
+      "menuReadyMs": 627.6000000005588,
+      "startToFrameMs": 909.0999999996275,
+      "map": "juniper",
+      "resources": 78
+    },
+    {
+      "repeat": 0,
+      "readyMs": 1295.5,
+      "menuReadyMs": 405.6000000005588,
+      "startToFrameMs": 889.8999999994412,
+      "map": "canyon",
+      "resources": 78
+    },
+    {
+      "repeat": 0,
+      "readyMs": 1816.5999999996275,
+      "menuReadyMs": 652.7000000001863,
+      "startToFrameMs": 1163.8999999994412,
+      "map": "alpine",
+      "resources": 78
+    },
+    {
+      "repeat": 0,
+      "readyMs": 1226,
+      "menuReadyMs": 534,
+      "startToFrameMs": 692,
+      "map": "rallycross",
+      "resources": 78
+    },
+    {
+      "repeat": 0,
+      "readyMs": 1620.4000000003725,
+      "menuReadyMs": 585.7000000001863,
+      "startToFrameMs": 1034.7000000001863,
+      "map": "amazonas",
+      "resources": 78
+    },
+    {
+      "repeat": 0,
+      "readyMs": 1801.2999999998137,
+      "menuReadyMs": 514,
+      "startToFrameMs": 1287.3999999994412,
+      "map": "coast",
+      "resources": 78
+    },
+    {
+      "repeat": 0,
+      "readyMs": 1530.7000000001863,
+      "menuReadyMs": 555.0999999996275,
+      "startToFrameMs": 975.6000000005588,
+      "map": "city",
+      "resources": 82
+    }
+  ],
+  "runs": [
+    {
+      "frames": 60,
+      "warmup": 30,
+      "step": 0.008333333333333333,
+      "results": [
+        {
+          "map": "juniper",
+          "scenario": "route",
+          "loadMs": 869.2000000001863,
+          "lookupMs": 0.08280000000012418,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.09999999962747097,
+            "p95": 0.20000000018626451,
+            "p99": 0.7000000001862645,
+            "max": 0.7000000001862645
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 6.5,
+            "p95": 18.5,
+            "p99": 21.100000000558794,
+            "max": 21.100000000558794
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.699999999999818,
+            "p95": 16.800000000000182,
+            "p99": 33.40000000000009,
+            "max": 33.40000000000009
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 16620905,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "juniper",
+          "scenario": "skids",
+          "loadMs": 901.4000000003725,
+          "lookupMs": 0.09609999999993792,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.20000000018626451,
+            "p95": 0.2999999998137355,
+            "p99": 2.099999999627471,
+            "max": 2.099999999627471
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 6,
+            "p95": 11.5,
+            "p99": 14.399999999441206,
+            "max": 14.399999999441206
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.699999999999818,
+            "p95": 16.800000000000182,
+            "p99": 33.30000000000018,
+            "max": 33.30000000000018
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 16620905,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "juniper",
+          "scenario": "ai",
+          "loadMs": 746,
+          "lookupMs": 0.06030000000012418,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.20000000018626451,
+            "p95": 0.40000000037252903,
+            "p99": 1,
+            "max": 1
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 5,
+            "p95": 6.900000000372529,
+            "p99": 14.299999999813735,
+            "max": 14.299999999813735
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999891,
+            "p95": 16.799999999999272,
+            "p99": 16.80000000000109,
+            "max": 16.80000000000109
+          },
+          "physicsSteps": 180,
+          "opponents": 3,
+          "aiElapsed": 1.4999999999999971,
+          "worldPixels": 16620905,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "canyon",
+          "scenario": "route",
+          "loadMs": 567.7000000001863,
+          "lookupMs": 0.0625333333335196,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.09999999962747097,
+            "p95": 0.19999999925494194,
+            "p99": 0.20000000018626451,
+            "max": 0.20000000018626451
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 4.7000000001862645,
+            "p95": 6,
+            "p99": 7.6000000005587935,
+            "max": 7.6000000005587935
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999891,
+            "p95": 16.700000000000728,
+            "p99": 16.799999999999272,
+            "max": 16.799999999999272
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 11599467,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "canyon",
+          "scenario": "skids",
+          "loadMs": 561.5,
+          "lookupMs": 0.07226666666660458,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.2999999998137355,
+            "p95": 0.40000000037252903,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 5,
+            "p95": 6,
+            "p99": 9.299999999813735,
+            "max": 9.299999999813735
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999891,
+            "p95": 16.700000000000728,
+            "p99": 16.799999999999272,
+            "max": 16.799999999999272
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 11599467,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "alpine",
+          "scenario": "route",
+          "loadMs": 652.7999999998137,
+          "lookupMs": 0.0744666666664804,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.09999999962747097,
+            "p95": 0.10000000055879354,
+            "p99": 0.20000000018626451,
+            "max": 0.20000000018626451
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 5.099999999627471,
+            "p95": 6.800000000745058,
+            "p99": 8.299999999813735,
+            "max": 8.299999999813735
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999891,
+            "p95": 16.799999999999272,
+            "p99": 16.80000000000109,
+            "max": 16.80000000000109
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 22069710,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "alpine",
+          "scenario": "skids",
+          "loadMs": 814.7000000001863,
+          "lookupMs": 0.06426666666660458,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.20000000018626451,
+            "p95": 0.39999999944120646,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 5.2000000001862645,
+            "p95": 7,
+            "p99": 9.100000000558794,
+            "max": 9.100000000558794
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.700000000000728,
+            "p95": 16.700000000000728,
+            "p99": 16.799999999999272,
+            "max": 16.799999999999272
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 22069710,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "amazonas",
+          "scenario": "route",
+          "loadMs": 654.6000000005588,
+          "lookupMs": 0.047566666666728756,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0,
+            "p95": 0.10000000055879354,
+            "p99": 0.20000000018626451,
+            "max": 0.20000000018626451
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 4.3999999994412065,
+            "p95": 5.3999999994412065,
+            "p99": 6.599999999627471,
+            "max": 6.599999999627471
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.700000000000728,
+            "p95": 16.700000000000728,
+            "p99": 16.80000000000291,
+            "max": 16.80000000000291
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 17224446,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "amazonas",
+          "scenario": "skids",
+          "loadMs": 703.3000000007451,
+          "lookupMs": 0.04286666666654249,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.20000000018626451,
+            "p95": 0.30000000074505806,
+            "p99": 0.40000000037252903,
+            "max": 0.40000000037252903
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 4.7999999998137355,
+            "p95": 6,
+            "p99": 7.2000000001862645,
+            "max": 7.2000000001862645
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999709,
+            "p95": 16.700000000000728,
+            "p99": 16.799999999999272,
+            "max": 16.799999999999272
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 17224446,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "coast",
+          "scenario": "route",
+          "loadMs": 831,
+          "lookupMs": 0.047233333333395425,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.09999999962747097,
+            "p95": 0.19999999925494194,
+            "p99": 0.20000000018626451,
+            "max": 0.20000000018626451
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 3.7999999998137355,
+            "p95": 5.8999999994412065,
+            "p99": 6.099999999627471,
+            "max": 6.099999999627471
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.700000000000728,
+            "p95": 16.700000000000728,
+            "p99": 16.80000000000291,
+            "max": 16.80000000000291
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 22787329,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "coast",
+          "scenario": "skids",
+          "loadMs": 786.2000000001863,
+          "lookupMs": 0.04906666666672876,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.20000000018626451,
+            "p95": 0.39999999944120646,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 4.2999999998137355,
+            "p95": 6.2000000001862645,
+            "p99": 7.1000000005587935,
+            "max": 7.1000000005587935
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999709,
+            "p95": 16.700000000000728,
+            "p99": 16.799999999999272,
+            "max": 16.799999999999272
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 22787329,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "city",
+          "scenario": "route",
+          "loadMs": 651.7999999998137,
+          "lookupMs": 0.052699999999875825,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0,
+            "p95": 0.10000000055879354,
+            "p99": 0.19999999925494194,
+            "max": 0.19999999925494194
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 4.7999999998137355,
+            "p95": 6,
+            "p99": 8.600000000558794,
+            "max": 8.600000000558794
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.700000000000728,
+            "p95": 16.700000000000728,
+            "p99": 16.80000000000291,
+            "max": 16.80000000000291
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 18361478,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "city",
+          "scenario": "skids",
+          "loadMs": 543.1999999992549,
+          "lookupMs": 0.05530000000012417,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.20000000018626451,
+            "p95": 0.2999999998137355,
+            "p99": 0.39999999944120646,
+            "max": 0.39999999944120646
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 4.7999999998137355,
+            "p95": 7,
+            "p99": 8.300000000745058,
+            "max": 8.300000000745058
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999709,
+            "p95": 16.799999999999272,
+            "p99": 16.799999999999272,
+            "max": 16.799999999999272
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 18361478,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "rallycross",
+          "scenario": "route",
+          "loadMs": 469.29999999981374,
+          "lookupMs": 0.05670000000018626,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.09999999962747097,
+            "p95": 0.20000000018626451,
+            "p99": 0.2999999998137355,
+            "max": 0.2999999998137355
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 5.400000000372529,
+            "p95": 11.5,
+            "p99": 23.59999999962747,
+            "max": 23.59999999962747
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999709,
+            "p95": 16.700000000004366,
+            "p99": 16.799999999995634,
+            "max": 16.799999999995634
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 9488502,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        },
+        {
+          "map": "rallycross",
+          "scenario": "skids",
+          "loadMs": 359.59999999962747,
+          "lookupMs": 0.054,
+          "physicsTwoStepsMs": {
+            "samples": 60,
+            "p50": 0.40000000037252903,
+            "p95": 0.599999999627471,
+            "p99": 1.1000000005587935,
+            "max": 1.1000000005587935
+          },
+          "renderSubmitMs": {
+            "samples": 60,
+            "p50": 5.7999999998137355,
+            "p95": 8.399999999441206,
+            "p99": 11.5,
+            "max": 11.5
+          },
+          "rafIntervalMs": {
+            "samples": 60,
+            "p50": 16.69999999999709,
+            "p95": 16.700000000004366,
+            "p99": 16.80000000000291,
+            "max": 16.80000000000291
+          },
+          "physicsSteps": 180,
+          "opponents": 0,
+          "aiElapsed": 0,
+          "worldPixels": 9488502,
+          "canvas": {
+            "width": 1280,
+            "height": 748,
+            "density": 1
+          }
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    [
+      {
+        "frame": "(idle) ",
+        "selfMs": 11620.229999999956
+      },
+      {
+        "frame": "buildWorld /src/world.js",
+        "selfMs": 4446.341000000005
+      },
+      {
+        "frame": "(program) ",
+        "selfMs": 3769.750000000017
+      },
+      {
+        "frame": "drawSkidmarks /src/renderer.js",
+        "selfMs": 2479.355000000007
+      },
+      {
+        "frame": "cell /src/tracks.js",
+        "selfMs": 1900.5899999999992
+      },
+      {
+        "frame": "ribbon /src/renderer.js",
+        "selfMs": 1867.5869999999945
+      },
+      {
+        "frame": "check /src/tracks.js",
+        "selfMs": 1570.6720000000003
+      },
+      {
+        "frame": "drawCar /src/renderer.js",
+        "selfMs": 1336.815999999998
+      },
+      {
+        "frame": "drawPatchHighlights /src/renderer.js",
+        "selfMs": 1250.8720000000008
+      },
+      {
+        "frame": "runPerformanceCheck /tools/performance-game.js",
+        "selfMs": 855.8850000000002
+      },
+      {
+        "frame": "drawCoastWaves /src/coast.js",
+        "selfMs": 738.1209999999999
+      },
+      {
+        "frame": "drawRiverCurrent /src/jungle.js",
+        "selfMs": 734.0649999999995
+      },
+      {
+        "frame": "drawSceneryAsset /src/scenery.js",
+        "selfMs": 597.8890000000005
+      },
+      {
+        "frame": "paintCoastGround /src/coast.js",
+        "selfMs": 464.1530000000002
+      },
+      {
+        "frame": "draw /src/renderer.js",
+        "selfMs": 450.7139999999999
+      },
+      {
+        "frame": "paintAmazonFords /src/jungle.js",
+        "selfMs": 320.28700000000003
+      },
+      {
+        "frame": "(garbage collector) ",
+        "selfMs": 292.18500000000006
+      },
+      {
+        "frame": "nearest /src/tracks.js",
+        "selfMs": 224.41200000000012
+      },
+      {
+        "frame": "(anonymous) /src/scenery.js",
+        "selfMs": 189.13999999999996
+      },
+      {
+        "frame": "nearestSegmentFrame /src/tracks.js",
+        "selfMs": 183.85700000000003
+      },
+      {
+        "frame": "(anonymous) /src/tracks.js",
+        "selfMs": 141.31799999999998
+      },
+      {
+        "frame": "pointOnTrack /src/tracks.js",
+        "selfMs": 137.821
+      },
+      {
+        "frame": "simulate /src/physics.js",
+        "selfMs": 126.84800000000001
+      },
+      {
+        "frame": "nearestDriving /src/tracks.js",
+        "selfMs": 117.10199999999992
+      },
+      {
+        "frame": "changeTrack /src/runtime.js",
+        "selfMs": 84.83899999999994
+      }
+    ]
+  ],
+  "graphics": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+  },
+  "finalLoadAverage": [11.45, 11.29, 8.59]
+}

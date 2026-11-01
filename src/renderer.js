@@ -1,3 +1,4 @@
+import { drawOpponents } from './opponents.js';
 import { updateAudio } from './audio.js';
 import { drawCoastWaves } from './coast.js';
 import { CFG, PAINTS } from './config.js';
@@ -22,7 +23,15 @@ import {
 import { pitAsphalt } from './terrain.js';
 import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
-import { $, updateHUD } from './ui.js';
+import { restartRun } from './race.js';
+import {
+  $,
+  applyPicker,
+  closePicker,
+  setPaused,
+  stepSelection,
+  updateHUD,
+} from './ui.js';
 
 export function paintPitRoad(c) {
   const points = pitLane.points;
@@ -99,22 +108,6 @@ export function paintPitRails(c) {
       c.lineWidth = 4;
       c.stroke();
     }
-  for (const [p, label] of [
-    [pitLane.points[18], street ? 'SERVICE ENTRY' : 'PIT ENTRY'],
-    [
-      pitLane.points[pitLane.points.length - 19],
-      street ? 'RETURN' : 'PIT EXIT',
-    ],
-  ]) {
-    c.save();
-    c.translate(p.x, p.y);
-    c.rotate(Math.atan2(p.ty, p.tx));
-    c.fillStyle = '#e5ebd8';
-    c.font = 'bold 12px Arial';
-    c.textAlign = 'center';
-    c.fillText(label, 0, -pitLane.road - 12);
-    c.restore();
-  }
   // The alternate route also crosses the timing line, so a pit lap counts.
   const index = pitLane.points.findIndex(
       (p) =>
@@ -301,11 +294,12 @@ export function draw() {
   const smoothing = 1 - Math.exp(-4.5 * elapsed);
   camera.x = lerpTo(camera.x, car.x + car.vx * 0.42, smoothing);
   camera.y = lerpTo(camera.y, car.y + car.vy * 0.42, smoothing);
-  camera.zoom = lerpTo(
-    camera.zoom,
-    desiredZoom() * (1 - clamp(Math.hypot(car.vx, car.vy) / 1700, 0, 0.19)),
-    smoothing,
-  );
+  const targetZoom = state.settings.reducedMotion
+    ? desiredZoom()
+    : desiredZoom() * (1 - clamp(Math.hypot(car.vx, car.vy) / 1700, 0, 0.19));
+  camera.zoom = state.settings.reducedMotion
+    ? targetZoom
+    : lerpTo(camera.zoom, targetZoom, smoothing);
   state.ctx.save();
   state.ctx.setTransform(pixelDensity(), 0, 0, pixelDensity(), 0, 0);
   state.ctx.fillStyle =
@@ -325,8 +319,10 @@ export function draw() {
   state.ctx.scale(camera.zoom, camera.zoom);
   state.ctx.translate(-camera.x, -camera.y);
   drawWorldViewport(state.ctx);
-  drawCoastWaves(state.ctx);
-  drawRiverCurrent(state.ctx);
+  if (!state.settings.reducedMotion) {
+    drawCoastWaves(state.ctx);
+    drawRiverCurrent(state.ctx);
+  }
   drawSkidmarks(state.ctx);
   drawStartingGridSelection(state.ctx);
   for (const p of particles) {
@@ -344,13 +340,15 @@ export function draw() {
     state.ctx.fill();
   }
   state.ctx.globalAlpha = 1;
-  drawPatchHighlights(state.ctx, millis() / 1000);
+  if (!state.settings.reducedMotion)
+    drawPatchHighlights(state.ctx, millis() / 1000);
   drawCityTraffic(state.ctx);
+  drawOpponents(state.ctx);
   drawCar(state.ctx);
   drawLapGhost(state.ctx);
   drawJungle(state.ctx);
   state.ctx.restore();
-  if (feedback.impact > 0.03) {
+  if (!state.settings.reducedMotion && feedback.impact > 0.03) {
     state.ctx.save();
     state.ctx.fillStyle = 'rgba(247,130,92,' + feedback.impact * 0.065 + ')';
     state.ctx.fillRect(0, 0, width, height);
@@ -366,6 +364,56 @@ export function draw() {
     state.lastHUD = millis();
   }
   updateAudio();
+}
+
+let gamepadPolling = false;
+
+export function startGamepadPolling() {
+  if (gamepadPolling) return;
+  gamepadPolling = true;
+  const frame = () => {
+    pollGamepad();
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
+function pollGamepad() {
+  const input = state.gamepadInput;
+  if (!input || !navigator.getGamepads) return;
+  const now = performance.now();
+  if (input.padIndex === null && now < input.nextScan) return;
+  const frame = input.update(navigator.getGamepads(), now);
+  $('gamepad-status').textContent = frame.connected
+    ? 'Controller connected'
+    : 'No controller detected';
+  if (!state.gamepadReady) {
+    state.gamepadControls = { steer: 0, throttle: 0, brake: 0, handbrake: 0 };
+    return;
+  }
+  const pickerOpen = $('selection-dialog').open;
+  if (pickerOpen) {
+    for (const action of frame.actions) {
+      if (action === 'previous') stepSelection(-1);
+      if (action === 'next') stepSelection(1);
+      if (action === 'confirm') applyPicker();
+      if (action === 'back') closePicker();
+    }
+  } else {
+    for (const action of frame.actions) {
+      if (action === 'pause') setPaused(!state.paused);
+      if (action === 'back' && state.paused) setPaused(false);
+      if (action === 'restart') restartRun();
+    }
+  }
+  const blocked = state.paused || pickerOpen;
+  if (blocked) state.gamepadNeedsNeutral = true;
+  const neutral = Object.values(frame.controls).every((value) => !value);
+  if (state.gamepadNeedsNeutral && neutral) state.gamepadNeedsNeutral = false;
+  state.gamepadControls =
+    blocked || state.gamepadNeedsNeutral
+      ? { steer: 0, throttle: 0, brake: 0, handbrake: 0 }
+      : frame.controls;
 }
 
 export function drawCar(c) {

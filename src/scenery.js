@@ -1,12 +1,13 @@
 import { coast, coastLandDistance, paintCoastBuilding } from './coast.js';
 import { MAPS, SCENERY_ASSETS, SCENERY_LAYERS } from './config.js';
 import { amazonRiverDistance, monkeyPosition } from './jungle.js';
-import { seededRandom } from './math.js';
+import { clamp, lerpTo, seededRandom } from './math.js';
 import { roundedRect } from './renderer.js';
 import {
   pitLane,
   sceneryArt,
   sceneryAssetState,
+  sceneryAccess,
   sceneryBuildings,
   sceneryDetails,
   sceneryScene,
@@ -20,7 +21,7 @@ import {
   paintCityTree,
   paintDesertProp,
 } from './terrain.js';
-import { nearest, widthAt, withinPitDistance } from './tracks.js';
+import { nearest, pointOnTrack, widthAt, withinPitDistance } from './tracks.js';
 
 export function loadSceneryAssets() {
   if (sceneryAssetState.promise) return sceneryAssetState.promise;
@@ -91,6 +92,7 @@ export function paddockAssetLayout() {
       h: 80,
       angle,
       bay: i + 1,
+      team: i < 2 ? 'blue' : i < 4 ? 'red' : null,
     });
   props.push({
     key: state.activeMap.id === 'alpine' ? 'control-room-snow' : 'control-room',
@@ -105,28 +107,67 @@ export function paddockAssetLayout() {
     { key: 'fuel-store', x: 263, y: 12, w: 24, h: 36, angle: 0 },
   );
   const forecourt = front < 0 ? -37 : 63;
+  for (const [team, x, tent] of [
+    ['blue', -181, -102],
+    ['red', -23, 56],
+  ]) {
+    props.push(
+      {
+        key: 'service-transporter',
+        x,
+        y: forecourt,
+        w: 64,
+        h: front < 0 ? 20 : 28,
+        angle: 0,
+        team,
+      },
+      {
+        key: 'service-tent-' + team,
+        x: tent,
+        y: forecourt,
+        w: 44,
+        h: front < 0 ? 18 : 24,
+        angle: 0,
+        team,
+      },
+      {
+        key: 'tool-trolley',
+        x: tent + 35,
+        y: forecourt,
+        w: 14,
+        h: 18,
+        angle: 0,
+        team,
+      },
+    );
+  }
   props.push(
-    {
-      key: 'service-tent-blue',
-      x: -102,
-      y: forecourt,
-      w: 44,
-      h: front < 0 ? 18 : 24,
-      angle: 0,
-    },
-    {
-      key: 'service-tent-red',
-      x: 56,
-      y: forecourt,
-      w: 44,
-      h: front < 0 ? 18 : 24,
-      angle: 0,
-    },
     { key: 'wood-crates', x: 135, y: forecourt, w: 17, h: 17, angle: 0 },
-    { key: 'tool-trolley', x: -23, y: forecourt, w: 17, h: 20, angle: 0 },
     { key: 'water-tank', x: -227, y: forecourt, w: 18, h: 18, angle: 0 },
   );
   return props;
+}
+
+export function paddockTeamLayout() {
+  const front = state.paddock.side === 1 ? -37 : 63;
+  return [
+    {
+      id: 'blue',
+      x: -141.5,
+      y: front,
+      w: 151,
+      h: state.paddock.side === 1 ? 26 : 42,
+      color: '#719fa9',
+    },
+    {
+      id: 'red',
+      x: 16.5,
+      y: front,
+      w: 151,
+      h: state.paddock.side === 1 ? 26 : 42,
+      color: '#c37f69',
+    },
+  ];
 }
 
 export function paintPaddock(c) {
@@ -142,6 +183,15 @@ export function paintPaddock(c) {
   c.save();
   c.translate(state.paddock.x, state.paddock.y);
   c.rotate(Math.atan2(state.paddock.ty, state.paddock.tx));
+  for (const team of paddockTeamLayout()) {
+    c.strokeStyle = '#c6c3a3';
+    c.lineWidth = 22;
+    c.lineCap = 'butt';
+    c.beginPath();
+    c.moveTo(team.x, team.y);
+    c.lineTo(team.x, state.paddock.side === 1 ? -82 : 117);
+    c.stroke();
+  }
   c.fillStyle = theme;
   roundedRect(c, -240, -50, 520, 135, 7);
   c.fill();
@@ -157,6 +207,14 @@ export function paintPaddock(c) {
     c.beginPath();
     c.moveTo(-234, y);
     c.lineTo(274, y);
+    c.stroke();
+  }
+  for (const team of paddockTeamLayout()) {
+    c.fillStyle = team.color + '66';
+    roundedRect(c, team.x - team.w / 2, team.y - team.h / 2, team.w, team.h, 4);
+    c.fill();
+    c.strokeStyle = '#eee5c48c';
+    c.lineWidth = 1;
     c.stroke();
   }
   for (const prop of paddockAssetLayout()) {
@@ -201,6 +259,14 @@ export function reserveScenery(prop, target) {
     )
   )
     return false;
+  if (
+    sceneryAccess.some(
+      (access) =>
+        sceneryAccessDistance(access, prop.x, prop.y) <
+        prop.radius + access.width / 2 + 8,
+    )
+  )
+    return false;
   target.push(prop);
   sceneryScene.push(prop);
   return true;
@@ -219,11 +285,11 @@ export function cityParkClear(x, y, radius) {
   return Math.hypot(x - 190, y - 775) > radius + 95;
 }
 
-export function sceneryClear(x, y, radius) {
+export function sceneryClear(x, y, radius, margin = 24) {
   const n = nearest(x, y);
   if (
-    n.distance < widthAt('wall', n.progress) + radius + 24 ||
-    withinPitDistance(x, y, pitLane.wall + radius + 24)
+    n.distance < widthAt('wall', n.progress) + radius + margin ||
+    withinPitDistance(x, y, pitLane.wall + radius + margin)
   )
     return false;
   const dx = x - state.paddock.x,
@@ -233,8 +299,8 @@ export function sceneryClear(x, y, radius) {
   if (
     px > -265 - radius &&
     px < 305 + radius &&
-    py > -75 - radius &&
-    py < 125 + radius
+    py > -100 - radius &&
+    py < 150 + radius
   )
     return false;
   if (state.activeMap.id === 'amazonas') {
@@ -366,6 +432,7 @@ export function buildSceneryDetails() {
   sceneryBuildings.length = 0;
   sceneryTrees.length = 0;
   sceneryScene.length = 0;
+  sceneryAccess.length = 0;
   buildSceneryBuildings();
   const rand = seededRandom(
       5600 + Object.keys(MAPS).indexOf(state.activeMap.id) * 271,
@@ -462,8 +529,195 @@ export function buildSceneryDetails() {
       sceneryDetails,
     );
   }
+  buildSceneryAccess();
   buildSceneryTrees();
   sceneryScene.sort((a, b) => a.layer - b.layer || a.y - b.y || a.x - b.x);
+}
+
+export function sceneryAccessDistance(access, x, y) {
+  let distance = Infinity;
+  for (let i = 1; i < access.points.length; i++) {
+    const a = access.points[i - 1],
+      b = access.points[i],
+      dx = b.x - a.x,
+      dy = b.y - a.y,
+      len2 = dx * dx + dy * dy,
+      t = len2 ? clamp(((x - a.x) * dx + (y - a.y) * dy) / len2, 0, 1) : 0;
+    distance = Math.min(
+      distance,
+      Math.hypot(x - a.x - dx * t, y - a.y - dy * t),
+    );
+  }
+  return distance;
+}
+
+export function sceneryEntrance(site) {
+  if (site.type === 'building') {
+    if (site.kind === 'home')
+      return {
+        x: site.x - 18,
+        y: site.y - 18,
+        w: site.w + 12,
+        h: site.h + 12,
+        angle: 0,
+      };
+    return {
+      x: site.x,
+      y: site.y,
+      w: site.w + (site.kind === 'coast' ? 8 : 12),
+      h: site.h + (site.kind === 'coast' ? 8 : 12),
+      angle: site.angle,
+    };
+  }
+  if (
+    ![
+      'cabin',
+      'hut',
+      'villa',
+      'citybuilding',
+      'greenhouse',
+      'shed-garden',
+      'cafe-terrace',
+    ].includes(site.kind)
+  )
+    return null;
+  const w =
+      site.kind === 'villa'
+        ? site.size * 1.2 + 8
+        : site.kind === 'citybuilding'
+          ? site.size * 1.5 + 12
+          : site.size * 1.6,
+    h =
+      site.kind === 'villa'
+        ? site.size * 0.9 + 8
+        : site.kind === 'citybuilding'
+          ? site.size * 1.2 + 12
+          : site.size * 1.4;
+  return { x: site.x, y: site.y, w, h, angle: site.angle };
+}
+
+export function buildSceneryAccess() {
+  const gardenTrees = sceneryBuildings
+    .filter((site) => site.kind === 'home')
+    .map((site) => ({ x: site.x + 60, y: site.y + 55, radius: 36 * 0.85 }));
+  for (const owner of [...sceneryBuildings, ...sceneryDetails]) {
+    const entrance = sceneryEntrance(owner);
+    if (!entrance) continue;
+    const width =
+        state.activeMap.id === 'city' && owner.kind === 'home'
+          ? 18
+          : owner.kind === 'office'
+            ? 22
+            : 10,
+      half = width / 2,
+      angle = entrance.angle,
+      cos = Math.cos(angle),
+      sin = Math.sin(angle);
+    const world = (x, y) => ({
+        x: entrance.x + cos * x - sin * y,
+        y: entrance.y + sin * x + cos * y,
+      }),
+      local = (p) => ({
+        x: (p.x - entrance.x) * cos + (p.y - entrance.y) * sin,
+        y: -(p.x - entrance.x) * sin + (p.y - entrance.y) * cos,
+      });
+    const n = nearest(owner.x, owner.y),
+      start = track[n.i],
+      next = track[(n.i + 1) % track.length],
+      s = start.s + n.t * Math.hypot(next.x - start.x, next.y - start.y);
+    let connected = false;
+    for (const offset of [0, 70, -70, 140, -140]) {
+      if (connected) break;
+      const p = pointOnTrack(s + offset),
+        distance = widthAt('wall', p.progress) + half + 10,
+        end = {
+          x: p.x - p.ty * n.side * distance,
+          y: p.y + p.tx * n.side * distance,
+        },
+        target = local(end),
+        front = entrance.h / 2 + 16;
+      if (Math.hypot(end.x - entrance.x, end.y - entrance.y) > 520) continue;
+      for (const side of [target.x < 0 ? -1 : 1, target.x < 0 ? 1 : -1]) {
+        const points = [world(0, entrance.h * 0.44), world(0, front)];
+        if (target.y >= front) points.push(world(target.x, front));
+        else {
+          const edge = side * (entrance.w / 2 + half + 14);
+          points.push(world(edge, front), world(edge, target.y));
+        }
+        points.push(end);
+        const access = {
+          owner,
+          width,
+          points,
+          kind: state.activeMap.id === 'city' ? 'paved' : 'gravel',
+          layer: SCENERY_LAYERS.ground,
+        };
+        let clear = true;
+        for (let i = 1; i < points.length && clear; i++) {
+          const a = points[i - 1],
+            b = points[i],
+            steps = Math.max(
+              1,
+              Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 8),
+            );
+          for (let j = 0; j <= steps; j++) {
+            const x = lerpTo(a.x, b.x, j / steps),
+              y = lerpTo(a.y, b.y, j / steps);
+            if (
+              gardenTrees.some(
+                (tree) =>
+                  Math.hypot(x - tree.x, y - tree.y) < tree.radius + half + 6,
+              ) ||
+              !sceneryClear(x, y, half + 2, 6) ||
+              sceneryScene.some(
+                (prop) =>
+                  prop !== owner &&
+                  Math.hypot(x - prop.x, y - prop.y) < prop.radius + half + 6,
+              )
+            ) {
+              clear = false;
+              break;
+            }
+            const q = local({ x, y });
+            if (
+              Math.abs(q.x) < entrance.w / 2 + half &&
+              q.y < entrance.h * 0.4 &&
+              q.y > -entrance.h / 2 - half
+            ) {
+              clear = false;
+              break;
+            }
+          }
+        }
+        if (clear) {
+          sceneryAccess.push(access);
+          connected = true;
+          break;
+        }
+      }
+    }
+  }
+}
+
+export function paintSceneryAccess(c) {
+  c.save();
+  c.lineJoin = 'round';
+  c.lineCap = 'round';
+  for (const access of sceneryAccess) {
+    for (const [width, color] of [
+      [access.width + 4, access.kind === 'paved' ? '#d3d4bb' : '#a8a080'],
+      [access.width, access.kind === 'paved' ? '#a3aca1' : '#c9b991'],
+    ]) {
+      c.beginPath();
+      access.points.forEach((p, i) =>
+        i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y),
+      );
+      c.strokeStyle = color;
+      c.lineWidth = width;
+      c.stroke();
+    }
+  }
+  c.restore();
 }
 
 export function buildSceneryTrees() {
@@ -484,7 +738,11 @@ export function buildSceneryTrees() {
       city: ['tree-birch', 'tree-elm', 'tree-willow'],
       rallycross: ['tree-oak', 'tree-birch', 'tree-pine'],
     }[id];
-  for (let i = 0; i < (id === 'amazonas' ? 2800 : 1100); i++) {
+  for (
+    let i = 0;
+    i < (id === 'amazonas' ? 2800 : id === 'city' ? 1800 : 1100);
+    i++
+  ) {
     const x = rand() * state.worldBounds.width + state.worldBounds.x,
       y = rand() * state.worldBounds.height + state.worldBounds.y,
       size = id === 'amazonas' ? 65 + rand() * 65 : 35 + rand() * 48,
@@ -526,6 +784,7 @@ export function paintSceneryGround(c) {
       c.fill();
     }
   }
+  paintSceneryAccess(c);
 }
 
 export function paintSceneryScene(c) {

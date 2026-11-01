@@ -1,3 +1,4 @@
+import * as club from './src/opponents.js';
 // Run with `node verify.mjs`. Exercises the real ES modules without a browser.
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -25,6 +26,8 @@ import {
   visibleGhostPose,
 } from './src/ghost.js';
 import { amazonRiver, amazonRiverFrame, updateJungle } from './src/jungle.js';
+import { buildRaceResultsModel } from './src/results.js';
+import { lerpTo } from './src/math.js';
 import { simulate } from './src/physics.js';
 import {
   beginLap,
@@ -35,8 +38,11 @@ import {
 } from './src/race.js';
 import {
   paddockAssetLayout,
+  paddockTeamLayout,
+  sceneryAccessDistance,
   sceneryClear,
   sceneryDetailLayer,
+  sceneryEntrance,
 } from './src/scenery.js';
 import {
   car,
@@ -47,6 +53,7 @@ import {
   pitLane,
   race,
   sceneryBuildings,
+  sceneryAccess,
   sceneryDetails,
   sceneryScene,
   sceneryTrees,
@@ -2095,4 +2102,285 @@ for (const key of [
   );
 console.log(
   'PASS: shared footprint reservations, rotated sprite bounds, deterministic placement, park/monkey clearance, layered draw order, and new asset coverage across all seven maps.',
+);
+
+for (const id of Object.keys(MAPS)) {
+  configureTrack(id);
+  if (id !== 'rallycross')
+    assert(
+      sceneryAccess.length >= 10,
+      'Maps with homes, cabins, or cafés need access paths: ' + id,
+    );
+  if (id === 'city')
+    assert(
+      sceneryAccess.filter((access) => access.owner.kind === 'home').length >=
+        15,
+      'Suburban homes need visible driveways',
+    );
+  if (id === 'city' || id === 'coast')
+    assert(
+      sceneryAccess.some((access) => access.owner.kind === 'cafe-terrace'),
+      'Cafés need a pedestrian approach',
+    );
+  for (const access of sceneryAccess) {
+    assert.equal(access.layer, SCENERY_LAYERS.ground);
+    assert(sceneryScene.includes(access.owner));
+    const entrance = sceneryEntrance(access.owner),
+      first = access.points[0],
+      last = access.points.at(-1),
+      n = nearest(last.x, last.y);
+    assert(
+      Math.hypot(first.x - entrance.x, first.y - entrance.y) < entrance.h / 2,
+      'Access must start at the building frontage',
+    );
+    assert(
+      Math.abs(
+        n.distance - widthAt('wall', n.progress) - access.width / 2 - 10,
+      ) < 1,
+      'Access must end at the outside verge',
+    );
+    for (const home of sceneryBuildings)
+      if (home.kind === 'home')
+        assert(
+          sceneryAccessDistance(access, home.x + 60, home.y + 55) >=
+            36 * 0.85 + access.width / 2 + 1.9,
+          'Driveways must clear every garden tree',
+        );
+    for (const prop of sceneryScene)
+      if (prop !== access.owner)
+        assert(
+          sceneryAccessDistance(access, prop.x, prop.y) >=
+            prop.radius + access.width / 2 + 1.9,
+          'Paths must clear other scenery footprints',
+        );
+    for (let i = 1; i < access.points.length; i++) {
+      const a = access.points[i - 1],
+        b = access.points[i],
+        steps = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 4));
+      for (let j = 0; j <= steps; j++) {
+        const x = lerpTo(a.x, b.x, j / steps),
+          y = lerpTo(a.y, b.y, j / steps),
+          m = nearest(x, y),
+          dx = x - entrance.x,
+          dy = y - entrance.y,
+          localX =
+            dx * Math.cos(entrance.angle) + dy * Math.sin(entrance.angle),
+          localY =
+            -dx * Math.sin(entrance.angle) + dy * Math.cos(entrance.angle);
+        assert(
+          m.distance > widthAt('wall', m.progress) + access.width / 2 + 2,
+          'Paths must stay outside the main barriers',
+        );
+        assert(
+          nearestPit(x, y).distance > pitLane.wall + access.width / 2 + 2,
+          'Paths must stay outside pit barriers',
+        );
+        assert(
+          !(
+            Math.abs(localX) < entrance.w / 2 &&
+            localY < entrance.h * 0.39 &&
+            localY > -entrance.h / 2
+          ),
+          'Paths must route around roofs',
+        );
+      }
+    }
+  }
+  const paths = JSON.stringify(sceneryAccess);
+  configureTrack(id);
+  assert.equal(JSON.stringify(sceneryAccess), paths);
+
+  const props = paddockAssetLayout(),
+    teams = paddockTeamLayout();
+  assert.equal(teams.length, 2);
+  for (const team of teams) {
+    const members = props.filter((prop) => prop.team === team.id);
+    assert.equal(
+      members.filter((prop) => prop.bay).length,
+      2,
+      'Each team needs two neighboring garages',
+    );
+    for (const key of [
+      'service-transporter',
+      'service-tent-' + team.id,
+      'tool-trolley',
+    ])
+      assert(
+        members.some((prop) => prop.key === key),
+        'Each team needs matching transport and service equipment',
+      );
+  }
+  for (let i = 0; i < props.length; i++)
+    for (let j = 0; j < i; j++) {
+      const a = props[i],
+        b = props[j];
+      assert(
+        Math.abs(a.x - b.x) >= (a.w + b.w) / 2 ||
+          Math.abs(a.y - b.y) >= (a.h + b.h) / 2,
+        'Paddock garages and equipment must not overlap',
+      );
+    }
+}
+console.log(
+  'PASS: frontage-to-verge paths clear roofs, scenery, roads, and pits; paddocks have two complete, non-overlapping team zones on every map.',
+);
+
+// Complete club races use the production AI controller and lap validation.
+configureCar('clubsport', 'red');
+configureTrack('juniper');
+reset();
+recover(false);
+club.opponentRace.enabled = true;
+startCountdown();
+assert.equal(club.opponentRace.cars.length, 3);
+assert.equal(new Set(club.opponentRace.cars.map((c) => c.paint)).size, 3);
+const gridPositions = club.opponentRace.cars.map((c) => c.s);
+club.updateOpponents(1);
+assert.deepEqual(
+  club.opponentRace.cars.map((c) => c.s),
+  gridPositions,
+);
+assert.equal(club.opponentRace.elapsed, 0, 'AI waits for GO');
+assert(chooseStartingSlot(2));
+assert(
+  club.opponentRace.cars.every((c) => c.s !== -250),
+  'Player grid slot stays clear',
+);
+assert.equal(club.opponentRace.elapsed, 0);
+race.countdown = 0;
+let observedBraking = false;
+for (let step = 0; step < 600 * 60; step++) {
+  club.updateOpponents(1 / 60);
+  for (const rival of club.opponentRace.cars) {
+    observedBraking ||= rival.brake;
+    assert(Number.isFinite(rival.x) && Number.isFinite(rival.y));
+    assert(rival.speed >= 0 && rival.speed <= 335);
+    if (step % 60 === 0) {
+      assert(
+        nearest(rival.x, rival.y).distance < CFG.road - 20,
+        'Opponents stay inside the road through every bend',
+      );
+    }
+  }
+  if (club.opponentRace.cars.every((c) => c.finish !== null)) break;
+}
+assert(observedBraking, 'Opponents brake before corners and oil');
+assert(
+  club.opponentRace.cars.every((c) => c.finish > 0),
+  'Every opponent finishes three laps',
+);
+assert(club.opponentRace.cars[0].finish < club.opponentRace.cars[1].finish);
+assert(club.opponentRace.cars[1].finish < club.opponentRace.cars[2].finish);
+assert(club.opponentRace.cars.every((c) => c.s === 3 * track.totalLength));
+const finishTimes = club.opponentRace.cars.map((c) => c.finish);
+club.updateOpponents(1);
+assert.deepEqual(
+  club.opponentRace.cars.map((c) => c.finish),
+  finishTimes,
+  'Finished opponents keep their original result',
+);
+
+// Replaying identical starts has identical pace even when the player moves.
+club.resetOpponentRace();
+for (let i = 0; i < 600; i++) club.updateOpponents(1 / 60);
+const firstRun = club.opponentRace.cars.map((c) => [c.s, c.speed]);
+car.x += 1500;
+car.y -= 1500;
+club.resetOpponentRace();
+for (let i = 0; i < 600; i++) club.updateOpponents(1 / 60);
+assert.deepEqual(
+  club.opponentRace.cars.map((c) => [c.s, c.speed]),
+  firstRun,
+  'Opponent pace never depends on player position',
+);
+
+// An invalid lap cannot finish the race. Three validated laps can.
+reset();
+race.countdown = 0;
+race.started = true;
+race.crossedStart = true;
+club.opponentRace.elapsed = 300;
+function clubLap(invalid = false) {
+  race.invalid = invalid;
+  race.next = 1;
+  for (const gate of [0.25, 0.5, 0.75]) {
+    race.previous = gate - 0.001;
+    updateRace(0.02, { progress: gate + 0.001, distance: 0 });
+  }
+  race.travel = 0.999;
+  race.previous = 0.999;
+  updateRace(0.02, { progress: 0.001, distance: 0 });
+}
+clubLap(true);
+assert.equal(race.lap, 1);
+assert.equal(club.opponentRace.finished, false);
+clubLap();
+clubLap();
+assert.equal(club.opponentRace.finished, false);
+clubLap();
+assert.equal(club.opponentRace.finished, true);
+assert(club.opponentRace.playerFinish > 0);
+assert.equal(car.vx, 0);
+const frozenClock = club.opponentRace.elapsed;
+simulate(CFG.step);
+assert.equal(
+  club.opponentRace.elapsed,
+  frozenClock,
+  'Race freezes on player finish',
+);
+const standings = club.opponentStandings();
+assert(
+  standings[0].player,
+  'Finished driver ranks ahead of unfinished drivers',
+);
+club.opponentRace.cars[0].finish = club.opponentRace.playerFinish - 1;
+assert.equal(
+  club.opponentStandings()[1].player,
+  true,
+  'Finish order uses crossing times',
+);
+club.resetOpponentRace();
+assert.equal(club.opponentRace.finished, false);
+assert.equal(club.opponentRace.playerFinish, null);
+assert.equal(club.opponentRace.elapsed, 0);
+configureTrack('city');
+assert.equal(club.opponentRace.enabled, false);
+assert.equal(club.opponentRace.cars.length, 0);
+console.log(
+  'PASS: three-lap club races, countdown/grid resets, road clearance, braking, deterministic pace, clean-lap validation, finish order, and mode cleanup.',
+);
+
+const winningResults = buildRaceResultsModel({
+  totalTime: 98.42,
+  bestLap: 32.7,
+  standings: [
+    { name: 'You', player: true, paint: 'red', finish: 98.42 },
+    { name: 'Alex', finish: 101.6 },
+    { name: 'Blair', finish: null },
+    { name: 'Casey', finish: null },
+  ],
+});
+assert.equal(winningResults.position, 1, 'Winner should receive first place');
+assert.equal(winningResults.totalTime, 98.42);
+assert.equal(winningResults.bestLap, 32.7);
+assert.equal(winningResults.rows[2].status, 'STILL RACING');
+assert.equal(winningResults.rows[2].time, null);
+const behindResults = buildRaceResultsModel({
+  totalTime: 105.1,
+  bestLap: 34.2,
+  standings: [
+    { name: 'Alex', finish: 98.4 },
+    { name: 'You', player: true, finish: 105.1 },
+    { name: 'Casey', finish: null },
+  ],
+});
+assert.equal(
+  behindResults.position,
+  2,
+  'Later finisher should be ranked behind',
+);
+assert.equal(behindResults.rows[2].status, 'STILL RACING');
+assert.equal(behindResults.rows[2].time, null);
+console.log(
+  'PASS: race results rank winners and later finishers, retain total and best-lap times, and never assign a time to an opponent still racing.',
 );

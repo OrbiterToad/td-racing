@@ -1,3 +1,5 @@
+import { initModalKeyboard } from './accessibility.js';
+import { toggleOpponentRace } from './opponents.js';
 import { toggleSound } from './audio.js';
 import { configureCar, loadCarArt, readBest } from './cars.js';
 import { MAPS } from './config.js';
@@ -9,7 +11,7 @@ import {
   restartRun,
   startCountdown,
 } from './race.js';
-import { desiredZoom } from './renderer.js';
+import { desiredZoom, startGamepadPolling } from './renderer.js';
 import { loadSceneryAssets } from './scenery.js';
 import {
   camera,
@@ -24,9 +26,18 @@ import {
   timing,
 } from './state.js';
 import { configureTrack } from './tracks.js';
+import { GamepadInput } from './gamepad.js';
 import { loadTrafficArt } from './traffic.js';
-import { $, initPicker, notify, setPaused, updateHUD } from './ui.js';
+import {
+  $,
+  initPicker,
+  notify,
+  openSessionSetup,
+  setPaused,
+  updateHUD,
+} from './ui.js';
 import { buildWorld } from './world.js';
+import { initTouchControls } from './touch-controls.js';
 
 export function changeTrack(id, announce = true) {
   if (!configureTrack(id)) return;
@@ -128,7 +139,9 @@ export function setup() {
   } catch (_) {}
   loadCarArt();
   noLoop();
-  $('hint').textContent = 'Loading the circuit…';
+  state.gamepadInput = new GamepadInput();
+  startGamepadPolling();
+  document.body.classList.add('starting');
   loadSceneryAssets().then(initializeGame);
 }
 
@@ -139,14 +152,40 @@ export function initializeGame() {
     const saved = localStorage.getItem('apex-selected-track');
     if (Object.hasOwn(MAPS, saved)) initial = saved;
   } catch (_) {}
-  changeTrack(initial, false);
+  initModalKeyboard();
   initPicker();
+  initTouchControls();
+  openSessionSetup();
+  state.pendingTrack = initial;
   $('pause').onclick = () => setPaused(!state.paused);
   $('resume').onclick = () => setPaused(false);
   $('sound').onclick = toggleSound;
   $('restart').onclick = restartRun;
+  $('race-mode').onclick = toggleOpponentRace;
+  $('race-mode').disabled = false;
+  state.gamepadReady = true;
+  window.addEventListener('gamepadconnected', () => {
+    $('gamepad-status').textContent = 'Controller connected';
+  });
+  window.addEventListener('gamepaddisconnected', () => {
+    $('gamepad-status').textContent = 'No controller detected';
+    state.gamepadControls = state.gamepadInput.disconnect(performance.now());
+  });
   window.addEventListener('keydown', (e) => {
-    if ($('selection-dialog').open) return;
+    if (document.querySelector('dialog[open]')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+      if (!e.repeat) setPaused(!state.paused);
+      e.preventDefault();
+      return;
+    }
+    // Leave native activation intact, including Space on Resume and menus.
+    if (
+      e.code === 'Space' &&
+      e.target.closest('button, a, input, select, textarea')
+    )
+      return;
+    if (state.paused) return;
     if (
       [
         'KeyW',
@@ -168,7 +207,6 @@ export function initializeGame() {
       restartRun();
     }
     if (e.code === 'KeyR') recover(true);
-    if (e.code === 'Escape' || e.code === 'KeyP') setPaused(!state.paused);
   });
   window.addEventListener('keyup', (e) => keys.delete(e.code));
   window.addEventListener('blur', () => {
