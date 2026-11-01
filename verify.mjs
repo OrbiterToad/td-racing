@@ -27,7 +27,7 @@ import {
 } from './src/ghost.js';
 import { amazonRiver, amazonRiverFrame, updateJungle } from './src/jungle.js';
 import { buildRaceResultsModel } from './src/results.js';
-import { lerpTo } from './src/math.js';
+import { clamp, lerpTo, seededRandom } from './src/math.js';
 import { simulate } from './src/physics.js';
 import {
   beginLap,
@@ -83,6 +83,37 @@ import {
 } from './src/traffic.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
+
+assert.equal(clamp(5, 0, 10), 5, 'Clamp preserves values inside its range');
+assert.equal(clamp(-1, 0, 10), 0, 'Clamp limits values below its range');
+assert.equal(clamp(11, 0, 10), 10, 'Clamp limits values above its range');
+assert.equal(clamp(4, 4, 4), 4, 'Clamp handles a range with identical bounds');
+assert.equal(clamp(NaN, 0, 10), NaN, 'Clamp preserves NaN');
+
+assert.equal(lerpTo(2, 8, 0), 2, 'Lerp returns the start at t=0');
+assert.equal(lerpTo(2, 8, 1), 8, 'Lerp returns the end at t=1');
+assert.equal(lerpTo(2, 8, 1.5), 11, 'Lerp extrapolates beyond t=1');
+assert.equal(lerpTo(8, 2, 0.25), 6.5, 'Lerp supports descending values');
+
+const randomA = seededRandom(0),
+  randomB = seededRandom(0),
+  randomNegative = seededRandom(-1),
+  firstRandom = randomA();
+assert.equal(
+  firstRandom,
+  1013904223 / 4294967296,
+  'Seed zero advances by the LCG increment',
+);
+assert.equal(firstRandom, randomB(), 'Equal seeds produce equal first values');
+assert.equal(randomA(), randomB(), 'Equal seeds remain deterministic');
+assert.equal(
+  randomNegative(),
+  seededRandom(0xffffffff)(),
+  'Negative seeds use the same unsigned 32-bit state',
+);
+assert(firstRandom >= 0 && firstRandom < 1, 'Random output stays in [0, 1)');
+console.log('PASS: clamp, lerpTo, and seededRandom edge cases.');
+
 const nodes = new Map();
 const node = (id) => {
   if (!nodes.has(id))
