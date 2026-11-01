@@ -69,7 +69,17 @@ export function medalForTime(time, targets) {
   return null;
 }
 
-export function readMedals(storage = globalThis.localStorage) {
+function resolveStorage(storage) {
+  if (storage !== undefined) return storage;
+  try {
+    return globalThis.localStorage;
+  } catch (_) {
+    return undefined;
+  }
+}
+
+export function readMedals(storage) {
+  storage = resolveStorage(storage);
   try {
     const saved = JSON.parse(storage?.getItem(MEDAL_KEY) ?? '{}');
     if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return {};
@@ -86,21 +96,14 @@ export function readMedals(storage = globalThis.localStorage) {
   }
 }
 
-export function earnedMedalFor(
-  trackId,
-  carId,
-  storage = globalThis.localStorage,
-) {
+export function earnedMedalFor(trackId, carId, storage) {
   if (!medalTargetsFor(trackId, carId)) return null;
   return readMedals(storage)[`${trackId}:${carId}`] ?? null;
 }
 
-export function awardMedal(
-  trackId,
-  carId,
-  lapTime,
-  { valid = false, timeTrial = false, storage = globalThis.localStorage } = {},
-) {
+export function awardMedal(trackId, carId, lapTime, options = {}) {
+  const { valid = false, timeTrial = false } = options;
+  const storage = resolveStorage(options.storage);
   const targets = medalTargetsFor(trackId, carId);
   if (!targets || !valid || !timeTrial) return null;
   const achieved = medalForTime(lapTime, targets);

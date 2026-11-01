@@ -122,3 +122,32 @@ test('malformed and unknown saved pairings are ignored', () => {
   );
   assert.deepEqual(readMedals(storage), { 'juniper:clubsport': 'gold' });
 });
+
+test('medal progress remains usable when browser storage access throws', () => {
+  const descriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    'localStorage',
+  );
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    get() {
+      throw new Error('Storage is unavailable');
+    },
+  });
+  try {
+    assert.deepEqual(readMedals(), {});
+    assert.deepEqual(
+      awardMedal(
+        'juniper',
+        'clubsport',
+        medalTargetsFor('juniper', 'clubsport').bronze,
+        { valid: true, timeTrial: true },
+      ),
+      { medal: 'bronze', previous: null, improved: true },
+    );
+  } finally {
+    if (descriptor)
+      Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else delete globalThis.localStorage;
+  }
+});

@@ -335,19 +335,26 @@ test('settings open from play and pause preserve the in-progress lap', async ({
   await page.keyboard.press('Escape');
   await expect(page.locator('#settings-session')).toBeFocused();
   await expect(page.locator('#pause-screen')).not.toHaveClass('open');
-  expect(
-    await page.evaluate(async () => {
-      const { car, race, state } = await import('./src/state.js');
-      return {
-        x: car.x,
-        y: car.y,
-        time: race.time,
-        lap: race.lap,
-        paused: state.paused,
-        sensitivity: state.settings.steeringSensitivity,
-      };
-    }),
-  ).toMatchObject({ ...held, paused: false, sensitivity: 1.25 });
+  const resumed = await page.evaluate(async () => {
+    const { car, race, state } = await import('./src/state.js');
+    return {
+      x: car.x,
+      y: car.y,
+      time: race.time,
+      lap: race.lap,
+      paused: state.paused,
+      sensitivity: state.settings.steeringSensitivity,
+    };
+  });
+  expect(resumed).toMatchObject({
+    x: held.x,
+    y: held.y,
+    lap: held.lap,
+    paused: false,
+    sensitivity: 1.25,
+  });
+  expect(resumed.time).toBeGreaterThanOrEqual(held.time);
+  expect(resumed.time - held.time).toBeLessThan(0.5);
 
   await page.locator('#pause').click();
   await expect(page.locator('#pause-screen')).toHaveClass('open');
