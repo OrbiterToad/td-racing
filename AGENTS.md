@@ -57,6 +57,10 @@ checks pass.
 Send concise progress and handoff messages in the coordinator chat at these
 points:
 
+- A message in your own task chat, a final answer, or an updated chat title is
+  not a coordinator handoff. Use the chat messaging tool to send the message
+  directly to the coordinator chat titled `Cordinator`.
+
 - After task preflight, report the issue, scope, base SHA, ownership/conflict
   scan, and required checks.
 - Report blockers or ambiguity promptly, state what is blocked, and wait for
@@ -66,6 +70,10 @@ points:
   review state, and any freshness or conflict blocker. This is a request for
   the coordinator's merge decision; do not merge on your own unless explicitly
   delegated.
+- If you cannot open or update a PR because GitHub access is unavailable, send
+  the coordinator the pushed branch, exact head and base SHAs, local check
+  results, and the access blocker. Do not rely on the coordinator finding the
+  details in your task chat; the coordinator can open the PR if appropriate.
 - After an explicitly authorized merge, say “I have merged PR #X” and include
   the resulting `master` SHA.
 - After the task is complete, report completion and that you are ready for a
