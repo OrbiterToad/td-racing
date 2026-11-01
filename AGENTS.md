@@ -4,12 +4,13 @@ than accumulating the entire task in an uncommitted working tree. Each commit
 should be a coherent, reviewable increment that is not knowingly broken and
 does not include secrets or generated noise; keep using the required commit
 message format and run relevant checks before handoff.
-After completing the task and passing the required checks, you may merge your
-changes into the repository's default branch and push the merge to `origin`
-yourself, once the task is complete and all required checks pass.
 Keep the task open while its pull request is pending. Follow up on review and
-required checks, address failures, and complete the merge into `master` before
-considering the task finished.
+required checks, and address failures. When the PR is ready, request merge
+readiness in the coordinator chat with the PR link, head and base SHAs, and
+required check and review state. The coordinator owns the merge queue and
+performs merges unless the coordinator explicitly delegates a specific merge.
+After an authorized merge, confirm it in the coordinator chat. Consider the
+task complete only after the merge and report that you are ready for a new task.
 
 Use the following commit message format:
 
@@ -31,3 +32,22 @@ operations needed to complete the task. Never print token values or include
 them in logs, messages, or commits. Keep local token files ignored by Git.
 Respect branch protection: use pull requests and merge only after all required
 checks pass.
+
+## Coordinator handoffs
+
+Send concise progress and handoff messages in the coordinator chat at these
+points:
+
+- After task preflight, report the issue, scope, base SHA, ownership/conflict
+  scan, and required checks.
+- Report blockers or ambiguity promptly, state what is blocked, and wait for
+  coordinator direction before taking dependent action.
+- When implementation is ready for merge review, say “I want to merge PR #X”
+  and include its link, tested head SHA, current base SHA, required check and
+  review state, and any freshness or conflict blocker. This is a request for
+  the coordinator's merge decision; do not merge on your own unless explicitly
+  delegated.
+- After an explicitly authorized merge, say “I have merged PR #X” and include
+  the resulting `master` SHA.
+- After the task is complete, report completion and that you are ready for a
+  new task. Keep the task open while its PR or required follow-up is pending.
