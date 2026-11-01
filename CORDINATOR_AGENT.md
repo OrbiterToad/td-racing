@@ -30,6 +30,7 @@ The issue size-labeling policy below is also published in `docs/COORDINATOR_GUID
 - Before creating or renaming an active agent chat, inspect the active title/slot map. Use one unique reusable slot from `Agent 1` through `Agent 8`; never create or rename an active chat to `Agent 9` or higher. Format titles as `Agent N (Size) · Task`, choosing `Mini` for bounded tasks (such as documentation, tests, audits, or focused fixes) and `Big` for broader feature implementations. For example: `Agent 8 (Mini) · Coordinator documentation` or `Agent 5 (Big) · Gamepad support`.
 - Use the Codex chat tools to rename an agent's chat if its task or size changes, while keeping its number stable.
 - Give each assignment its own chat. When an agent finishes, archive the completed task chat (the app supports archiving, not deleting) before assigning a new task. Reuse that freed number for the next task, keeping active numbers unique and within 1–8; update the size label, task name, and model to fit the new assignment.
+- Reserve Agent 1 for agent-instruction maintenance. Keep Agent 1's chat open after this task finishes and mark it idle/reserved for future changes to agent or coordinator instructions; do not archive it or repurpose it for feature work.
 
 ## Coordinating agents
 
@@ -40,6 +41,17 @@ The issue size-labeling policy below is also published in `docs/COORDINATOR_GUID
 - Send coordination messages only when authorized by the user. Do not interrupt or duplicate active work. Check branches, worktrees, PRs, reviews, and CI to catch overlap and dependencies; share actionable findings with the affected agent when authorized.
 - Keep work open while a PR is pending. Follow required checks and reviews, address failures, and complete the merge into `master` before marking the task done.
 - A completed implementation with an unmerged PR is still open work. Mark an agent free only after its assignment is complete and the PR is merged, or the user explicitly ends that assignment.
+
+## Master merge queue
+
+- The main coordinator owns merge decisions and maintains one ordered queue for open PRs targeting `master`. Keep each entry current with its owner, PR, head and base revisions, required-check and review state, mergeability, likely conflict risk, blockers, and any planned merge pass.
+- Order the queue first by whether required reviews and checks are ready, then by mergeability, freshness requirements, and likely conflict risk. Prefer compatible, low-conflict PRs in the same planned pass so a ready PR does not advance `master` immediately before several slower branches are ready to sync. A green check alone does not make a PR ready to merge.
+- Plan merge passes explicitly. Before a pass, tell affected active agents the intended sequence and agree on a sync checkpoint; ask them to avoid unnecessary rebases while the pass is in progress. Do not edit or rebase their branches on their behalf unless specifically assigned.
+- Merge PRs one at a time through the repository's protected path. Immediately before each merge, refresh its head and base, mergeability/conflict state, required reviews and review requests, required check conclusions, and applicable branch protection. Confirm all required approvals and checks are satisfied, the branch meets the repository's freshness rule, and there is no blocking review feedback. Never bypass protection, infer a passing state from incomplete data, or enable automatic merging.
+- After each merge, record the resulting `master` commit and refresh the next PR in the pass. If it is now stale under protection rules, conflicts, receives new blocking review feedback, or has pending/failed required checks, pause it; do not force the pass through. Report the precise blocker and next action, then requeue it after the owner updates the branch and required checks finish.
+- At the end of a pass, tell affected active agents the final `master` commit to sync to, identify branches that need updating, and track their refreshed required checks. Avoid asking agents to sync repeatedly between planned passes unless a protection rule or blocker requires it.
+- A paused PR stays open and retains its owner. Resume it only after refreshing its state and clearing the blocker; restore its position based on current readiness and conflict risk. Continue with independent ready PRs when a different PR is waiting on its owner, reviews, checks, or sync.
+- In concise queue updates, identify the planned pass and next step, ready and queued PRs, blockers, and active branch sync checkpoints. Refresh the underlying PR and check data before reporting; keep merge decisions with the main coordinator.
 
 ## Agent status updates
 
