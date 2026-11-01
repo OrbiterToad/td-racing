@@ -25,6 +25,7 @@ import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
 import { rewind } from './rewind.js';
+import { handleGamepadAction } from './tutorial.js';
 import {
   $,
   applyPicker,
@@ -393,7 +394,10 @@ function pollGamepad() {
     return;
   }
   const pickerOpen = $('selection-dialog').open;
-  if (pickerOpen) {
+  const tutorialOpen = $('tutorial-dialog').open;
+  if (tutorialOpen) {
+    for (const action of frame.actions) handleGamepadAction(action);
+  } else if (pickerOpen) {
     for (const action of frame.actions) {
       if (action === 'previous') stepSelection(-1);
       if (action === 'next') stepSelection(1);
@@ -408,7 +412,8 @@ function pollGamepad() {
       if (action === 'rewind') rewind();
     }
   }
-  const blocked = state.paused || pickerOpen;
+  const modalOpen = Boolean(document.querySelector('dialog[open]'));
+  const blocked = state.paused || modalOpen;
   if (blocked) state.gamepadNeedsNeutral = true;
   const neutral = Object.values(frame.controls).every((value) => !value);
   if (state.gamepadNeedsNeutral && neutral) state.gamepadNeedsNeutral = false;
