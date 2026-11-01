@@ -58,6 +58,7 @@ export class GamepadInput {
     edge(1, 'back');
     edge(9, 'pause');
     edge(3, 'restart');
+    edge(2, 'rewind');
     const dpadLeft = buttonPressed(pad, 14),
       dpadRight = buttonPressed(pad, 15);
     const left = Math.abs(pad.axes[0] || 0) > 0.55 && (pad.axes[0] || 0) < 0;

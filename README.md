@@ -30,4 +30,9 @@ Then visit [localhost:8000](http://localhost:8000). Use **WASD** or the arrow
 keys to drive, **Space** for the handbrake, **N** to restart, and **Escape** or
 **P** to pause.
 
+In solo practice/time trials, press **B / Backspace**, gamepad **X**, or the
+touch **↶ 5s** button to flash back up to five seconds. Using flashback marks the
+track/car session as practice only, so its laps cannot set a personal best or
+save a lap ghost. Club races do not offer flashback.
+
 See [ASSETS.txt](ASSETS.txt) for asset credits and licenses.
