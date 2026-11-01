@@ -128,3 +128,24 @@ function renderStep(index) {
   next.hidden = last;
   finish.hidden = !last;
 }
+
+export function handleGamepadAction(action) {
+  const dialog = document.getElementById('tutorial-dialog');
+  if (!dialog?.open) return false;
+  if (action === 'previous') {
+    renderStep(currentStep - 1);
+    return true;
+  }
+  if (action === 'next' || action === 'confirm') {
+    if (currentStep === steps.length - 1 && action === 'confirm')
+      closeTutorial('completed');
+    else renderStep(currentStep + 1);
+    return true;
+  }
+  if (action === 'back') {
+    if (currentStep > 0) renderStep(currentStep - 1);
+    else closeTutorial('dismissed');
+    return true;
+  }
+  return false;
+}
