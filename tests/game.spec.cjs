@@ -142,9 +142,11 @@ test('gamepad can navigate and confirm the session setup wizard', async ({
   await expect(page.locator('#tutorial-heading')).toHaveText(
     'Brake before the turn',
   );
-  await press(1);
-  await expect(page.locator('#tutorial-heading')).toHaveText('Get moving');
-  await press(1);
+  for (let step = 0; step < 5; step++) await press(0);
+  await expect(page.locator('#tutorial-heading')).toHaveText(
+    'Chase your ghost',
+  );
+  await press(0);
   await expect(page.locator('#tutorial-dialog')).not.toBeVisible();
   await page.locator('#pause').click();
   await expect(page.locator('#pause-screen')).toHaveClass('open');
