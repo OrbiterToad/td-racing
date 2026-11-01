@@ -459,7 +459,10 @@ function drawLocalSplitScreen(c) {
     c.font = '15px Arial';
     c.fillText(
       race.order
-        .map((player, place) => `${place + 1}. PLAYER ${player + 1}`)
+        .map((player, place) => {
+          const time = race.players[player].finishedAt;
+          return `${place + 1}. PLAYER ${player + 1} · ${time.toFixed(2)}s`;
+        })
         .join('     '),
       width / 2,
       height / 2 + 20,
