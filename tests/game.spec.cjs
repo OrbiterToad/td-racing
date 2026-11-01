@@ -11,7 +11,8 @@ async function startSession(page) {
   await page.locator('#picker-apply').click();
   await expect(page.locator('#selection-dialog')).not.toBeVisible();
   const guide = page.locator('#tutorial-dialog');
-  if (await guide.isVisible()) await page.locator('#tutorial-skip').click();
+  await expect(guide).toBeVisible();
+  await page.locator('#tutorial-skip').click();
 }
 
 test('packaged game loads, changes tracks and cars, and remembers selections', async ({
