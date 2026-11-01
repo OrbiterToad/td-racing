@@ -31,9 +31,9 @@ const GAME_MODES = {
   trial: {
     id: 'trial',
     name: 'Time trial',
-    tag: 'SOLO / CHASE YOUR PERSONAL BEST',
+    tag: 'SOLO / PERSONAL BEST',
     description:
-      'An open track. Unlimited laps. Find your rhythm, set a clean lap and chase your best-lap ghost.',
+      'An open track with unlimited laps, personal-best timing, and a lap ghost.',
   },
   race: {
     id: 'race',
@@ -198,13 +198,10 @@ export function renderPicker() {
       : 'Choose your ride.';
   $('picker-eyebrow').textContent = 'APEX / THE DRIVING CLUB';
   $('picker-description').textContent = modes
-    ? 'One last choice. How do you want to drive?'
+    ? 'Choose a driving mode.'
     : tracks
-      ? vehicle.name +
-        ' · ' +
-        PAINTS[state.pendingPaint].name +
-        ' / Find your next apex.'
-      : 'Six machines. Five colors. Make the grid your own.';
+      ? vehicle.name + ' · ' + PAINTS[state.pendingPaint].name
+      : 'Choose a car and paint.';
   document.querySelector('.picker-steps').hidden = !state.selectingSession;
   document.querySelector('.wizard-nav-actions').hidden =
     !state.selectingSession;
@@ -281,7 +278,7 @@ export function renderPicker() {
     medalDetails = `<div class="medal-progress" aria-label="Medal progress for ${selected.name} and ${vehicle.name}"><span class="medal-earned">EARNED / <b>${earned ? earned.toUpperCase() : 'NONE'}</b></span><div class="medal-targets" aria-label="Medal target times">${['bronze', 'silver', 'gold'].map((medal) => `<span class="medal-target ${medal}" data-medal="${medal}"><b>${medal.toUpperCase()}</b><time>${formatTime(targets[medal])}</time></span>`).join('')}</div></div>`;
   }
   const art = modes
-    ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : 'YOUR TRACK. YOUR PACE.'}</span>`
+    ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : 'TIME TRIAL'}</span>`
     : tracks
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
       : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;

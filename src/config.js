@@ -45,7 +45,6 @@ export const MAPS = {
     id: 'juniper',
     name: 'Juniper Raceway',
     label: 'WOODLAND / TECHNICAL',
-    subtitle: 'Commit to the esses. Watch for oil.',
     description:
       'Deep esses, green woodland, and three oil slicks before demanding corners.',
     temperature: '24°C',
@@ -87,7 +86,6 @@ export const MAPS = {
     id: 'canyon',
     name: 'Desert Canyon',
     label: 'DESERT / EXPERT',
-    subtitle: 'Read the rock. Earn the exit.',
     description:
       'Tight sandstone passes, sharper bends, and four sand drifts across the asphalt.',
     temperature: '38°C',
@@ -156,7 +154,6 @@ export const MAPS = {
     id: 'alpine',
     name: 'Alpine Pass',
     label: 'ALPINE / SWITCHBACKS',
-    subtitle: 'Climb the hairpins. Respect the ice.',
     description:
       'Linked mountain hairpins, winding ledge roads, and just three isolated ice patches.',
     temperature: '−4°C',
@@ -214,7 +211,6 @@ export const MAPS = {
     id: 'amazonas',
     name: 'Amazonas',
     label: 'JUNGLE / TIGHT & TWISTY',
-    subtitle: 'Follow the river. Dodge the coconuts.',
     description:
       'Tight jungle bends and two shallow river fords. Dodge the monkey’s coconuts.',
     temperature: '31°C',
@@ -262,7 +258,6 @@ export const MAPS = {
     id: 'coast',
     name: 'Costa Azul',
     label: 'COAST / SEASIDE RHYTHM',
-    subtitle: 'Chase the waves. Link the curves.',
     description:
       'Lighthouse bends, village hairpins and beachside esses. Two small sand drifts; a marina pit lane.',
     temperature: '27°C',
@@ -328,7 +323,6 @@ export const MAPS = {
     id: 'city',
     name: 'City Streets',
     label: 'CITY / DOWNTOWN + SUBURBS',
-    subtitle: 'Square up downtown. Watch for traffic.',
     description:
       'Existing city streets: tight downtown turns, wavy suburbs and occasional everyday traffic.',
     temperature: '22°C',
@@ -363,7 +357,6 @@ export const MAPS = {
     id: 'rallycross',
     name: 'Ridgeway Rallycross',
     label: 'RALLYCROSS / MIXED SURFACE',
-    subtitle: 'Grip, slide, grip. Find the rhythm.',
     description:
       'Packed dirt, fast asphalt, and a technical infield. Built for the Offroad.',
     temperature: '19°C',
