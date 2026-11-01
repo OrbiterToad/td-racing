@@ -1183,7 +1183,12 @@
         align-items: center;
         gap: 10px;
       }
-      .picker-actions[hidden] {
+      .wizard-nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .wizard-nav-actions[hidden] {
         display: none;
       }
       .picker-step-control {
@@ -1440,22 +1445,24 @@
         .picker-actions {
           width: 100%;
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr 1fr 1.35fr;
           gap: 6px;
         }
-        .picker-actions[hidden] {
-          display: none;
+        .wizard-nav-actions {
+          display: contents;
         }
         .picker-step-control {
+          min-width: 0;
           min-height: 44px;
-          padding: 0 8px;
-          font-size: 10px;
+          padding: 0 4px;
+          font-size: 9px;
+          letter-spacing: 0.5px;
         }
         .picker-bottom .primary {
-          grid-column: 1 / -1;
           width: 100%;
-          font-size: 13px;
-          padding: 0 16px;
+          min-height: 44px;
+          font-size: 11px;
+          padding: 0 8px;
         }
         .header-choice {
           padding: 0 12px;
@@ -2116,13 +2123,19 @@
       <div class="picker-bottom">
         <p id="picker-footnote"></p>
         <div class="picker-actions">
-          <button type="button" class="picker-step-control" id="wizard-back">
-            ← BACK
-          </button>
-          <button type="button" class="picker-step-control" id="wizard-forward">
-            NEXT →
-          </button>
-          <button class="primary" id="picker-apply">DRIVE →</button>
+          <div class="wizard-nav-actions">
+            <button type="button" class="picker-step-control" id="wizard-back">
+              ← BACK
+            </button>
+            <button
+              type="button"
+              class="picker-step-control"
+              id="wizard-forward"
+            >
+              NEXT →
+            </button>
+          </div>
+          <button class="primary" id="picker-apply" autofocus>DRIVE →</button>
         </div>
       </div>
     </dialog>

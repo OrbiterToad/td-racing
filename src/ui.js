@@ -206,7 +206,8 @@ export function renderPicker() {
         ' / Find your next apex.'
       : 'Six machines. Five colors. Make the grid your own.';
   document.querySelector('.picker-steps').hidden = !state.selectingSession;
-  document.querySelector('.picker-actions').hidden = !state.selectingSession;
+  document.querySelector('.wizard-nav-actions').hidden =
+    !state.selectingSession;
   $('wizard-back').disabled =
     !state.selectingSession || state.pickerMode === 'garage';
   $('wizard-forward').disabled = !state.selectingSession || modes;
