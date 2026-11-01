@@ -2,7 +2,7 @@ import { initModalKeyboard } from './accessibility.js';
 import { toggleOpponentRace } from './opponents.js';
 import { toggleSound } from './audio.js';
 import { configureCar, loadCarArt, readBest } from './cars.js';
-import { MAPS } from './config.js';
+import { MAPS, VEHICLES } from './config.js';
 import { drawMinimap } from './minimap.js';
 import {
   beginLap,
@@ -43,7 +43,13 @@ import { createLocalRace } from './local-race.js';
 
 export function changeTrack(id, announce = true) {
   if (!configureTrack(id)) return;
-  state.localRace = state.localMultiplayer ? createLocalRace() : null;
+  state.localRace = state.localMultiplayer
+    ? createLocalRace(
+        state.activeCar,
+        VEHICLES[state.playerTwoCar],
+        state.paint,
+      )
+    : null;
   prepareRewindSession(id, state.activeCar.id);
   keys.clear();
   skidmarks.length = 0;

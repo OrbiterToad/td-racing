@@ -25,8 +25,11 @@ import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
 import { rewind } from './rewind.js';
-<<<<<<< HEAD
-import { pollSecondPlayer } from './local-race.js';
+import {
+  localRaceResults,
+  localViewport,
+  pollSecondPlayer,
+} from './local-race.js';
 import { handleGamepadAction } from './tutorial.js';
 import {
   $,
@@ -379,18 +382,11 @@ function drawLocalSplitScreen(c) {
   for (let index = 0; index < 2; index++) {
     const player = index === 0 ? car : race.players[1];
     const x = index * viewW;
-    const zoom = Math.min(viewW / 760, viewH / 540, 0.85);
-    const sourceW = viewW / zoom,
-      sourceH = viewH / zoom;
-    const sx = clamp(
-      player.x - sourceW / 2 - state.worldBounds.x,
-      0,
-      state.worldCanvas.width - sourceW,
-    );
-    const sy = clamp(
-      player.y - sourceH / 2 - state.worldBounds.y,
-      0,
-      state.worldCanvas.height - sourceH,
+    const { zoom, sourceW, sourceH, sx, sy } = localViewport(
+      player,
+      state.worldBounds,
+      viewW,
+      viewH,
     );
     c.save();
     c.beginPath();
@@ -413,28 +409,23 @@ function drawLocalSplitScreen(c) {
     const py = (player.y - state.worldBounds.y - sy) * zoom;
     c.translate(px, py);
     c.rotate(player.angle);
-    c.fillStyle = index === 0 ? PAINTS[state.paint].hex : '#77d5fa';
+    const spec = race.carSpecs[index];
+    c.fillStyle = PAINTS[race.paints[index]].hex;
     c.fillRect(
-      (-state.activeCar.length * zoom) / 2,
-      (-state.activeCar.width * zoom) / 2,
-      state.activeCar.length * zoom,
-      state.activeCar.width * zoom,
+      (-spec.length * zoom) / 2,
+      (-spec.width * zoom) / 2,
+      spec.length * zoom,
+      spec.width * zoom,
     );
     c.restore();
     c.fillStyle = '#10201b';
     c.fillRect(x, 0, viewW, 42);
     c.fillStyle = '#f4f1e8';
     c.font = 'bold 15px Arial';
-    c.fillText(
-      index === 0
-        ? 'PLAYER 1 · WASD / GAMEPAD'
-        : 'PLAYER 2 · IJKL / SECOND GAMEPAD',
-      x + 14,
-      19,
-    );
+    c.fillText(`PLAYER ${index + 1} · ${spec.name.toUpperCase()}`, x + 14, 19);
     c.font = '12px Arial';
     c.fillText(
-      `LAP ${index === 0 ? race.players[0].lap + 1 : player.lap + 1} / ${race.laps}   ${Math.round(Math.hypot(player.vx, player.vy) * 0.46)} km/h`,
+      `${index === 0 ? 'WASD / PAD 1' : 'IJKL / PAD 2'}   LAP ${index === 0 ? race.players[0].lap : player.lap}/${race.laps}   ${Math.round(Math.hypot(player.vx, player.vy) * 0.46)} km/h`,
       x + 14,
       35,
     );
@@ -458,12 +449,7 @@ function drawLocalSplitScreen(c) {
     c.fillText('RACE RESULTS', width / 2, height / 2 - 14);
     c.font = '15px Arial';
     c.fillText(
-      race.order
-        .map((player, place) => {
-          const time = race.players[player].finishedAt;
-          return `${place + 1}. PLAYER ${player + 1} · ${time.toFixed(2)}s`;
-        })
-        .join('     '),
+      localRaceResults(race).join('     '),
       width / 2,
       height / 2 + 20,
     );

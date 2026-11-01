@@ -148,6 +148,8 @@ export function openPicker(mode) {
   state.pendingTrack = state.activeMap.id;
   state.pendingCar = state.activeCar.id;
   state.pendingPaint = state.paint;
+  state.pendingPlayerTwoCar = state.playerTwoCar;
+  state.pendingPaint = state.paint;
   state.pickerWasPaused = state.paused;
   setPaused(true, false);
   document.body.classList.add('choosing');
@@ -297,7 +299,18 @@ export function renderPicker() {
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
       : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;
   const details = modes
-    ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : selectedId === 'local' ? 'THREE LAPS · TWO LOCAL DRIVERS' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
+    ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : selectedId === 'local' ? 'THREE LAPS · TWO LOCAL DRIVERS' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span>${
+        selectedId === 'local'
+          ? `<label class="player-two-car" for="player-two-car">PLAYER 2 CAR <select id="player-two-car">${Object.values(
+              VEHICLES,
+            )
+              .map(
+                (car) =>
+                  `<option value="${car.id}" ${car.id === state.pendingPlayerTwoCar ? 'selected' : ''}>${car.name}</option>`,
+              )
+              .join('')}</select></label>`
+          : ''
+      }</div>`
     : tracks
       ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div>${medalDetails}<span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
       : `<div class="car-stats">${['PACE', 'HANDLING', 'OFF ROAD'].map((label, i) => `<span>${label}<i><b style="width:${selected.bars[i] * 100}%"></b></i></span>`).join('')}</div>`;
@@ -344,6 +357,12 @@ export function renderPicker() {
       document.querySelector(`[data-paint="${state.pendingPaint}"]`).focus();
     };
   }
+  const playerTwoCar = $('player-two-car');
+  if (playerTwoCar)
+    playerTwoCar.onchange = () => {
+      state.pendingPlayerTwoCar = playerTwoCar.value;
+      renderPicker();
+    };
 }
 
 export function applyPicker() {
@@ -369,6 +388,7 @@ export function applyPicker() {
     syncCarHUD();
   }
   state.localMultiplayer = state.pendingGameMode === 'local';
+  if (state.localMultiplayer) state.playerTwoCar = state.pendingPlayerTwoCar;
   if (
     state.selectingSession ||
     (state.pickerMode === 'tracks' && state.pendingTrack !== state.activeMap.id)

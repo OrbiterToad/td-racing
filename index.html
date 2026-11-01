@@ -1015,6 +1015,21 @@
         color: #edf0e8;
         font-weight: 600;
       }
+      .player-two-car {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 10px;
+        font-size: 11px;
+        color: #a9bbb4;
+      }
+      .player-two-car select {
+        color: #edf0e8;
+        background: #203033;
+        border: 1px solid #ffffff30;
+        border-radius: 3px;
+        padding: 6px 10px;
+      }
       .mode-tile {
         flex-wrap: wrap;
         align-content: flex-end;
@@ -1492,8 +1507,15 @@
           margin: 2px 0;
         }
         #selection-dialog[data-mode='modes'] .feature-copy p,
-        #selection-dialog[data-mode='modes'] .mode-summary {
+        #selection-dialog[data-mode='modes'] .mode-summary > span {
           display: none;
+        }
+        #selection-dialog[data-mode='modes'] .mode-summary {
+          gap: 3px;
+          padding-top: 4px;
+        }
+        #selection-dialog[data-mode='modes'] .player-two-car {
+          padding-top: 2px;
         }
         .picker-steps {
           gap: 16px;

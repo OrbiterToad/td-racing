@@ -10,9 +10,11 @@ export const state = {
   pickerMode: 'garage',
   pendingTrack: 'juniper',
   pendingCar: 'clubsport',
+  pendingPlayerTwoCar: 'clubsport',
   pendingPaint: 'red',
   pendingGameMode: 'trial',
   localMultiplayer: false,
+  playerTwoCar: 'clubsport',
   playerTwo: null,
   localRace: null,
   settings: {

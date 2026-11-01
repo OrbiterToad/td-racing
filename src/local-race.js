@@ -1,4 +1,5 @@
 import { GamepadInput } from './gamepad.js';
+import { VEHICLES } from './config.js';
 import { driveVehicle } from './vehicle-physics.js';
 import { nearestDriving } from './tracks.js';
 import { startingGrid, state } from './state.js';
@@ -14,13 +15,17 @@ const blankCar = (slot) => ({
   throttle: 0,
   brake: 0,
   slickTime: 0,
-  lap: 0,
+  lap: 1,
   elapsed: 0,
   progress: 0,
   finishedAt: null,
 });
 
-export function createLocalRace() {
+export function createLocalRace(
+  playerOneCar = state.activeCar,
+  playerTwoCar = VEHICLES[state.playerTwoCar],
+  playerOnePaint = state.paint,
+) {
   const first = blankCar(startingGrid[0]);
   const second = blankCar(startingGrid[1]);
   return {
@@ -30,6 +35,8 @@ export function createLocalRace() {
     finished: false,
     order: [],
     laps: 3,
+    carSpecs: [playerOneCar, playerTwoCar],
+    paints: [playerOnePaint, 'blue'],
   };
 }
 
@@ -38,10 +45,7 @@ export function pollSecondPlayer(race, gamepads, now) {
   const input = race.pad;
   if (input.padIndex === null && now >= input.nextScan) {
     const candidate = Array.from(gamepads || []).find(
-      (pad) =>
-        pad?.connected &&
-        pad.index !== state.gamepadInput?.padIndex &&
-        pad.index !== 0,
+      (pad) => pad?.connected && pad.index !== state.gamepadInput?.padIndex,
     );
     if (candidate) input.padIndex = candidate.index;
   }
@@ -81,7 +85,7 @@ export function updateLocalRace(race, dt, controls, primary) {
     if (delta < -0.5) delta += 1;
     player.progress = n.progress;
     player.elapsed += dt;
-    driveVehicle(player, controls[index], dt, state.activeCar);
+    driveVehicle(player, controls[index], dt, race.carSpecs[index]);
     if (delta > 0 && n.progress < 0.08 && player.elapsed > 5) {
       player.lap++;
       if (player.lap > race.laps) {
@@ -91,6 +95,38 @@ export function updateLocalRace(race, dt, controls, primary) {
       }
     }
   }
+}
+
+export function localViewport(player, worldBounds, viewW, viewH) {
+  const zoom = Math.min(viewW / 760, viewH / 540, 0.85);
+  const sourceW = viewW / zoom,
+    sourceH = viewH / zoom;
+  return {
+    zoom,
+    sourceW,
+    sourceH,
+    sx: Math.max(
+      0,
+      Math.min(
+        player.x - sourceW / 2 - worldBounds.x,
+        worldBounds.width - sourceW,
+      ),
+    ),
+    sy: Math.max(
+      0,
+      Math.min(
+        player.y - sourceH / 2 - worldBounds.y,
+        worldBounds.height - sourceH,
+      ),
+    ),
+  };
+}
+
+export function localRaceResults(race) {
+  return race.order.map((player, place) => {
+    const time = race.players[player].finishedAt;
+    return `${place + 1}. PLAYER ${player + 1} · ${time.toFixed(2)}s`;
+  });
 }
 
 export function localPlayerTwoControls(keys, gamepad = {}) {
