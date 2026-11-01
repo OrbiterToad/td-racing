@@ -924,6 +924,54 @@
           Impact,
           sans-serif;
       }
+      .medal-progress {
+        width: 100%;
+        margin-top: 8px;
+        display: grid;
+        gap: 6px;
+      }
+      .medal-earned {
+        color: #a9bbb4;
+        font-size: 9px;
+        letter-spacing: 1px;
+      }
+      .medal-earned b {
+        color: var(--card-accent);
+      }
+      .medal-targets {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .medal-target {
+        min-width: 0;
+        padding: 5px 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 3px;
+        border: 1px solid #ffffff18;
+        background: #ffffff05;
+      }
+      .medal-target b {
+        font-size: 8px;
+        letter-spacing: 1px;
+      }
+      .medal-target time {
+        color: #dbe4da;
+        font-size: 9px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .medal-target.bronze b {
+        color: #d9a176;
+      }
+      .medal-target.silver b {
+        color: #d5dedb;
+      }
+      .medal-target.gold b {
+        color: #f0d270;
+      }
       .feature-condition {
         margin-top: 16px;
         color: #a9bbb4;
@@ -1186,13 +1234,32 @@
           gap: 8px;
         }
         .feature-copy {
-          padding: 18px 24px;
+          padding: 14px 24px;
         }
         .feature-record {
-          padding-top: 10px;
+          padding-top: 6px;
+          gap: 4px;
+        }
+        .feature-record strong {
+          font-size: 28px;
+        }
+        .medal-progress {
+          margin-top: 2px;
+          gap: 2px;
+        }
+        .medal-target {
+          padding: 3px 4px;
+          gap: 2px;
+        }
+        .medal-target b {
+          font-size: 6px;
+          letter-spacing: 0.4px;
+        }
+        .medal-target time {
+          font-size: 7px;
         }
         .feature-condition {
-          margin-top: 10px;
+          margin-top: 3px;
         }
         .picker-bottom {
           padding-top: 12px;
@@ -1215,7 +1282,24 @@
           margin-bottom: 10px;
         }
         .feature-copy {
-          padding: 12px 20px;
+          padding: 8px 16px;
+        }
+        .feature-record {
+          padding-top: 6px;
+          gap: 4px;
+        }
+        .feature-record strong {
+          font-size: 26px;
+        }
+        .medal-progress {
+          margin-top: 2px;
+          gap: 2px;
+        }
+        .medal-targets {
+          gap: 3px;
+        }
+        .feature-condition {
+          margin-top: 3px;
         }
         .choice-tag {
           font-size: 9px;
@@ -1392,6 +1476,9 @@
 
         .picker-head h2 {
           font-size: 30px;
+        }
+        .feature-copy {
+          padding: 6px 16px;
         }
         .picker-head p,
         .choice-rail,
