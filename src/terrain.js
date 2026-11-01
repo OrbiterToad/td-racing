@@ -36,8 +36,18 @@ export function paintCityGround(c, bounds) {
   const { x, y, width, height } = bounds;
   c.fillStyle = '#929b98';
   c.fillRect(x, y, width, height);
-  c.strokeStyle = '#cbd0c127';
-  c.lineWidth = 1;
+  c.fillStyle = '#a2b28b';
+  c.beginPath();
+  c.moveTo(-1500, 160);
+  c.lineTo(-850, -130);
+  c.lineTo(x + width, -130);
+  c.lineTo(x + width, y + height);
+  c.lineTo(-1500, y + height);
+  c.closePath();
+  c.fill();
+  // A regular, pale street grid gives the distant blocks a legible city scale.
+  c.strokeStyle = '#cbd0c133';
+  c.lineWidth = 2;
   for (let px = x; px < x + width; px += 95) {
     c.beginPath();
     c.moveTo(px, y);
@@ -50,21 +60,65 @@ export function paintCityGround(c, bounds) {
     c.lineTo(x + width, py);
     c.stroke();
   }
-  c.fillStyle = '#a2b28b';
-  c.beginPath();
-  c.moveTo(-1500, 160);
-  c.lineTo(-850, -130);
-  c.lineTo(x + width, -130);
-  c.lineTo(x + width, y + height);
-  c.lineTo(-1500, y + height);
-  c.closePath();
-  c.fill();
+  // Broad avenues and marked crossings sit below the circuit, like a street
+  // network passing through the neighborhoods around the race route.
+  const avenueColumns = [-2100, -1200, -300, 600, 1500, 2400],
+    avenueRows = [-1800, -900, 0, 900, 1800],
+    avenues = [
+      ...avenueColumns.map((px) => ({
+        x1: px,
+        y1: y,
+        x2: px,
+        y2: y + height,
+      })),
+      ...avenueRows.map((py) => ({
+        x1: x,
+        y1: py,
+        x2: x + width,
+        y2: py,
+      })),
+    ];
+  c.lineCap = 'butt';
+  for (const avenue of avenues) {
+    c.beginPath();
+    c.moveTo(avenue.x1, avenue.y1);
+    c.lineTo(avenue.x2, avenue.y2);
+    c.strokeStyle = '#788481';
+    c.lineWidth = 48;
+    c.stroke();
+    c.beginPath();
+    c.moveTo(avenue.x1, avenue.y1);
+    c.lineTo(avenue.x2, avenue.y2);
+    c.strokeStyle = '#c0c5b8';
+    c.lineWidth = 3;
+    c.stroke();
+    c.beginPath();
+    c.moveTo(avenue.x1, avenue.y1);
+    c.lineTo(avenue.x2, avenue.y2);
+    c.strokeStyle = '#e2d5a055';
+    c.lineWidth = 2;
+    c.setLineDash([14, 18]);
+    c.stroke();
+    c.setLineDash([]);
+  }
+  c.fillStyle = '#e5e4d0a8';
+  for (const px of avenueColumns)
+    for (const py of avenueRows) {
+      for (let stripe = -3; stripe <= 3; stripe++) {
+        c.fillRect(px - 22, py - 37 + stripe * 9, 44, 4);
+        c.fillRect(px - 37 + stripe * 9, py - 22, 4, 44);
+      }
+    }
   // A small central park is well inside the circuit, beyond the barriers.
   c.fillStyle = '#8da67c';
   roundedRect(c, -330, -40, 1040, 860, 90);
   c.fill();
+  c.strokeStyle = '#d6d1b5';
+  c.lineWidth = 18;
+  roundedRect(c, -295, -5, 970, 790, 72);
+  c.stroke();
   c.strokeStyle = '#d7cfb0';
-  c.lineWidth = 12;
+  c.lineWidth = 14;
   c.beginPath();
   c.ellipse(190, 390, 380, 285, 0, 0, Math.PI * 2);
   c.stroke();
@@ -73,6 +127,38 @@ export function paintCityGround(c, bounds) {
   c.lineTo(550, 390);
   c.moveTo(190, 120);
   c.lineTo(190, 660);
+  c.stroke();
+  // Four planted quadrants and a small event lawn make the park read as a
+  // deliberate landmark from racing zoom, while keeping its paths open.
+  for (const [px, py] of [
+    [-155, 165],
+    [535, 165],
+    [-155, 615],
+    [535, 615],
+  ]) {
+    c.fillStyle = '#6f8e68';
+    c.beginPath();
+    c.arc(px, py, 76, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = '#a8b88a';
+    c.beginPath();
+    c.arc(px, py, 55, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = '#d2cfaa';
+    c.fillRect(px - 31, py - 3, 62, 6);
+    c.fillRect(px - 3, py - 31, 6, 62);
+  }
+  c.fillStyle = '#7e9d73';
+  roundedRect(c, 105, 305, 170, 170, 20);
+  c.fill();
+  c.strokeStyle = '#d7cfb0';
+  c.lineWidth = 5;
+  c.strokeRect(124, 324, 132, 132);
+  c.beginPath();
+  c.moveTo(190, 324);
+  c.lineTo(190, 456);
+  c.moveTo(124, 390);
+  c.lineTo(256, 390);
   c.stroke();
   c.fillStyle = '#d9d9c4';
   c.beginPath();
