@@ -439,6 +439,19 @@
       .sound-on {
         color: var(--lime);
       }
+      .ui-icon {
+        display: inline-block;
+        flex: none;
+        vertical-align: -0.15em;
+      }
+      .tile-check .ui-icon {
+        width: 15px;
+        height: 15px;
+      }
+      .swatch .ui-icon {
+        width: 14px;
+        height: 14px;
+      }
       #pause-screen {
         display: none;
         position: absolute;
@@ -1083,7 +1096,9 @@
         position: absolute;
         top: 8px;
         right: 10px;
-        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: var(--lime);
       }
       .choice-tile img {
@@ -1866,9 +1881,9 @@
       </div>
       <div class="header-actions">
         <button class="header-choice" id="open-tracks" aria-haspopup="dialog">
-          Juniper Raceway ▾</button
+          Juniper Raceway</button
         ><button class="header-choice" id="open-garage" aria-haspopup="dialog">
-          Garage ◇
+          Garage
         </button>
       </div>
       <div class="session">
@@ -1979,12 +1994,16 @@
       </div>
       <div id="touch-controls" aria-label="Touch driving controls">
         <div class="touch-steering" aria-label="Steering">
-          <button class="touch-button" data-key="KeyA" aria-label="Steer left">
-            ◀
-          </button>
-          <button class="touch-button" data-key="KeyD" aria-label="Steer right">
-            ▶
-          </button>
+          <button
+            class="touch-button"
+            data-key="KeyA"
+            aria-label="Steer left"
+          ></button>
+          <button
+            class="touch-button"
+            data-key="KeyD"
+            aria-label="Steer right"
+          ></button>
         </div>
         <div class="touch-pedals" aria-label="Pedals and handbrake">
           <button class="touch-button" data-key="Space" aria-label="Handbrake">
@@ -1998,7 +2017,7 @@
           </button>
         </div>
         <button class="touch-button" id="touch-pause" aria-label="Pause">
-          Ⅱ Pause
+          Pause
         </button>
         <button
           class="touch-button"
@@ -2040,7 +2059,7 @@
           >
             ⚙ SETTINGS
           </button>
-          <button class="primary" id="resume">BACK ON TRACK →</button>
+          <button class="primary" id="resume">BACK ON TRACK</button>
           <button class="guide-link" id="tutorial-help">
             HELP / DRIVING GUIDE
           </button>
@@ -2105,19 +2124,15 @@
           class="browse-button"
           id="picker-prev"
           aria-label="Previous selection"
-        >
-          ←
-        </button>
+        ></button>
         <span id="picker-count" aria-live="polite"></span>
         <button
           class="browse-button"
           id="picker-next"
           aria-label="Next selection"
-        >
-          →
-        </button>
+        ></button>
         <span class="navigation-hint"
-          >← → / SELECT &nbsp; · &nbsp; ENTER / CONFIRM</span
+          >SELECT &nbsp; · &nbsp; ENTER / CONFIRM</span
         >
       </div>
       <div class="picker-bottom">
@@ -2135,7 +2150,7 @@
               NEXT →
             </button>
           </div>
-          <button class="primary" id="picker-apply" autofocus>DRIVE →</button>
+          <button class="primary" id="picker-apply" autofocus>DRIVE</button>
         </div>
       </div>
     </dialog>
@@ -2230,7 +2245,7 @@
             type="button"
             aria-pressed="true"
           >
-            ♪ Sound on
+            Sound on
           </button>
           <button id="settings-done" class="settings-done" type="button">
             DONE / BACK
@@ -2304,10 +2319,10 @@
           id="restart"
           title="N · Restart from your chosen grid spot"
         >
-          ↻ Restart</button
+          Restart</button
         ><button class="action" id="sound" aria-pressed="false">
-          ♪ Sound off</button
-        ><button class="action" id="pause" aria-pressed="false">Ⅱ Pause</button>
+          Sound off</button
+        ><button class="action" id="pause" aria-pressed="false">Pause</button>
       </div>
     </footer>
     <script src="assets/p5.min.js"></script>

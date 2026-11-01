@@ -11,6 +11,7 @@ import { changeTrack } from './runtime.js';
 import { car, keys, opponentRace, race, state, timing } from './state.js';
 import { paintCityGround } from './terrain.js';
 import { dirtProgress, sampleMap } from './tracks.js';
+import { renderUiIcon } from './ui-icons.js';
 
 export const $ = (id) => document.getElementById(id);
 
@@ -19,6 +20,49 @@ let pauseOpener;
 let previewCanvas = null;
 let previewMap = null;
 let previewObserver = null;
+
+function setButtonContent(
+  id,
+  icon,
+  label,
+  { placement = 'start', size = 16 } = {},
+) {
+  const button = $(id),
+    svg = renderUiIcon(icon, { size });
+  button.innerHTML =
+    placement === 'end' ? `${label} ${svg}` : `${svg} ${label}`;
+}
+
+function initializeActionIcons() {
+  setButtonContent('open-garage', 'garage', 'Garage', {
+    placement: 'end',
+    size: 16,
+  });
+  setButtonContent('restart', 'restart', 'Restart', { size: 14 });
+  setButtonContent('resume', 'forward', 'BACK ON TRACK', {
+    placement: 'end',
+    size: 16,
+  });
+  setButtonContent('touch-pause', 'pause', 'Pause', { size: 16 });
+  for (const [selector, name] of [
+    ['#touch-controls [data-key="KeyA"]', 'steerLeft'],
+    ['#touch-controls [data-key="KeyD"]', 'steerRight'],
+  ])
+    document.querySelector(selector).innerHTML = renderUiIcon(name, {
+      size: 20,
+    });
+  $('picker-prev').innerHTML = renderUiIcon('previous', { size: 20 });
+  $('picker-next').innerHTML = renderUiIcon('forward', { size: 20 });
+  document.querySelector('.navigation-hint').innerHTML =
+    `${renderUiIcon('steerLeft', { size: 14 })} ${renderUiIcon('steerRight', { size: 14 })} / SELECT &nbsp; · &nbsp; ENTER / CONFIRM`;
+  syncTrackChoiceButton();
+}
+
+export function syncTrackChoiceButton() {
+  const button = $('open-tracks');
+  button.innerHTML = `${state.activeMap.name} ${renderUiIcon('chevronDown', { size: 14 })}`;
+  button.setAttribute('aria-label', 'Tracks: ' + state.activeMap.name);
+}
 
 function redrawTrackPreview() {
   if (previewCanvas && previewMap) paintTrackPreview(previewCanvas, previewMap);
@@ -86,6 +130,7 @@ function pendingChoiceKey() {
 }
 
 export function initPicker() {
+  initializeActionIcons();
   $('open-tracks').onclick = () => openPicker('tracks');
   $('open-garage').onclick = () => openPicker('garage');
   $('picker-close').onclick = () => closePicker();
@@ -117,10 +162,7 @@ export function initPicker() {
 export function syncCarHUD() {
   $('car-name').textContent = state.activeCar.name.toUpperCase();
   $('car-drive').textContent = state.activeCar.id === 'rally' ? 'AWD' : 'RWD';
-  $('open-tracks').setAttribute(
-    'aria-label',
-    'Tracks: ' + state.activeMap.name,
-  );
+  syncTrackChoiceButton();
 }
 
 // Shared entry point for startup and returning to setup after a session.
@@ -223,9 +265,9 @@ export function renderPicker() {
   }
   $('picker-close').hidden =
     state.selectingSession && state.pickerMode === 'garage';
-  $('picker-close').textContent = state.selectingSession
-    ? '← BACK'
-    : 'ESC / BACK';
+  const closeLabel = state.selectingSession ? 'BACK' : 'ESC / BACK';
+  $('picker-close').innerHTML =
+    `${renderUiIcon('back', { size: 14 })} ${closeLabel}`;
   $('picker-close').setAttribute(
     'aria-label',
     state.selectingSession
@@ -234,15 +276,17 @@ export function renderPicker() {
         : 'Back to car selection'
       : 'Close selection',
   );
-  $('picker-apply').textContent = state.selectingSession
+  const applyLabel = state.selectingSession
     ? modes
-      ? 'START DRIVING →'
+      ? 'START DRIVING'
       : tracks
-        ? 'NEXT / SELECT GAME MODE →'
-        : 'NEXT / SELECT CIRCUIT →'
+        ? 'NEXT / SELECT GAME MODE'
+        : 'NEXT / SELECT CIRCUIT'
     : tracks
-      ? 'DRIVE THIS CIRCUIT →'
-      : 'APPLY & DRIVE →';
+      ? 'DRIVE THIS CIRCUIT'
+      : 'APPLY & DRIVE';
+  $('picker-apply').innerHTML =
+    `${applyLabel} ${renderUiIcon('forward', { size: 16 })}`;
   $('picker-footnote').textContent = modes
     ? vehicle.name.toUpperCase() +
       ' / ' +
@@ -300,7 +344,7 @@ export function renderPicker() {
       </div>
     </div>
     <div class="choice-rail" aria-label="${modes ? 'Game modes' : tracks ? 'Circuits' : 'Cars'}" style="--choice-count:${choices.length}">
-      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? '' : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R'}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
+      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? '' : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R'}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? renderUiIcon('check', { size: 15 }) : ''}</span></button>`).join('')}
 
     </div>
     ${
@@ -311,7 +355,7 @@ export function renderPicker() {
           )
             .map(
               ([id, color]) =>
-                `<button class="swatch ${id === state.pendingPaint ? 'selected' : ''}" data-paint="${id}" aria-label="Paint ${color.name}" aria-pressed="${id === state.pendingPaint}" style="--paint:${color.hex}">${id === state.pendingPaint ? '✓' : ''}</button>`,
+                `<button class="swatch ${id === state.pendingPaint ? 'selected' : ''}" data-paint="${id}" aria-label="Paint ${color.name}" aria-pressed="${id === state.pendingPaint}" style="--paint:${color.hex}">${id === state.pendingPaint ? renderUiIcon('check', { size: 14 }) : ''}</button>`,
             )
             .join('')}</div></div>`
     }`;
@@ -534,7 +578,18 @@ export function setPaused(value, moveFocus = true) {
   keys.clear();
   state.accumulator = 0;
   $('pause-screen').classList.toggle('open', state.paused);
-  $('pause').textContent = state.paused ? '▶ Resume' : 'Ⅱ Pause';
+  setButtonContent(
+    'pause',
+    state.paused ? 'play' : 'pause',
+    state.paused ? 'Resume' : 'Pause',
+    {
+      size: 14,
+    },
+  );
+  $('pause').setAttribute(
+    'aria-label',
+    state.paused ? 'Resume game' : 'Pause game',
+  );
   $('pause').setAttribute('aria-pressed', String(state.paused));
   if (changed && moveFocus && !document.querySelector('dialog[open]')) {
     if (state.paused) {

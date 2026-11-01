@@ -58,5 +58,5 @@ export function renderUiIcon(name, { label, size = 20, tone } = {}) {
       : ` role="img" aria-label="${escapeAttribute(label.trim())}"`;
   const color = tone === undefined ? '' : ` style="color:${TONES[tone]}"`;
 
-  return `<svg class="ui-icon" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"${accessible}${color}>${ICON_PATHS[name]}</svg>`;
+  return `<svg class="ui-icon" data-icon="${name}" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"${accessible}${color}>${ICON_PATHS[name]}</svg>`;
 }
