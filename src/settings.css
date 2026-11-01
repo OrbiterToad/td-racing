@@ -99,6 +99,55 @@
   border-bottom: 1px solid #ffffff16;
 }
 
+.ghost-transfer-row {
+  min-height: 132px;
+}
+
+.ghost-transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ghost-transfer-actions select,
+.ghost-transfer-actions button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #ffffff30;
+  border-radius: 4px;
+  background: #ffffff08;
+  color: #dce5da;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ghost-transfer-actions select {
+  min-width: 150px;
+  color-scheme: dark;
+}
+
+.ghost-transfer-actions button:hover:not(:disabled),
+.ghost-transfer-actions select:focus-visible {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
+.ghost-transfer-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+#ghost-transfer-pairing {
+  color: var(--lime);
+  font-weight: 600;
+}
+
+#ghost-transfer-status {
+  min-height: 1.4em;
+}
+
 .setting-copy label,
 .setting-label {
   display: block;
@@ -241,6 +290,15 @@
   .setting-row {
     min-height: 92px;
     padding: 10px 0;
+  }
+
+  .ghost-transfer-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .ghost-transfer-actions {
+    justify-content: flex-start;
   }
 
   .settings-footer {

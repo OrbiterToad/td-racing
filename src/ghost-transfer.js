@@ -2,29 +2,62 @@ const FORMAT = 'td-racing-lap-ghost';
 const VERSION = 1;
 const MIN_FRAMES = 20;
 const MAX_FRAMES = 18000;
+export const MAX_GHOST_DOCUMENT_LENGTH = 4 * 1024 * 1024;
 
 /** Encode a best-lap ghost as a portable JSON document. */
-export function serializeLapGhost(ghost) {
+export function serializeLapGhost(ghost, pairing) {
   const validated = validateLapGhost(ghost);
-  if (!validated) throw new TypeError('Invalid lap ghost');
+  if (
+    !validated ||
+    !pairing ||
+    typeof pairing.track !== 'string' ||
+    typeof pairing.car !== 'string'
+  )
+    throw new TypeError('Invalid lap ghost or pairing');
 
-  return JSON.stringify({
+  const document = JSON.stringify({
     format: FORMAT,
     version: VERSION,
+    pairing: { track: pairing.track, car: pairing.car },
     ghost: validated,
   });
+  if (document.length > MAX_GHOST_DOCUMENT_LENGTH)
+    throw new TypeError('Lap ghost document is too large');
+  return document;
 }
 
 /** Parse and validate a portable ghost document without changing game state. */
 export function parseLapGhost(document) {
+  if (
+    typeof document !== 'string' ||
+    document.length > MAX_GHOST_DOCUMENT_LENGTH
+  )
+    return null;
   let data;
   try {
     data = JSON.parse(document);
   } catch (_) {
     return null;
   }
-  if (!data || data.format !== FORMAT || data.version !== VERSION) return null;
-  return validateLapGhost(data.ghost);
+  if (
+    !data ||
+    data.format !== FORMAT ||
+    data.version !== VERSION ||
+    !data.pairing ||
+    typeof data.pairing.track !== 'string' ||
+    typeof data.pairing.car !== 'string' ||
+    !data.pairing.track ||
+    !data.pairing.car
+  )
+    return null;
+  const ghost = validateLapGhost(data.ghost);
+  return ghost ? { pairing: { ...data.pairing }, ghost } : null;
+}
+
+export function ghostMatchesPair(bundle, track, car) {
+  return (
+    !!bundle && bundle.pairing?.track === track && bundle.pairing?.car === car
+  );
 }
 
 function validateLapGhost(ghost) {

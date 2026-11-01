@@ -2156,6 +2156,30 @@
           </button>
         </header>
         <div class="settings-list">
+          <section class="setting-row ghost-transfer-row">
+            <div class="setting-copy">
+              <label for="ghost-reference">Lap ghost</label>
+              <p id="ghost-transfer-pairing"></p>
+              <p id="ghost-transfer-status" role="status" aria-live="polite">
+                Export a backup or import a rival ghost for this car and
+                circuit.
+              </p>
+            </div>
+            <div class="ghost-transfer-actions">
+              <select id="ghost-reference" aria-label="Reference ghost">
+                <option value="best">Personal best</option>
+                <option value="imported" disabled>Imported rival</option>
+              </select>
+              <button id="ghost-export" type="button">EXPORT</button>
+              <button id="ghost-import" type="button">IMPORT</button>
+              <input
+                id="ghost-file"
+                type="file"
+                accept=".json,application/json"
+                hidden
+              />
+            </div>
+          </section>
           <section class="setting-row">
             <div class="setting-copy">
               <label for="settings-volume">Sound volume</label>

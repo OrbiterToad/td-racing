@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseLapGhost, serializeLapGhost } from '../src/ghost-transfer.js';
+import {
+  ghostMatchesPair,
+  MAX_GHOST_DOCUMENT_LENGTH,
+  parseLapGhost,
+  serializeLapGhost,
+} from '../src/ghost-transfer.js';
 
 function sampleGhost() {
   return {
@@ -18,13 +23,22 @@ function sampleGhost() {
 
 test('portable ghost round-trips without sharing mutable frame data', () => {
   const original = sampleGhost();
-  const encoded = serializeLapGhost(original);
+  const encoded = serializeLapGhost(original, {
+    track: 'juniper',
+    car: 'clubsport',
+  });
   const decoded = parseLapGhost(encoded);
 
-  assert.deepEqual(decoded, original);
-  assert.notEqual(decoded, original);
-  assert.notEqual(decoded.frames, original.frames);
-  assert.notEqual(decoded.frames[0], original.frames[0]);
+  assert.deepEqual(decoded, {
+    pairing: { track: 'juniper', car: 'clubsport' },
+    ghost: original,
+  });
+  assert.notEqual(decoded.ghost, original);
+  assert.notEqual(decoded.ghost.frames, original.frames);
+  assert.notEqual(decoded.ghost.frames[0], original.frames[0]);
+  assert.equal(ghostMatchesPair(decoded, 'juniper', 'clubsport'), true);
+  assert.equal(ghostMatchesPair(decoded, 'canyon', 'clubsport'), false);
+  assert.equal(ghostMatchesPair(decoded, 'juniper', 'formula'), false);
 });
 
 test('portable ghost parser rejects malformed documents and unsupported versions', () => {
@@ -38,11 +52,13 @@ test('portable ghost parser rejects malformed documents and unsupported versions
       JSON.stringify({
         format: 'td-racing-lap-ghost',
         version: 2,
+        pairing: { track: 'juniper', car: 'clubsport' },
         ghost: sampleGhost(),
       }),
     ),
     null,
   );
+  assert.equal(parseLapGhost('x'.repeat(MAX_GHOST_DOCUMENT_LENGTH + 1)), null);
 });
 
 test('portable ghost parser rejects invalid timing, frame sequences, and sectors', () => {
@@ -67,6 +83,7 @@ test('portable ghost parser rejects invalid timing, frame sequences, and sectors
     const document = JSON.stringify({
       format: 'td-racing-lap-ghost',
       version: 1,
+      pairing: { track: 'juniper', car: 'clubsport' },
       ghost,
     });
     assert.equal(parseLapGhost(document), null);
@@ -74,5 +91,9 @@ test('portable ghost parser rejects invalid timing, frame sequences, and sectors
 });
 
 test('serializer refuses invalid lap ghosts', () => {
-  assert.throws(() => serializeLapGhost(null), TypeError);
+  assert.throws(
+    () => serializeLapGhost(null, { track: 'juniper', car: 'clubsport' }),
+    TypeError,
+  );
+  assert.throws(() => serializeLapGhost(sampleGhost()), TypeError);
 });
