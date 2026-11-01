@@ -1482,6 +1482,19 @@
         }
       }
       @media (max-width: 650px) {
+        #selection-dialog[data-mode='modes'] .selection-feature {
+          grid-template-rows: 56px minmax(0, 1fr);
+        }
+        #selection-dialog[data-mode='modes'] .feature-copy {
+          padding: 8px 12px;
+        }
+        #selection-dialog[data-mode='modes'] .feature-copy h3 {
+          margin: 2px 0;
+        }
+        #selection-dialog[data-mode='modes'] .feature-copy p,
+        #selection-dialog[data-mode='modes'] .mode-summary {
+          display: none;
+        }
         .picker-steps {
           gap: 16px;
         }

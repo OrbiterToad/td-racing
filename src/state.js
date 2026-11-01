@@ -12,6 +12,9 @@ export const state = {
   pendingCar: 'clubsport',
   pendingPaint: 'red',
   pendingGameMode: 'trial',
+  localMultiplayer: false,
+  playerTwo: null,
+  localRace: null,
   settings: {
     volume: 0.7,
     steeringSensitivity: 1,

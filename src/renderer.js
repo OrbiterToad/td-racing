@@ -25,6 +25,8 @@ import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
 import { rewind } from './rewind.js';
+<<<<<<< HEAD
+import { pollSecondPlayer } from './local-race.js';
 import { handleGamepadAction } from './tutorial.js';
 import {
   $,
@@ -350,6 +352,7 @@ export function draw() {
   drawLapGhost(state.ctx);
   drawJungle(state.ctx);
   state.ctx.restore();
+  if (state.localRace) drawLocalSplitScreen(state.ctx, elapsed);
   if (!state.settings.reducedMotion && feedback.impact > 0.03) {
     state.ctx.save();
     state.ctx.fillStyle = 'rgba(247,130,92,' + feedback.impact * 0.065 + ')';
@@ -366,6 +369,103 @@ export function draw() {
     state.lastHUD = millis();
   }
   updateAudio();
+}
+
+function drawLocalSplitScreen(c) {
+  const race = state.localRace;
+  if (!race || !state.worldCanvas || !state.worldBounds) return;
+  const viewW = Math.floor(width / 2),
+    viewH = height;
+  for (let index = 0; index < 2; index++) {
+    const player = index === 0 ? car : race.players[1];
+    const x = index * viewW;
+    const zoom = Math.min(viewW / 760, viewH / 540, 0.85);
+    const sourceW = viewW / zoom,
+      sourceH = viewH / zoom;
+    const sx = clamp(
+      player.x - sourceW / 2 - state.worldBounds.x,
+      0,
+      state.worldCanvas.width - sourceW,
+    );
+    const sy = clamp(
+      player.y - sourceH / 2 - state.worldBounds.y,
+      0,
+      state.worldCanvas.height - sourceH,
+    );
+    c.save();
+    c.beginPath();
+    c.rect(x, 0, viewW, viewH);
+    c.clip();
+    c.fillStyle = '#778b69';
+    c.fillRect(x, 0, viewW, viewH);
+    c.drawImage(
+      state.worldCanvas,
+      sx,
+      sy,
+      Math.min(sourceW, state.worldCanvas.width - sx),
+      Math.min(sourceH, state.worldCanvas.height - sy),
+      x,
+      0,
+      viewW,
+      viewH,
+    );
+    const px = x + (player.x - state.worldBounds.x - sx) * zoom;
+    const py = (player.y - state.worldBounds.y - sy) * zoom;
+    c.translate(px, py);
+    c.rotate(player.angle);
+    c.fillStyle = index === 0 ? PAINTS[state.paint].hex : '#77d5fa';
+    c.fillRect(
+      (-state.activeCar.length * zoom) / 2,
+      (-state.activeCar.width * zoom) / 2,
+      state.activeCar.length * zoom,
+      state.activeCar.width * zoom,
+    );
+    c.restore();
+    c.fillStyle = '#10201b';
+    c.fillRect(x, 0, viewW, 42);
+    c.fillStyle = '#f4f1e8';
+    c.font = 'bold 15px Arial';
+    c.fillText(
+      index === 0
+        ? 'PLAYER 1 · WASD / GAMEPAD'
+        : 'PLAYER 2 · IJKL / SECOND GAMEPAD',
+      x + 14,
+      19,
+    );
+    c.font = '12px Arial';
+    c.fillText(
+      `LAP ${index === 0 ? race.players[0].lap + 1 : player.lap + 1} / ${race.laps}   ${Math.round(Math.hypot(player.vx, player.vy) * 0.46)} km/h`,
+      x + 14,
+      35,
+    );
+    if (x === 0) c.fillRect(viewW - 1, 0, 2, height);
+  }
+  if (race.countdown > 0) {
+    c.fillStyle = '#08120ddd';
+    c.fillRect(0, height / 2 - 42, width, 84);
+    c.fillStyle = '#f4f1e8';
+    c.font = 'bold 48px Arial';
+    c.textAlign = 'center';
+    c.fillText(String(Math.ceil(race.countdown)), width / 2, height / 2 + 16);
+    c.textAlign = 'start';
+  }
+  if (race.finished) {
+    c.fillStyle = '#08120dee';
+    c.fillRect(width / 2 - 170, height / 2 - 54, 340, 108);
+    c.fillStyle = '#f4f1e8';
+    c.font = 'bold 20px Arial';
+    c.textAlign = 'center';
+    c.fillText('RACE RESULTS', width / 2, height / 2 - 14);
+    c.font = '15px Arial';
+    c.fillText(
+      race.order
+        .map((player, place) => `${place + 1}. PLAYER ${player + 1}`)
+        .join('     '),
+      width / 2,
+      height / 2 + 20,
+    );
+    c.textAlign = 'start';
+  }
 }
 
 let gamepadPolling = false;
@@ -386,6 +486,12 @@ function pollGamepad() {
   const now = performance.now();
   if (input.padIndex === null && now < input.nextScan) return;
   const frame = input.update(navigator.getGamepads(), now);
+  if (state.localRace)
+    state.playerTwo = pollSecondPlayer(
+      state.localRace,
+      navigator.getGamepads(),
+      now,
+    );
   $('gamepad-status').textContent = frame.connected
     ? 'Controller connected'
     : 'No controller detected';

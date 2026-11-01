@@ -23,9 +23,11 @@ import { driveVehicle } from './vehicle-physics.js';
 import { resolveCityTraffic, updateCityTraffic } from './traffic.js';
 import { recordRewindFrame } from './rewind.js';
 import { $ } from './ui.js';
+import { localPlayerTwoControls, updateLocalRace } from './local-race.js';
 
 export function simulate(dt) {
   if (opponentRace.enabled && opponentRace.finished) return;
+  if (state.localRace?.finished) return;
   lapGhost.previous = [car.x, car.y, car.angle];
   updateJungle(dt);
   if (state.activeMap.id === 'coast') coast.time += dt;
@@ -39,6 +41,13 @@ export function simulate(dt) {
         ? 1
         : state.gamepadControls.throttle;
     if (race.countdown === 0) race.goTime = 0.8;
+    if (state.localRace)
+      updateLocalRace(
+        state.localRace,
+        dt,
+        [null, localPlayerTwoControls(keys, state.playerTwo)],
+        car,
+      );
     return;
   }
   race.goTime = Math.max(0, race.goTime - dt);
@@ -83,6 +92,13 @@ export function simulate(dt) {
       speed,
       surface,
     } = drive;
+  if (state.localRace)
+    updateLocalRace(
+      state.localRace,
+      dt,
+      [null, localPlayerTwoControls(keys, state.playerTwo)],
+      car,
+    );
   if (drive.impact > 65) {
     burst(
       car.x + after.nx * after.side * 17,

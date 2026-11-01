@@ -39,9 +39,11 @@ import {
 import { buildWorld } from './world.js';
 import { initTouchControls } from './touch-controls.js';
 import { prepareRewindSession, rewind } from './rewind.js';
+import { createLocalRace } from './local-race.js';
 
 export function changeTrack(id, announce = true) {
   if (!configureTrack(id)) return;
+  state.localRace = state.localMultiplayer ? createLocalRace() : null;
   prepareRewindSession(id, state.activeCar.id);
   keys.clear();
   skidmarks.length = 0;
