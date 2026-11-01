@@ -523,6 +523,54 @@ for (const viewport of [
   });
 }
 
+test('wizard step buttons and Back/Next navigate directly while preserving choices', async ({
+  page,
+}) => {
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  if (await page.locator('#tutorial-dialog').isVisible())
+    await page.locator('#tutorial-skip').click();
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+
+  await expect(page.locator('#wizard-back')).toBeDisabled();
+  await page.locator('[data-choice="clubsport"]').click();
+  await page.getByRole('button', { name: 'Paint Ocean', exact: true }).click();
+  await page.locator('#step-mode').click();
+  await expect(page.locator('#picker-title')).toHaveText('Choose your mode.');
+  await expect(page.locator('#wizard-forward')).toBeDisabled();
+  await expect(page.locator('#step-mode')).toHaveAttribute(
+    'aria-current',
+    'step',
+  );
+
+  await page.locator('#wizard-back').click();
+  await expect(page.locator('#picker-title')).toHaveText(
+    'Choose your circuit.',
+  );
+  await page.locator('[data-choice="juniper"]').click();
+  await page.locator('#wizard-back').click();
+  await expect(page.locator('[data-choice="clubsport"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Paint Ocean', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#wizard-forward').click();
+  await expect(page.locator('[data-choice="juniper"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.locator('#step-mode').click();
+  await page
+    .getByRole('button', { name: 'Choose Club race', exact: true })
+    .click();
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#race-panel')).toBeVisible();
+  await expect(page.locator('#car-name')).toHaveText('CLUBSPORT R');
+  await expect(page.locator('#track-title')).toHaveText('Juniper Raceway');
+});
+
 test('club race can be selected on the final wizard page and survives back navigation', async ({
   page,
 }) => {
