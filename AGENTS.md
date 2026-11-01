@@ -85,6 +85,7 @@ points:
   [Agent <number>] [#<issue> <short task>] [merge request]
   Further info: I want to merge PR #<number>. Head `<sha>`, base `<sha>`; checks: <results>; review: <state>; mergeability: <state>.
   ```
+
 - If you cannot open or update a PR because GitHub access is unavailable, send
   the coordinator the pushed branch, exact head and base SHAs, local check
   results, and the access blocker. Do not rely on the coordinator finding the

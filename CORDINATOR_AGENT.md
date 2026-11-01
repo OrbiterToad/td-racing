@@ -66,6 +66,7 @@ The issue size-labeling policy below is also published in `docs/COORDINATOR_GUID
   [Coordinator] [#<issue> <short task>] [sync checkpoint]
   Further info: PR #<number> merged; current default-branch SHA is `<sha>`. Resume the queued work from that base.
   ```
+
 - When an agent encounters a blocker, ambiguity, scope conflict, unavailable dependency, or decision it cannot make safely, require it to report promptly to the coordinator and wait for coordination. It must not silently stall, create a competing branch, or contact the user or other agents directly; the coordinator owns resolving the blocker and relaying decisions.
 - Keep work open while a PR is pending. Follow required checks and reviews, address failures, and complete the merge into `master` before marking the task done.
 - A completed implementation with an unmerged PR is still open work. Mark an agent free only after its assignment is complete and the PR is merged, or the user explicitly ends that assignment.
