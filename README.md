@@ -6,16 +6,16 @@ seven tracks, six cars, time trials, lap ghosts, and a three-lap race against AI
 ## The gallery
 
 <p align="center">
-  <img src="preview-cars.png" alt="Six selectable racing cars in the garage" width="49%">
-  <img src="preview-garage.jpg" alt="The APEX garage and car selection screen" width="49%">
+  <img src="preview/preview-cars.png" alt="Six selectable racing cars in the garage" width="49%">
+  <img src="preview/preview-garage.jpg" alt="The APEX garage and car selection screen" width="49%">
 </p>
 <p align="center">
-  <img src="preview-amazonas.png" alt="A car racing through the tropical Amazonas circuit" width="49%">
-  <img src="preview-coast.png" alt="Coastal circuit with turquoise water and a seaside village" width="49%">
+  <img src="preview/preview-amazonas.png" alt="A car racing through the tropical Amazonas circuit" width="49%">
+  <img src="preview/preview-coast.png" alt="Coastal circuit with turquoise water and a seaside village" width="49%">
 </p>
 <p align="center">
-  <img src="preview-city.png" alt="City street circuit winding between downtown buildings and parkland" width="49%">
-  <img src="preview-tracks.jpg" alt="Overhead views of the circuit collection" width="49%">
+  <img src="preview/preview-city.png" alt="City street circuit winding between downtown buildings and parkland" width="49%">
+  <img src="preview/preview-tracks.jpg" alt="Overhead views of the circuit collection" width="49%">
 </p>
 
 ## Play
