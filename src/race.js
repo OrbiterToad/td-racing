@@ -161,17 +161,19 @@ export function updateRace(dt, n) {
       )
         opponentRace.bestLap = crossingTime;
       race.lap++;
-      const medalAward = !opponentRace.enabled && resultEligible(state.rewindUsed)
-        ? awardMedal(state.activeMap.id, state.activeCar.id, race.last, {
-            valid: true,
-            timeTrial: true,
-          })
-        : null;
-      const earnedMedal = !opponentRace.enabled && resultEligible(state.rewindUsed)
-        ? (earnedMedalFor(state.activeMap.id, state.activeCar.id) ??
-          medalAward?.medal ??
-          null)
-        : null;
+      const medalAward =
+        !opponentRace.enabled && resultEligible(state.rewindUsed)
+          ? awardMedal(state.activeMap.id, state.activeCar.id, race.last, {
+              valid: true,
+              timeTrial: true,
+            })
+          : null;
+      const earnedMedal =
+        !opponentRace.enabled && resultEligible(state.rewindUsed)
+          ? (earnedMedalFor(state.activeMap.id, state.activeCar.id) ??
+            medalAward?.medal ??
+            null)
+          : null;
       const medalResult = earnedMedal
         ? `${medalAward?.improved ? 'NEW ' : ''}${earnedMedal.toUpperCase()} MEDAL · `
         : '';
