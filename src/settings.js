@@ -183,6 +183,9 @@ export function openSettings(trigger = document.activeElement) {
   activeTrigger = trigger;
   pausedBeforeSettings = state.paused;
   setPaused(true);
+  $('settings-list').hidden = false;
+  $('ghost-transfer-panel').hidden = true;
+  $('settings-ghost-tools').textContent = 'LAP GHOSTS';
   updateSettingsUI();
   syncGhostTransferUI();
   dialog.showModal();
@@ -234,6 +237,19 @@ export function initSettings() {
   $('settings-close').addEventListener('click', closeSettings);
   $('settings-done').addEventListener('click', closeSettings);
   $('settings-sound').addEventListener('click', toggleSound);
+  $('settings-ghost-tools').addEventListener('click', (event) => {
+    const showingGhostTools = $('ghost-transfer-panel').hidden;
+    $('settings-list').hidden = showingGhostTools;
+    $('ghost-transfer-panel').hidden = !showingGhostTools;
+    event.currentTarget.textContent = showingGhostTools
+      ? 'LAP GHOSTS'
+      : 'SETTINGS';
+    if (showingGhostTools) $('settings-ghost-tools').focus();
+    else {
+      syncGhostTransferUI();
+      $('ghost-reference').focus();
+    }
+  });
   $('ghost-reference').addEventListener('change', (event) => {
     if (selectGhostReference(event.currentTarget.value)) {
       try {

@@ -70,6 +70,8 @@ async function openDriveSettings(page) {
   if (await guide.isVisible()) await page.locator('#tutorial-skip').click();
   await page.locator('#settings-session').click();
   await expect(page.locator('#settings-dialog')).toBeVisible();
+  await page.locator('#settings-ghost-tools').click();
+  await expect(page.locator('#ghost-transfer-panel')).toBeVisible();
 }
 
 test('compatible rival import is selectable and leaves all personal-best records unchanged', async ({
