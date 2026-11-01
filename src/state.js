@@ -23,6 +23,7 @@ export const state = {
   rewindKey: '',
   rewindHistory: [],
   rewindClock: 0,
+  rewindSampleClock: 0,
   pickerWasPaused: false,
   activeMap: MAPS.juniper,
   controlPoints: MAPS.juniper.points,

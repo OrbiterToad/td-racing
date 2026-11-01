@@ -20,6 +20,7 @@ import {
 } from './rewind-core.js';
 
 const HISTORY_SECONDS = REWIND_SECONDS + 0.25;
+const SNAPSHOT_INTERVAL = 1 / 30;
 
 export function eligibleForRewind() {
   return canRewind({
@@ -58,6 +59,9 @@ export function recordRewindFrame(dt) {
     return;
   }
   state.rewindClock += dt;
+  state.rewindSampleClock += dt;
+  if (state.rewindSampleClock < SNAPSHOT_INTERVAL) return;
+  state.rewindSampleClock %= SNAPSHOT_INTERVAL;
   state.rewindHistory.push(snapshot());
   const cutoff = state.rewindClock - HISTORY_SECONDS;
   while (state.rewindHistory.length > 1 && state.rewindHistory[1].at < cutoff)
@@ -77,6 +81,7 @@ export function rewind() {
     traffic: cityTraffic,
   });
   state.rewindClock = frame.at;
+  state.rewindSampleClock = 0;
   state.rewindHistory = state.rewindHistory.filter(
     (item) => item.at <= frame.at,
   );
@@ -109,4 +114,5 @@ export function prepareRewindSession(trackId, carId) {
   }
   state.rewindHistory = [];
   state.rewindClock = 0;
+  state.rewindSampleClock = 0;
 }
