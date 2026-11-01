@@ -56,6 +56,27 @@ function pickerChoices() {
       : VEHICLES;
 }
 
+const WIZARD_STEPS = ['garage', 'tracks', 'modes'];
+
+function navigateWizardStep(mode) {
+  if (!state.selectingSession || !WIZARD_STEPS.includes(mode)) return;
+  if (mode === 'modes' && !clubRaceAvailable()) state.pendingGameMode = 'trial';
+  state.pickerMode = mode;
+  renderPicker();
+  $('picker-apply').focus();
+}
+
+function moveWizardStep(direction) {
+  if (!state.selectingSession) return;
+  const index = WIZARD_STEPS.indexOf(state.pickerMode);
+  const nextIndex = Math.max(
+    0,
+    Math.min(WIZARD_STEPS.length - 1, index + direction),
+  );
+  navigateWizardStep(WIZARD_STEPS[nextIndex]);
+  (direction < 0 ? $('wizard-back') : $('wizard-forward')).focus();
+}
+
 function pendingChoiceKey() {
   return state.pickerMode === 'modes'
     ? 'pendingGameMode'
@@ -69,6 +90,10 @@ export function initPicker() {
   $('open-garage').onclick = () => openPicker('garage');
   $('picker-close').onclick = () => closePicker();
   $('picker-apply').onclick = applyPicker;
+  $('wizard-back').onclick = () => moveWizardStep(-1);
+  $('wizard-forward').onclick = () => moveWizardStep(1);
+  for (const button of document.querySelectorAll('.picker-step'))
+    button.onclick = () => navigateWizardStep(button.dataset.step);
   $('picker-prev').onclick = () => stepSelection(-1);
   $('picker-next').onclick = () => stepSelection(1);
   $('selection-dialog').addEventListener('cancel', (e) => {
@@ -181,12 +206,17 @@ export function renderPicker() {
         ' / Find your next apex.'
       : 'Six machines. Five colors. Make the grid your own.';
   document.querySelector('.picker-steps').hidden = !state.selectingSession;
+  document.querySelector('.picker-actions').hidden = !state.selectingSession;
+  $('wizard-back').disabled =
+    !state.selectingSession || state.pickerMode === 'garage';
+  $('wizard-forward').disabled = !state.selectingSession || modes;
   for (const [id, mode] of [
     ['step-car', 'garage'],
     ['step-track', 'tracks'],
     ['step-mode', 'modes'],
   ]) {
     $(id).classList.toggle('active', state.pickerMode === mode);
+    $(id).disabled = !state.selectingSession;
     if (state.pickerMode === mode) $(id).setAttribute('aria-current', 'step');
     else $(id).removeAttribute('aria-current');
   }

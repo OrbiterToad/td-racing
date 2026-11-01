@@ -760,9 +760,19 @@
         font-weight: 700;
         letter-spacing: 1px;
       }
-      .picker-steps span {
-        padding-bottom: 10px;
+      .picker-step {
+        padding: 0 0 10px;
+        color: inherit;
+        background: transparent;
+        border: 0;
         border-bottom: 2px solid #ffffff18;
+        font: inherit;
+        letter-spacing: inherit;
+        cursor: pointer;
+      }
+      .picker-step:hover,
+      .picker-step:focus-visible {
+        color: #edf0e8;
       }
       .picker-steps .active {
         color: var(--lime);
@@ -1168,6 +1178,33 @@
         color: #9eb3a7;
         margin: 0;
       }
+      .picker-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .picker-actions[hidden] {
+        display: none;
+      }
+      .picker-step-control {
+        min-height: 48px;
+        padding: 0 16px;
+        color: #dbe4da;
+        background: #ffffff08;
+        border: 1px solid #ffffff30;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+      .picker-step-control:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .picker-step-control:not(:disabled):hover {
+        border-color: var(--lime);
+        background: #d5f57814;
+      }
       .picker-bottom .primary {
         margin: 0;
         min-height: 64px;
@@ -1400,7 +1437,22 @@
         .picker-bottom p {
           display: none;
         }
+        .picker-actions {
+          width: 100%;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+        }
+        .picker-actions[hidden] {
+          display: none;
+        }
+        .picker-step-control {
+          min-height: 44px;
+          padding: 0 8px;
+          font-size: 10px;
+        }
         .picker-bottom .primary {
+          grid-column: 1 / -1;
           width: 100%;
           font-size: 13px;
           padding: 0 16px;
@@ -1998,11 +2050,32 @@
         <div class="eyebrow" id="picker-eyebrow">THE CIRCUIT COLLECTION</div>
         <h2 id="picker-title">Find your next apex.</h2>
         <p id="picker-description"></p>
-        <div class="picker-steps" aria-label="Session setup">
-          <span id="step-car" class="active">01 / CAR</span
-          ><span id="step-track">02 / CIRCUIT</span
-          ><span id="step-mode">03 / MODE</span>
-        </div>
+        <nav class="picker-steps" aria-label="Session setup">
+          <button
+            type="button"
+            id="step-car"
+            class="picker-step active"
+            data-step="garage"
+          >
+            01 / CAR
+          </button>
+          <button
+            type="button"
+            id="step-track"
+            class="picker-step"
+            data-step="tracks"
+          >
+            02 / CIRCUIT
+          </button>
+          <button
+            type="button"
+            id="step-mode"
+            class="picker-step"
+            data-step="modes"
+          >
+            03 / MODE
+          </button>
+        </nav>
         <button
           class="picker-settings"
           id="settings-setup"
@@ -2042,7 +2115,15 @@
       </div>
       <div class="picker-bottom">
         <p id="picker-footnote"></p>
-        <button class="primary" id="picker-apply">DRIVE →</button>
+        <div class="picker-actions">
+          <button type="button" class="picker-step-control" id="wizard-back">
+            ← BACK
+          </button>
+          <button type="button" class="picker-step-control" id="wizard-forward">
+            NEXT →
+          </button>
+          <button class="primary" id="picker-apply">DRIVE →</button>
+        </div>
       </div>
     </dialog>
     <dialog id="settings-dialog" aria-labelledby="settings-title">
