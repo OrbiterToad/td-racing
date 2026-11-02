@@ -1,4 +1,12 @@
+import { state } from './state.js';
+
 const STORAGE_KEY = 'apex-tutorial-v1';
+const SKILL_TRIAL_MODES = new Set([
+  'braking',
+  'slalom',
+  'handbrake',
+  'cornering',
+]);
 
 const steps = [
   {
@@ -57,7 +65,13 @@ export function initTutorial() {
   const help = document.getElementById('tutorial-help');
   help.addEventListener('click', () => openTutorial(help));
   document.getElementById('selection-dialog').addEventListener('close', () => {
-    if (!decided && !dialog.open) openTutorial(document.getElementById('game'));
+    if (
+      !decided &&
+      !dialog.open &&
+      !state.selectingSession &&
+      !SKILL_TRIAL_MODES.has(state.pendingGameMode)
+    )
+      openTutorial(document.getElementById('game'));
   });
   back.addEventListener('click', () => renderStep(currentStep - 1));
   next.addEventListener('click', () => renderStep(currentStep + 1));

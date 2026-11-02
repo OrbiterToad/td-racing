@@ -26,6 +26,7 @@ import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
 import { rewind } from './rewind.js';
 import { handleGamepadAction } from './tutorial.js';
+import { drawSkillTrialMarkers } from './skill-trials.js';
 import {
   $,
   applyPicker,
@@ -327,6 +328,7 @@ export function draw() {
   }
   drawSkidmarks(state.ctx);
   drawStartingGridSelection(state.ctx);
+  drawSkillTrialMarkers(state.ctx);
   for (const p of particles) {
     state.ctx.globalAlpha = (p.life / p.max) * 0.35;
     state.ctx.fillStyle =
