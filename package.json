@@ -7,6 +7,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "prepare": "node tools/setup-hooks.mjs",
     "lint": "eslint \"*.{js,cjs,mjs}\" src tools tests --max-warnings 0",
     "test": "node verify.mjs && node --test tests/*.test.mjs",
     "test:browser": "playwright test",
