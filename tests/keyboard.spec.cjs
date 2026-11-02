@@ -161,6 +161,31 @@ test('pause accepts Space, focuses Resume, ignores driving and restart inputs, a
   await expect(pause).toBeFocused();
 });
 
+test('pause menu restart starts a fresh run and closes the pause screen', async ({
+  page,
+}) => {
+  await startTrial(page);
+  await page.locator('#pause').click();
+  await expect(page.locator('#pause-screen')).toHaveClass('open');
+
+  await page.locator('#pause-restart').click();
+
+  await expect(page.locator('#pause-screen')).not.toHaveClass('open');
+  await expect(page.locator('#start-countdown')).toHaveText(/^[123]$|^GO!$/);
+  await expect(page.locator('#pause')).toBeFocused();
+  expect(
+    await page.evaluate(async () => {
+      const { car, race, state } = await import('./src/state.js');
+      return {
+        speed: Math.hypot(car.vx, car.vy),
+        countdown: race.countdown,
+        time: race.time,
+        paused: state.paused,
+      };
+    }),
+  ).toMatchObject({ speed: 0, time: 0, paused: false });
+});
+
 test('starting a session hands focus to driving so Space remains a handbrake', async ({
   page,
 }) => {
