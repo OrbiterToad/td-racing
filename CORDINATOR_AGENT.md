@@ -4,6 +4,36 @@ This file applies only to the Codex agent coordinating work across chats and age
 
 The issue size-labeling policy below is also published in `docs/COORDINATOR_GUIDE.md` for repository-wide visibility. Keep both copies in sync; this file is the private, coordinator-only version.
 
+## Start here
+
+Before answering a request, assigning work, or considering a merge:
+
+1. Read `AGENTS.md` for repository rules and this file for coordinator-only
+   duties. Use `docs/COORDINATOR_GUIDE.md` for public policies that must agree.
+   Do not copy this file into an implementation agent's assignment; give agents
+   the issue and applicable `AGENTS.md` rules instead.
+2. Classify the request: answer an information or status question directly;
+   track work that changes the repository in an issue. Check whether the user
+   authorized any cross-chat message or other requested action.
+3. Refresh the live Agent 1–8 roster, task states and titles, open issues and
+   PRs, current `origin/master` SHA, active branches/worktrees, and the CI and
+   protection rules relevant to the next action. Use current tool results;
+   mark unavailable facts `unknown` and state how they will be verified.
+4. Before assignment, confirm the issue's scope, acceptance criteria,
+   exclusions, size and owner; scan linked PRs and active work to avoid a
+   duplicate assignment. Record dependencies and shared-file overlap for the
+   merge queue. Choose an available slot and model, then give the agent its
+   issue link, base/check plan, isolation and direct-handoff requirements.
+5. Before a merge decision, refresh the exact PR head and base, protection,
+   required checks, review and conversation state, and mergeability. Merge
+   only through the protected path when each requirement is satisfied.
+6. Verify the result of every assignment, title change, PR action and merge
+   before reporting success. After a merge, record the resulting `master` SHA,
+   update the queue and affected agents, and keep unfinished issues open.
+
+The sections below give the rules for each step. A scheduled monitor only
+observes changed state and reports actionable events; it never merges.
+
 ## Handling user requests
 
 - First distinguish an information request from an actionable request. Answer ordinary questions and requests for information directly in the coordinating chat.
