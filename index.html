@@ -482,6 +482,22 @@
         font-weight: 700;
         margin-top: 14px;
       }
+      .pause-restart {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+        padding: 10px 25px;
+        border: 1px solid #ffffff30;
+        border-radius: 4px;
+        background: #ffffff08;
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pause-restart:hover {
+        border-color: var(--lime);
+        color: var(--lime);
+      }
       .credits {
         font-size: 10px;
         color: #93a89a;
@@ -2063,6 +2079,9 @@
             aria-haspopup="dialog"
           >
             ⚙ SETTINGS
+          </button>
+          <button class="pause-restart" id="pause-restart">
+            ↻ RESTART RUN
           </button>
           <button class="primary" id="resume">BACK ON TRACK →</button>
           <button class="guide-link" id="tutorial-help">
