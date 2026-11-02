@@ -52,6 +52,40 @@ checks pass.
   requirements, unavailable dependencies, or failing checks that you cannot
   resolve, and state the next useful step you can take.
 
+## Communication standard
+
+Use these two-line structures for every direct coordination message:
+
+```text
+[Agent <number>] [#<issue> <short task>] [<state>]
+Further info: <outcome or request; relevant evidence; next action and owner>
+```
+
+```text
+[Coordinator] [#<issue> <short task>] [<state>]
+Further info: <decision or instruction; relevant evidence; next action and owner>
+```
+
+Use the assigned agent number and tracked issue, with a short, stable task
+name. Choose a state from `assignment`, `preflight complete`, `progress`,
+`blocked`, `merge request`, `decision`, `changes requested`, `merged`, or
+`ready for new task`. State meanings and copyable lifecycle templates are in
+[the coordinator guide](docs/COORDINATOR_GUIDE.md#communication-standard).
+
+Lead with the result, request, or decision. Use neutral, direct sentences and
+name who acts next when action is needed. Report progress only when a
+milestone, evidence, risk, or next action changes; avoid repeated status,
+filler, invented percentages, or unsupported claims. Include only relevant
+fields. Use `pending` for work awaiting completion and `unknown` for facts
+not yet verified, with the next verification step. Distinguish local results
+from CI results, and implementation readiness from merge completion.
+
+The format does not grant messaging or merge authority. Send required
+handoffs directly to `Cordinator` using the chat messaging tool, within user
+authorization. The coordinator owns the merge queue and merges unless it
+explicitly delegates a specific merge. Keep the assignment open until its
+PR is merged and required follow-up is complete.
+
 ## Coordinator handoffs
 
 Send concise progress and handoff messages in the coordinator chat at these
@@ -70,6 +104,7 @@ points:
   not a coordinator handoff. Use the chat messaging tool to send the message
   directly to the coordinator chat titled `Cordinator`.
 
+- Report meaningful progress with evidence and the next action.
 - After task preflight, report the issue, scope, base SHA, ownership/conflict
   scan, and required checks.
 - Report blockers or ambiguity promptly, state what is blocked, and wait for
@@ -90,7 +125,7 @@ points:
   the coordinator the pushed branch, exact head and base SHAs, local check
   results, and the access blocker. Do not rely on the coordinator finding the
   details in your task chat; the coordinator can open the PR if appropriate.
-- After an explicitly authorized merge, say “I have merged PR #X” and include
+- After performing an explicitly authorized merge, say “I have merged PR #X” and include
   the resulting `master` SHA.
 - After the task is complete, report completion and that you are ready for a
   new task. Keep the task open while its PR or required follow-up is pending.
@@ -99,6 +134,6 @@ Coordinator replies use the same two-line structure, with `[Coordinator]` in
 the first field. For example:
 
 ```text
-[Coordinator] [#<issue> <short task>] [sync checkpoint]
+[Coordinator] [#<issue> <short task>] [progress]
 Further info: PR #<number> merged; current default-branch SHA is `<sha>`. Resume the queued work from that base.
 ```
