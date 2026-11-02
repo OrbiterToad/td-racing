@@ -559,7 +559,7 @@ export function setPaused(value, moveFocus = true) {
   }
   if (state.engineGain)
     state.engineGain.gain.setTargetAtTime(
-      !state.paused && state.soundEnabled ? 0.018 + car.throttle * 0.014 : 0,
+      !state.paused && state.soundEnabled ? 0.014 + car.throttle * 0.018 : 0,
       state.audioCtx.currentTime,
       0.05,
     );
