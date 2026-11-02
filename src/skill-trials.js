@@ -40,6 +40,9 @@ export const SKILL_TRIALS = {
 };
 
 const STORAGE_KEY = 'apex-skill-trials-v1';
+const BRAKING_TARGET_KMH = 120;
+const SPEED_TO_KMH = 0.46;
+const BRAKING_TARGET_SPEED = BRAKING_TARGET_KMH / SPEED_TO_KMH;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 export function readSkillProgress() {
@@ -243,11 +246,15 @@ export function updateSkillTrial(dt, drive) {
   if (distance < 0) distance += 1;
   skillTrial.previousProgress = n.progress;
   if (skillTrial.id === 'braking') {
-    if (speed >= 120)
+    if (speed >= BRAKING_TARGET_SPEED)
       skillTrial.startSpeed = Math.max(skillTrial.startSpeed, speed);
-    if (skillTrial.startSpeed >= 220 && drive.braking)
+    if (skillTrial.startSpeed >= BRAKING_TARGET_SPEED && drive.braking)
       skillTrial.brakingDistance += speed * dt;
-    if (skillTrial.startSpeed >= 220 && drive.braking && speed < 12) {
+    if (
+      skillTrial.startSpeed >= BRAKING_TARGET_SPEED &&
+      drive.braking &&
+      speed < 12
+    ) {
       skillTrial.score = clamp(100 - skillTrial.brakingDistance / 22, 0, 100);
       showResult(
         true,

@@ -68,6 +68,7 @@ export function initTutorial() {
     if (
       !decided &&
       !dialog.open &&
+      !state.selectingSession &&
       !SKILL_TRIAL_MODES.has(state.pendingGameMode)
     )
       openTutorial(document.getElementById('game'));
