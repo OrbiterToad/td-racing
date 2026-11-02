@@ -61,6 +61,25 @@ function updateSettingsUI() {
     .reducedMotionSaved
     ? 'Uses your saved preference instead of the device setting.'
     : 'Follows your device preference until you choose a setting.';
+  for (const [id, key, on, off] of [
+    [
+      'settings-steering-assist',
+      'steeringAssist',
+      'Steering assist on',
+      'Steering assist off',
+    ],
+    [
+      'settings-auto-accelerate',
+      'autoAccelerate',
+      'Auto-accelerate on',
+      'Auto-accelerate off',
+    ],
+  ]) {
+    const enabled = Boolean(state.settings[key]);
+    $(id).setAttribute('aria-checked', String(enabled));
+    $(id).textContent = enabled ? 'ON' : 'OFF';
+    $(id + '-value').textContent = enabled ? on : off;
+  }
   syncSoundButtons();
 }
 
@@ -208,6 +227,8 @@ export function initSettings() {
   Object.assign(state.settings, {
     volume: preferences.volume,
     steeringSensitivity: preferences.steeringSensitivity,
+    steeringAssist: preferences.steeringAssist,
+    autoAccelerate: preferences.autoAccelerate,
     reducedMotion: preferences.reducedMotion,
     reducedMotionSaved: preferences.reducedMotionSaved,
   });
@@ -298,6 +319,15 @@ export function initSettings() {
       Math.round(state.settings.steeringSensitivity * 100) + '%';
     persistSettings();
   });
+  for (const [id, key] of [
+    ['settings-steering-assist', 'steeringAssist'],
+    ['settings-auto-accelerate', 'autoAccelerate'],
+  ])
+    $(id).addEventListener('click', () => {
+      state.settings[key] = !state.settings[key];
+      persistSettings();
+      updateSettingsUI();
+    });
   $('settings-motion').addEventListener('click', () => {
     state.settings.reducedMotionSaved = true;
     applyMotionPreference(!state.settings.reducedMotion);
