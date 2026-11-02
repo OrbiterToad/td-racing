@@ -25,11 +25,13 @@ Before answering a request, assigning work, or considering a merge:
    merge queue. Choose an available slot and model, then give the agent its
    issue link, base/check plan, isolation and direct-handoff requirements.
 5. Before a merge decision, refresh the exact PR head and base, protection,
-   required checks, review and conversation state, and mergeability. Merge
-   only through the protected path when each requirement is satisfied.
+   required checks, review and conversation state, and mergeability. Explicitly
+   delegate each eligible PR merge to the dedicated Agent 2; use the protected
+   path and never delegate based on an earlier status snapshot.
 6. Verify the result of every assignment, title change, PR action and merge
-   before reporting success. After a merge, record the resulting `master` SHA,
-   update the queue and affected agents, and keep unfinished issues open.
+   before reporting success. After Agent 2 merges, record the resulting
+   `master` SHA, update the queue and affected agents, and keep unfinished
+   issues open.
 
 The sections below give the rules for each step. A scheduled monitor only
 observes changed state and reports actionable events; it never merges.
@@ -60,8 +62,9 @@ observes changed state and reports actionable events; it never merges.
 - Choose an available model for the assignment's difficulty and uncertainty: use `gpt-6-luna` for difficult or high-uncertainty tasks, and a lighter/basic model for easier tasks (for example, `gpt-5.6-luna` when available). Issue/chat size and model choice are separate decisions; reassess if scope changes.
 - Before creating or renaming an active agent chat, inspect the active title/slot map. Use one unique reusable slot from `Agent 1` through `Agent 8`; never create or rename an active chat to `Agent 9` or higher. Format titles as `Agent N (Mini/Big) · <state> · <short task>`, using the task's size and a concise current state. For example: `Agent 8 (Mini) · Working · Coordinator documentation` or `Agent 5 (Big) · Blocked · Gamepad support`.
 - Update a chat title whenever its state or task changes, keeping its agent number stable and its size accurate. Use `Blocked` when a dependency or access problem prevents the next step, `Working` for active implementation, and `Merge ready` only after the required checks and review state support a merge request; verify the rename. Do not leave a blocked task titled `Working`.
-- Give each assignment its own chat. When a nonreserved agent finishes, verify the merge and required follow-up, then archive the completed chat before reusing its slot. Reuse only that freed number; update the size label, task name, and model for the new assignment. An open PR remains an active assignment.
+- Give each assignment its own chat. When a nonreserved agent finishes, verify the merge and required follow-up, then archive the completed chat before reusing its slot. Promptly offer the freed slot a suitable queued issue, preferring ready Mini work unless a concrete dependency or priority says otherwise. Reuse only that freed number; update the size label, task name, and model for the new assignment. An open PR remains tracked work; a blocked PR may be paused under the rule below.
 - Reserve Agent 1 for agent-instruction maintenance. Keep Agent 1's chat open after this task finishes and mark it idle/reserved for future changes to agent or coordinator instructions; do not archive it or repurpose it for feature work.
+- Reserve Agent 2 for PR queue integration and explicitly delegated merges. Keep its chat open and reserved when idle; do not assign unrelated feature work to that slot. If earlier Agent 2 work is paused, preserve its branch, PR and chat before reusing the active Agent 2 slot for integration; keep the paused task visible in the roster.
 
 ## Agent task start preflight
 
@@ -94,6 +97,18 @@ observes changed state and reports actionable events; it never merges.
 ## Canceling assignments
 
 - When the user or coordinator cancels an assignment, stop its work, close its PR, and delete only that task's remote branch. Then archive the canceled chat and reuse its agent number for a replacement task with the correct size and model. Preserve work and branches belonging to other tasks.
+
+## Paused assignments
+
+- If an agent is blocked and cannot make useful progress, mark its task and
+  title `Blocked`, keep its branch, PR and chat intact, and record the blocker
+  and next action in the queue. Do not silently cancel or overwrite it.
+- After preserving the paused task, its slot may be reused in a separate new
+  chat. Keep agent numbers unique among active assignments and keep the paused
+  chat clearly marked so its old title is not mistaken for an active owner. If
+  no slot is available, queue the task. When the blocker clears, resume the
+  preserved assignment in an available slot or explicitly reassign it with a
+  recorded handoff.
 
 ## Communication standard
 
@@ -156,7 +171,7 @@ PR is merged and required follow-up is complete.
 - Order the queue first by whether required reviews and checks are ready, then by mergeability, freshness requirements, and likely conflict risk. Prefer compatible, low-conflict PRs in the same planned pass so a ready PR does not advance `master` immediately before several slower branches are ready to sync. A green check alone does not make a PR ready to merge.
 - When an agent is ready, it must tell the coordinator which PR it wants to merge. Plan merge passes explicitly and tell affected agents the intended sequence and sync checkpoint. Keep other agents working; ask an owner to pause pushes only when their branch is actively being integrated or conflict resolution needs a stable head.
 - The coordinator owns resolving conflicts needed to integrate queued PRs. Resolve them in the PR branch or a dedicated integration branch, preserving each agent's intended changes; then rerun required checks and refresh reviews and mergeability. Tell the owner what changed and the resulting commit. Do not ask the user to resolve routine merge conflicts.
-- Merge PRs one at a time through the repository's protected path. The coordinator owns the decision and normally performs the merge; delegate only a specific merge as `AGENTS.md` permits. Immediately before each merge, refresh its exact head and base, mergeability/conflict state, required reviews and review requests, unresolved conversations, required check conclusions, and applicable branch protection. Confirm all approvals and checks are satisfied on that head, the branch meets the freshness rule, and there is no blocking feedback. Never bypass protection, infer a passing state from incomplete data, enable automatic merging, or treat a prior status report as merge authorization.
+- Merge PRs one at a time through the repository's protected path. The coordinator owns queue ordering and the merge decision; after refreshing the gate, explicitly delegate that specific PR and head to Agent 2 for integration. Agent 2 reports the resulting `master` SHA. Immediately before each delegation, refresh its exact head and base, mergeability/conflict state, required reviews and review requests, unresolved conversations, required check conclusions, and applicable branch protection. Confirm all approvals and checks are satisfied on that head, the branch meets the freshness rule, and there is no blocking feedback. Never bypass protection, infer a passing state from incomplete data, enable automatic merging, or treat a prior status report as merge authorization.
 - After each merge, verify the PR is merged and record the resulting `master` commit; update affected agent titles and refresh the next PR in the pass. If it is now stale under protection rules, conflicts, receives new blocking review feedback, or has pending/failed required checks, pause it; do not force the pass through. Report the precise blocker and next action, then requeue it after the owner updates the branch and required checks finish.
 - At the end of a pass, tell affected active agents the final `master` commit to sync to, identify branches that need updating, and track their refreshed required checks. Agents then continue their assigned work from the new checkpoint. When an issue is complete and its PR is merged, close out that assignment and give the agent a suitable next queued issue if a slot is available.
 - A paused PR stays open and retains its owner. Resume it only after refreshing its state and clearing the blocker; restore its position based on current readiness and conflict risk. Continue with independent ready PRs when a different PR is waiting on its owner, reviews, checks, or sync.
@@ -172,7 +187,7 @@ For a requested full agent-status report to the user:
 - Treat percentages as estimates based on concrete milestones: implementation, verification, PR creation, required checks/review, and merge. Explain the current milestone and next action; do not invent progress between observations. State blockers plainly; an open PR or passing local tests alone is not 100%.
 - For every open task, state where work is happening: branch and worktree/path when known, plus PR number/link when one exists. Distinguish local work from pushed PR work.
 - Mention relevant CI/check state, failures, review feedback, dependencies on other agents, and the next milestone concisely.
-- If an agent has no active assignment, mark it `Free` instead of presenting stale work as active. Show Agent 1 as `Reserved` when idle, not as an ordinary free slot.
+- If an agent has no active assignment, mark it `Free` instead of presenting stale work as active. Show Agents 1 and 2 as `Reserved` when idle, not as ordinary free slots. Show paused tasks separately with their preserved owner, PR and blocker; do not count them as active slots.
 - Refresh thread status and PR/check data before reporting. Do not present old progress as current.
 - Keep each task's reported size consistent with its issue's `Mini`/`Big` label; if you relabeled the issue, reflect the new label in the same update.
 
@@ -183,6 +198,8 @@ Suggested format:
 | Agent   | Progress | Task / location                                          | Latest state / next step                |
 | ------- | -------: | -------------------------------------------------------- | --------------------------------------- |
 | Agent N |   🟢 90% | Task · `ai/branch` · `/path/to/worktree` · [PR #N](link) | Checks running; waiting for required CI |
+
+**Paused:** list blocked assignments with their preserved branch/PR and next action.
 
 **Done:** list completed assignments at ✅ 100%, with merged PR links where available.
 
@@ -200,4 +217,4 @@ Omit sections that have no entries. Keep reports concise, but never omit an acti
 - A monitor may recommend a queue action but must never merge, enable auto
   merge, bypass protection, or mark an agent complete. The coordinator makes
   an explicit fresh merge decision in an active chat after checking the
-  required state above.
+  required state above, then delegates that specific merge to Agent 2.
