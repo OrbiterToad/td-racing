@@ -125,7 +125,7 @@ points:
   the coordinator the pushed branch, exact head and base SHAs, local check
   results, and the access blocker. Do not rely on the coordinator finding the
   details in your task chat; the coordinator can open the PR if appropriate.
-- After an explicitly authorized merge, say “I have merged PR #X” and include
+- After performing an explicitly authorized merge, say “I have merged PR #X” and include
   the resulting `master` SHA.
 - After the task is complete, report completion and that you are ready for a
   new task. Keep the task open while its PR or required follow-up is pending.
