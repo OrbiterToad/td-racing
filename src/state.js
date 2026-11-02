@@ -92,6 +92,11 @@ export const jungle = { cooldown: 0, throwTime: 0, flowTime: 0, coconuts: [] };
 
 export const lapGhost = { best: null, frames: [], cursor: 0, previous: null };
 
+export const ghostLibrary = {
+  imported: null,
+  reference: 'best',
+};
+
 export const startingGrid = [];
 
 export const camera = { x: 0, y: 0, zoom: 1 };

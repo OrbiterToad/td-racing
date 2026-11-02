@@ -2179,7 +2179,7 @@
             ESC / BACK
           </button>
         </header>
-        <div class="settings-list">
+        <div class="settings-list" id="settings-list">
           <section class="setting-row">
             <div class="setting-copy">
               <label for="settings-volume">Sound volume</label>
@@ -2247,6 +2247,33 @@
             </div>
           </section>
         </div>
+        <section id="ghost-transfer-panel" hidden>
+          <header class="settings-heading ghost-transfer-heading">
+            <div>
+              <div class="eyebrow">APEX / TIME TRIAL</div>
+              <h3>Lap ghost</h3>
+              <p id="ghost-transfer-pairing"></p>
+            </div>
+          </header>
+          <p id="ghost-transfer-status" role="status" aria-live="polite">
+            Export a backup or import a rival ghost for this car and circuit.
+          </p>
+          <div class="ghost-transfer-actions">
+            <label for="ghost-reference">Reference ghost</label>
+            <select id="ghost-reference">
+              <option value="best">Personal best</option>
+              <option value="imported" disabled>Imported rival</option>
+            </select>
+            <button id="ghost-export" type="button">EXPORT</button>
+            <button id="ghost-import" type="button">IMPORT</button>
+            <input
+              id="ghost-file"
+              type="file"
+              accept=".json,application/json"
+              hidden
+            />
+          </div>
+        </section>
         <footer class="settings-footer">
           <button
             id="settings-sound"
@@ -2255,6 +2282,13 @@
             aria-pressed="true"
           >
             ♪ Sound on
+          </button>
+          <button
+            id="settings-ghost-tools"
+            class="settings-ghost-tools"
+            type="button"
+          >
+            LAP GHOSTS
           </button>
           <button id="settings-done" class="settings-done" type="button">
             DONE / BACK
