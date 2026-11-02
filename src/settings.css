@@ -328,8 +328,8 @@
   }
 
   .setting-row {
-    min-height: 92px;
-    padding: 10px 0;
+    min-height: 74px;
+    padding: 7px 0;
   }
 
   .settings-footer {
@@ -391,7 +391,7 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .setting-row {
-    min-height: 95px;
+    min-height: 72px;
     grid-template-columns: minmax(0, 1fr) minmax(115px, 145px);
     gap: 8px;
     padding: 10px 0;
@@ -489,8 +489,8 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .setting-row {
-    min-height: 72px;
-    padding: 6px 0;
+    min-height: 48px;
+    padding: 2px 0;
   }
 
   .settings-footer {
