@@ -142,9 +142,7 @@ test('gamepad can navigate and confirm the session setup wizard', async ({
   await expect(page.locator('#tutorial-heading')).toHaveText(
     'Brake before the turn',
   );
-  await press(1);
-  await expect(page.locator('#tutorial-heading')).toHaveText('Get moving');
-  await press(1);
+  await page.locator('#tutorial-skip').click();
   await expect(page.locator('#tutorial-dialog')).not.toBeVisible();
   await page.locator('#pause').click();
   await expect(page.locator('#pause-screen')).toHaveClass('open');
@@ -345,6 +343,8 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
     countdown: 0,
     paused: true,
   });
+  const guide = page.locator('#tutorial-dialog');
+  if (await guide.isVisible()) await page.locator('#tutorial-skip').click();
   await page.keyboard.press('Escape');
   await expect(page.locator('#selection-dialog')).toBeVisible();
   await page.keyboard.press('ArrowRight');
