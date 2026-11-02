@@ -52,6 +52,13 @@ checks pass.
   requirements, unavailable dependencies, or failing checks that you cannot
   resolve, and state the next useful step you can take.
 
+When implementation is complete but a PR remains in the merge queue, the
+coordinator renames this task chat `Waiting for PR · <short task>` without an
+agent number and reuse the numbered slot for a new assignment. A blocked task
+may similarly become `Paused · <short task>`. Keep this chat, branch and PR
+open for review, checks and follow-up until the assignment is complete; a
+released slot does not mean the PR merged.
+
 ## Communication standard
 
 Use these two-line structures for every direct coordination message:
@@ -67,7 +74,10 @@ Further info: <decision or instruction; relevant evidence; next action and owner
 ```
 
 Use the assigned agent number and tracked issue, with a short, stable task
-name. Choose a state from `assignment`, `preflight complete`, `progress`,
+name. If the coordinator releases the number and keeps the task chat open as
+`Waiting for PR` or `Paused`, use the former number in that task's handoffs;
+the issue field distinguishes it from a new assignment using that slot.
+Choose a state from `assignment`, `preflight complete`, `progress`,
 `blocked`, `merge request`, `decision`, `changes requested`, `merged`, or
 `ready for new task`. State meanings and copyable lifecycle templates are in
 [the coordinator guide](docs/COORDINATOR_GUIDE.md#communication-standard).

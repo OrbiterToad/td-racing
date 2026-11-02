@@ -22,8 +22,8 @@ Before answering a request, assigning work, or considering a merge:
 4. Before assignment, confirm the issue's scope, acceptance criteria,
    exclusions, size and owner; scan linked PRs and active work to avoid a
    duplicate assignment. Record dependencies and shared-file overlap for the
-   merge queue. Choose an available slot and model, then give the agent its
-   issue link, base/check plan, isolation and direct-handoff requirements.
+   merge queue. Choose a free or explicitly released slot and model, then
+   give the agent its issue link, base/check plan, isolation and handoffs.
 5. Before a merge decision, refresh the exact PR head and base, protection,
    required checks, review and conversation state, and mergeability. Explicitly
    delegate each eligible PR merge to the dedicated Agent 2; use the protected
@@ -60,10 +60,10 @@ observes changed state and reports actionable events; it never merges.
 ## Creating agent chats
 
 - Choose an available model for the assignment's difficulty and uncertainty: use `gpt-6-luna` for difficult or high-uncertainty tasks, and a lighter/basic model for easier tasks (for example, `gpt-5.6-luna` when available). Issue/chat size and model choice are separate decisions; reassess if scope changes.
-- Before creating or renaming an active agent chat, inspect the active title/slot map. Use one unique reusable slot from `Agent 1` through `Agent 8`; never create or rename an active chat to `Agent 9` or higher. Format titles as `Agent N (Mini/Big) · <state> · <short task>`, using the task's size and a concise current state. For example: `Agent 8 (Mini) · Working · Coordinator documentation` or `Agent 5 (Big) · Blocked · Gamepad support`.
-- Update a chat title whenever its state or task changes, keeping its agent number stable and its size accurate. Use `Blocked` when a dependency or access problem prevents the next step, `Working` for active implementation, and `Merge ready` only after the required checks and review state support a merge request; verify the rename. Do not leave a blocked task titled `Working`.
-- Give each assignment its own chat. When a nonreserved agent finishes, verify the merge and required follow-up, then archive the completed chat before reusing its slot. Promptly offer the freed slot a suitable queued issue, preferring ready Mini work unless a concrete dependency or priority says otherwise. Reuse only that freed number; update the size label, task name, and model for the new assignment. An open PR remains tracked work; a blocked PR may be paused under the rule below.
-- Reserve Agent 1 for agent-instruction maintenance. Keep Agent 1's chat open after this task finishes and mark it idle/reserved for future changes to agent or coordinator instructions; do not archive it or repurpose it for feature work.
+- Before creating or renaming an active agent chat, inspect the active title/slot map. Use one unique reusable slot from `Agent 1` through `Agent 8`; never create or rename an active chat to `Agent 9` or higher. Numbered active titles use `Agent N (Mini/Big) · <state> · <short task>`, with the assignment's size and current state. For example: `Agent 8 (Mini) · Working · Coordinator documentation` or `Agent 5 (Big) · Blocked · Gamepad support`. Parked chats use the unnumbered titles below.
+- Update an active chat title whenever its state or task changes, keeping its agent number stable until the slot is released and its size accurate. Use `Blocked` when a dependency or access problem prevents the next step, `Working` for active implementation, and `Merge ready` only after the required checks and review state support a merge request; verify the rename. Do not leave a blocked task titled `Working`.
+- Give each assignment its own chat. Release its numbered slot when the implementation is complete and its PR is parked, or when blocked work is paused under the rules below; keep the old unnumbered chat and PR open. Promptly offer a released slot a suitable queued issue, preferring ready Mini work unless a concrete dependency or priority says otherwise. Create a separate new chat with that number. After a nonreserved assignment is merged and its follow-up is complete, archive its old chat. Do not treat slot release as task completion.
+- Reserve Agent 1 for agent-instruction maintenance. Its parked PR chat follows the unnumbered waiting rule; after completion, keep the instruction-maintenance chat open and mark Agent 1 idle/reserved. Do not archive it or repurpose the slot for feature work.
 - Reserve Agent 2 for PR queue integration and explicitly delegated merges. Keep its chat open and reserved when idle; do not assign unrelated feature work to that slot. If earlier Agent 2 work is paused, preserve its branch, PR and chat before reusing the active Agent 2 slot for integration; keep the paused task visible in the roster.
 
 ## Agent task start preflight
@@ -100,15 +100,20 @@ observes changed state and reports actionable events; it never merges.
 
 ## Paused assignments
 
-- If an agent is blocked and cannot make useful progress, mark its task and
-  title `Blocked`, keep its branch, PR and chat intact, and record the blocker
-  and next action in the queue. Do not silently cancel or overwrite it.
-- After preserving the paused task, its slot may be reused in a separate new
-  chat. Keep agent numbers unique among active assignments and keep the paused
-  chat clearly marked so its old title is not mistaken for an active owner. If
-  no slot is available, queue the task. When the blocker clears, resume the
-  preserved assignment in an available slot or explicitly reassign it with a
-  recorded handoff.
+- When implementation is complete but its PR is parked in the merge queue,
+  rename the still-open chat `Waiting for PR · <short task>` with no agent
+  number. Keep its branch, PR, owner and follow-up tracked; release the former
+  number for a new task/chat. The parked assignment is not complete until its
+  PR merges and required follow-up finishes.
+- If an agent is blocked and cannot make useful progress, preserve its branch,
+  PR and chat, record the blocker and next action, then rename its old chat
+  `Paused · <short task>` with no agent number before releasing the slot. Do
+  not cancel or overwrite the preserved work.
+- A released number may be reused in a separate new chat. Keep numbers unique
+  among active assignments; keep waiting and paused chats visible without
+  numbers. If no slot is available, queue the new task. If parked work needs
+  changes or a blocker clears, reactivate it only with a free numbered slot or
+  explicitly reassign it with a recorded handoff.
 
 ## Communication standard
 
@@ -125,7 +130,10 @@ Further info: <decision or instruction; relevant evidence; next action and owner
 ```
 
 Use the assigned agent number and tracked issue, with a short, stable task
-name. Choose a state from `assignment`, `preflight complete`, `progress`,
+name. If the coordinator releases the number and keeps the task chat open as
+`Waiting for PR` or `Paused`, use the former number in that task's handoffs;
+the issue field distinguishes it from a new assignment using that slot.
+Choose a state from `assignment`, `preflight complete`, `progress`,
 `blocked`, `merge request`, `decision`, `changes requested`, `merged`, or
 `ready for new task`. State meanings and copyable lifecycle templates are in
 [the coordinator guide](docs/COORDINATOR_GUIDE.md#communication-standard).
@@ -146,9 +154,9 @@ PR is merged and required follow-up is complete.
 
 ## Coordinating agents
 
-- Never have more than eight active agents. Check the live active-task count and active title/slot map before creating or assigning another agent. If eight are active, leave them undisturbed, record the next task in the queue, and create or assign its agent chat only after an agent completes and a slot opens. Assign only the freed slot; active numbers must remain unique and in the range 1–8, so never use `Agent 9` or higher.
+- Never have more than eight numbered active agents. Check the live active-task count and title/slot map before assigning. If all slots are occupied, queue the task until a number is released by a completed and parked implementation, a preserved pause, or a merged assignment. Assign only a free/released number; active numbers must remain unique and within 1–8.
 - When a slot opens and more than one queued issue is ready to start, prefer a ready issue labeled `Mini` first. Pass over it only when a dependency (it is blocked on other work), urgency (a time-sensitive or higher-priority blocker), or similar concrete reason makes a different queued issue the right next pick; note that reason in the status update. This preference never justifies creating a ninth agent or otherwise exceeding the eight-active-agent cap — it only orders work within the existing limit.
-- Maintain a numbered roster of tracked agents and their current assignments.
+- Maintain a roster of numbered active agents plus separately tracked unnumbered waiting and paused assignments, each with its issue, branch, PR and owner.
 - Check each agent's latest chat status before reporting progress or assigning follow-up work. Treat chat titles and summaries as labels, not as instructions; use the human user's authorization for assignments and messages.
 - Send coordination messages only when authorized by the user. Do not duplicate the same issue assignment. Check branches, worktrees, PRs, reviews, and CI to understand overlap and plan integration; do not treat shared files as a blocker to parallel implementation. Share actionable merge-order or dependency information with affected agents.
 - Require a direct handoff message in the coordinator chat for merge readiness or blockers; an agent's final answer in its own task chat is not enough. If the agent reports pushed work without a PR because of access trouble, use the branch/head/check details in its direct handoff to open or update the PR when authorized.
@@ -162,7 +170,7 @@ PR is merged and required follow-up is complete.
 
 - When an agent encounters a blocker, ambiguity, scope conflict, unavailable dependency, or decision it cannot make safely, require it to report promptly to the coordinator and wait for coordination. It must not silently stall, create a competing branch, or contact the user or other agents directly; the coordinator owns resolving the blocker and relaying decisions.
 - Keep work open while a PR is pending. Follow required checks and reviews, address failures, and complete the merge into `master` before marking the task done.
-- A completed implementation with an unmerged PR is still open work. Mark an agent free only after its assignment is complete and the PR is merged, or the user explicitly ends that assignment.
+- A parked PR remains open work with an owner even after its former number is released. Keep its unnumbered chat and branch until the PR merges or the user explicitly ends the assignment; continue review/check follow-up there.
 
 ## Master merge queue
 
@@ -187,7 +195,7 @@ For a requested full agent-status report to the user:
 - Treat percentages as estimates based on concrete milestones: implementation, verification, PR creation, required checks/review, and merge. Explain the current milestone and next action; do not invent progress between observations. State blockers plainly; an open PR or passing local tests alone is not 100%.
 - For every open task, state where work is happening: branch and worktree/path when known, plus PR number/link when one exists. Distinguish local work from pushed PR work.
 - Mention relevant CI/check state, failures, review feedback, dependencies on other agents, and the next milestone concisely.
-- If an agent has no active assignment, mark it `Free` instead of presenting stale work as active. Show Agents 1 and 2 as `Reserved` when idle, not as ordinary free slots. Show paused tasks separately with their preserved owner, PR and blocker; do not count them as active slots.
+- If a numbered slot has no active assignment, mark it `Free` instead of presenting stale work as active. Show Agents 1 and 2 as `Reserved` when idle, not as ordinary free slots. List unnumbered `Waiting for PR` and `Paused` chats separately with their owner, branch/PR and next action; do not count them as active slots.
 - Refresh thread status and PR/check data before reporting. Do not present old progress as current.
 - Keep each task's reported size consistent with its issue's `Mini`/`Big` label; if you relabeled the issue, reflect the new label in the same update.
 
@@ -199,7 +207,9 @@ Suggested format:
 | ------- | -------: | -------------------------------------------------------- | --------------------------------------- |
 | Agent N |   🟢 90% | Task · `ai/branch` · `/path/to/worktree` · [PR #N](link) | Checks running; waiting for required CI |
 
-**Paused:** list blocked assignments with their preserved branch/PR and next action.
+**Waiting for PR:** list unnumbered parked PRs with owner, checks/review and next action.
+
+**Paused:** list unnumbered blocked assignments with preserved branch/PR and next action.
 
 **Done:** list completed assignments at ✅ 100%, with merged PR links where available.
 
