@@ -1,9 +1,9 @@
 # Coordinator guide
 
 This guide documents issue size labels, task prioritization, and standard
-communication between the coordinator and agents. It is the public, repository-facing counterpart to the
-coordinator's private operating notes in `CORDINATOR_AGENT.md`; the policy
-described here must match what that file says.
+communication between the coordinator and agents. It is the public
+repository-facing counterpart to the coordinator's private operating notes
+in `CORDINATOR_AGENT.md`; the policies described here must match that file.
 
 ## Labeling issues by size
 
@@ -146,8 +146,13 @@ Meaningful progress — either speaker reports a concrete change:
 Further info: <milestone achieved>; validation: <command/result and tested SHA>; pushed: <branch/commit or PR URL>; dependencies/conflicts: <new finding, if any>. Next: I will <next step>.
 ```
 
-For a coordinator sync checkpoint, use `[Coordinator]` and name the verified
-`master` SHA, affected branch, and owner of the next action.
+For a coordinator sync checkpoint, use `progress` and name the verified
+`master` SHA, affected branch, and owner of the next action:
+
+```text
+[Coordinator] [#<issue> <short task>] [progress]
+Further info: PR #<number> merged; current master: <SHA>. Agent <number>, sync <branch> to this checkpoint and report the tested head when ready.
+```
 
 Blocker or decision needed — agent identifies the impact and safe next step:
 
@@ -268,4 +273,3 @@ Further info: I have merged PR #121: https://github.com/OrbiterToad/td-racing/pu
 [Agent 3] [#120 Pause restart] [ready for new task]
 Further info: PR #121 is merged at master 5555555555555555555555555555555555555555; required follow-up: none. Task complete. I am ready for a new task.
 ```
-

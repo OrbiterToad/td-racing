@@ -97,7 +97,7 @@ PR is merged and required follow-up is complete.
 - Format coordinator replies the same way. Example:
 
   ```text
-  [Coordinator] [#<issue> <short task>] [sync checkpoint]
+  [Coordinator] [#<issue> <short task>] [progress]
   Further info: PR #<number> merged; current default-branch SHA is `<sha>`. Resume the queued work from that base.
   ```
 
