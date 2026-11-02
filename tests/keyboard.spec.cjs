@@ -96,9 +96,10 @@ test('setup supports keyboard selection, paint, Back, disabled modes and contain
     'Requires Juniper + Clubsport R',
   );
   await page.keyboard.press('ArrowRight');
-  await expect(page.locator('[data-choice="trial"]')).toBeFocused();
+  await expect(page.locator('[data-choice="braking"]')).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.locator('#selection-dialog')).not.toBeVisible();
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
 });
 
 for (const picker of ['garage', 'tracks']) {

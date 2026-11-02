@@ -328,6 +328,7 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
 }) => {
   await page.route('https://**/*', (route) => route.abort());
   await page.goto('./');
+  await expect(page.locator('#selection-dialog')).toBeVisible();
   await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   const readStartup = () =>
     page.evaluate(async () => {
@@ -358,7 +359,9 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
     .getByRole('button', { name: 'Choose Costa Azul', exact: true })
     .click();
   await page.keyboard.press('Escape');
+  await expect(page.locator('#selection-dialog')).toBeVisible();
   await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(guide).not.toBeVisible();
   await expect(page.locator('[data-choice="sprint"]')).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -516,7 +519,7 @@ for (const viewport of [
           ? '02 / 06'
           : mode === 'tracks'
             ? '02 / 07'
-            : '01 / 02',
+            : '04 / 06',
       );
       await page.locator('#picker-apply').click();
     }
@@ -627,4 +630,104 @@ test('club race can be selected on the final wizard page and survives back navig
   await page.locator('#picker-apply').click();
   await expect(page.locator('#race-panel')).toBeVisible();
   await expect(page.locator('#start-countdown')).toHaveText(/^[123]$/);
+});
+
+test('skill trials explain the selected event and start outside time-trial records', async ({
+  page,
+}) => {
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  await page.locator('#picker-apply').click();
+  await page.locator('#picker-apply').click();
+  await page.locator('[data-choice="slalom"]').click();
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
+  await expect(page.locator('#skill-trial-copy')).toContainText(
+    'Pass all five alternating gates',
+  );
+  await page.locator('#skill-trial-primary').click();
+  const session = await page.evaluate(async () => {
+    const { skillTrial, state } = await import('./src/state.js');
+    return {
+      active: skillTrial.active,
+      id: skillTrial.id,
+      ordinaryBest: localStorage.getItem(state.BEST_KEY),
+      skillBest: localStorage.getItem('apex-skill-trials-v1'),
+    };
+  });
+  expect(session).toEqual({
+    active: true,
+    id: 'slalom',
+    ordinaryBest: null,
+    skillBest: null,
+  });
+});
+
+test('braking trial requires its advertised 120 km/h target and supports quick retry', async ({
+  page,
+}) => {
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  await page.locator('#picker-apply').click();
+  await page.locator('#picker-apply').click();
+  await page.locator('[data-choice="braking"]').click();
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
+  await page.locator('#skill-trial-primary').click();
+
+  const tooSlowResult = await page.evaluate(async () => {
+    const [{ car, race, skillTrial }, { updateSkillTrial }, { setPaused }] =
+      await Promise.all([
+        import('./src/state.js'),
+        import('./src/skill-trials.js'),
+        import('./src/ui.js'),
+      ]);
+    setPaused(true, false);
+    race.countdown = 0;
+    Object.assign(skillTrial, {
+      id: 'braking',
+      active: true,
+      started: false,
+      elapsed: 0,
+      startProgress: 0,
+      previousProgress: 0,
+      startSpeed: 0,
+      brakingDistance: 0,
+    });
+    car.vx = 250;
+    car.vy = 0;
+    updateSkillTrial(1 / 60, { after: { progress: 0 }, braking: true });
+    car.vx = 0;
+    updateSkillTrial(1 / 60, { after: { progress: 0 }, braking: true });
+    return document.querySelector('#skill-trial-dialog').dataset.phase;
+  });
+  expect(tooSlowResult).not.toBe('result');
+
+  await page.evaluate(async () => {
+    const [{ car }, { updateSkillTrial }] = await Promise.all([
+      import('./src/state.js'),
+      import('./src/skill-trials.js'),
+    ]);
+    car.vx = 270;
+    updateSkillTrial(1 / 60, { after: { progress: 0 }, braking: true });
+    car.vx = 0;
+    updateSkillTrial(1 / 60, { after: { progress: 0 }, braking: true });
+  });
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
+  await expect(page.locator('#skill-trial-copy')).toContainText(
+    'Stopped after',
+  );
+  await expect(page.locator('#skill-trial-stats')).toContainText('ATTEMPTS 1');
+  await page.locator('#skill-trial-primary').click();
+  const retry = await page.evaluate(async () => {
+    const { skillTrial } = await import('./src/state.js');
+    return {
+      active: skillTrial.active,
+      id: skillTrial.id,
+      progress: JSON.parse(localStorage.getItem('apex-skill-trials-v1')),
+    };
+  });
+  expect(retry.active).toBe(true);
+  expect(retry.id).toBe('braking');
+  expect(retry.progress.braking).toMatchObject({ attempts: 1, completions: 1 });
 });
