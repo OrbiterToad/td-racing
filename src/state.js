@@ -19,6 +19,7 @@ export const state = {
     reducedMotionSaved: false,
   },
   audioMasterGain: undefined,
+  engineFilter: undefined,
   rewindUsed: false,
   rewindKey: '',
   rewindHistory: [],
