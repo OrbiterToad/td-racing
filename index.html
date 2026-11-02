@@ -1708,6 +1708,41 @@
         color: #9eb0a4;
         margin: 6px 0 0;
       }
+      /* Keep compact selection copy readable at every supported viewport. */
+      #selection-dialog {
+        --compact-label-size: 12px;
+      }
+
+      #selection-dialog .picker-steps,
+      #selection-dialog .picker-step,
+      #selection-dialog .choice-tag,
+      #selection-dialog .tile-number,
+      #selection-dialog .paint-row,
+      #selection-dialog .navigation-hint,
+      #selection-dialog .picker-bottom p,
+      #selection-dialog .mode-summary,
+      #selection-dialog .mode-note,
+      #selection-dialog .car-stats,
+      #selection-dialog .feature-record,
+      #selection-dialog .medal-earned,
+      #selection-dialog .medal-target b,
+      #selection-dialog .medal-target time {
+        font-size: var(--compact-label-size);
+        line-height: 1.35;
+      }
+
+      #selection-dialog .medal-target {
+        flex-wrap: wrap;
+      }
+
+      #selection-dialog .medal-target time {
+        margin-left: auto;
+      }
+
+      #selection-dialog .picker-bottom p {
+        max-width: 42ch;
+      }
+
       #race-mode[aria-pressed='true'] {
         color: var(--lime);
       }
