@@ -1,4 +1,4 @@
-# Coordinator guide: issue size labels
+# Coordinator guide
 
 This guide documents how the coordinator classifies and labels actionable
 GitHub issues by size, and how that classification affects which issue gets
@@ -64,34 +64,58 @@ current `Mini`/`Big` label. If the coordinator relabels an issue because its
 true scope became clear only after investigation, the same status update
 reflects the new label.
 
-## Coordinator handoff messages
+## Communication standard
 
-Every agent-to-coordinator message starts with this first line:
-
-`[Agent <number>] [#<issue> <short task>] [<current state>]`
-
-Every coordinator-to-agent message uses the same fields with `[Coordinator]`
-in the first field. Put details on the next line, beginning with `Further info:`.
-Use concise state labels such as `preflight complete`, `progress`,
-`blocked`, `merge request`, `merged`, and `ready for new task`.
-
-At preflight, progress, blocker or ambiguity, merge request, authorized merge,
-and task-completion milestones, send a direct message to the coordinator chat;
-a final answer in an agent's own chat is not a handoff. A merge request keeps
-the exact phrase “I want to merge PR #<number>” in its details and includes
-the PR link, tested head SHA, current base SHA, check/review state, and any
-freshness or conflict blocker. The coordinator owns the merge decision.
-
-Example agent merge request:
+Use these two-line structures for every direct coordination message:
 
 ```text
-[Agent <number>] [#<issue> <short task>] [merge request]
-Further info: I want to merge PR #<number>. Head `<sha>`, base `<sha>`; checks: <results>; review: <state>; mergeability: <state>.
+[Agent <number>] [#<issue> <short task>] [<state>]
+Further info: <outcome or request; relevant evidence; next action and owner>
 ```
-
-Example coordinator sync message:
 
 ```text
-[Coordinator] [#<issue> <short task>] [sync checkpoint]
-Further info: PR #<number> merged; current default-branch SHA is `<sha>`. Resume the queued work from that base.
+[Coordinator] [#<issue> <short task>] [<state>]
+Further info: <decision or instruction; relevant evidence; next action and owner>
 ```
+
+Use the assigned agent number and tracked issue, with a short, stable task
+name. Choose a state from `assignment`, `preflight complete`, `progress`,
+`blocked`, `merge request`, `decision`, `changes requested`, `merged`, or
+`ready for new task`. State meanings and copyable lifecycle templates are in
+[the state definitions](#state-meanings).
+
+Lead with the result, request, or decision. Use neutral, direct sentences and
+name who acts next when action is needed. Report progress only when a
+milestone, evidence, risk, or next action changes; avoid repeated status,
+filler, invented percentages, or unsupported claims. Include only relevant
+fields. Use `pending` for work awaiting completion and `unknown` for facts
+not yet verified, with the next verification step. Distinguish local results
+from CI results, and implementation readiness from merge completion.
+
+The format does not grant messaging or merge authority. Send required
+handoffs directly to `Cordinator` using the chat messaging tool, within user
+authorization. The coordinator owns the merge queue and merges unless it
+explicitly delegates a specific merge. Keep the assignment open until its
+PR is merged and required follow-up is complete.
+
+### State meanings
+
+| State                | Speaker       | Use when                                                                             |
+| -------------------- | ------------- | ------------------------------------------------------------------------------------ |
+| `assignment`         | Coordinator   | Assigning scope, ownership, checks, and acceptance criteria.                         |
+| `preflight complete` | Agent         | Acknowledging scope after checking the base, ownership, and dependencies.            |
+| `progress`           | Either        | Reporting a meaningful milestone or a sync checkpoint and next action.               |
+| `blocked`            | Agent         | A blocker or decision prevents dependent work; identify what can continue.           |
+| `merge request`      | Agent         | Requesting the coordinator's merge decision with current evidence.                   |
+| `decision`           | Coordinator   | Resolving a request, setting merge order, or explicitly delegating a specific merge. |
+| `changes requested`  | Coordinator   | Naming required corrections and validation before another handoff.                   |
+| `merged`             | Actual merger | Confirming the merge with the resulting `master` SHA.                                |
+| `ready for new task` | Agent         | The PR is merged and required follow-up is complete.                                 |
+
+Message states describe the communication event; they do not replace chat
+lifecycle titles or issue size labels. Use `progress` for sync checkpoints.
+A `decision` is not evidence of a completed merge. An agent only says
+“I have merged PR #X” after performing that specific, explicitly authorized
+merge; when the coordinator merges, the coordinator sends the confirmation.
+The agent can then acknowledge the verified merge in its completion report.
+

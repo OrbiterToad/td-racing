@@ -51,6 +51,40 @@ The issue size-labeling policy below is also published in `docs/COORDINATOR_GUID
 
 - When the user or coordinator cancels an assignment, stop its work, close its PR, and delete only that task's remote branch. Then archive the canceled chat and reuse its agent number for a replacement task with the correct size and model. Preserve work and branches belonging to other tasks.
 
+## Communication standard
+
+Use these two-line structures for every direct coordination message:
+
+```text
+[Agent <number>] [#<issue> <short task>] [<state>]
+Further info: <outcome or request; relevant evidence; next action and owner>
+```
+
+```text
+[Coordinator] [#<issue> <short task>] [<state>]
+Further info: <decision or instruction; relevant evidence; next action and owner>
+```
+
+Use the assigned agent number and tracked issue, with a short, stable task
+name. Choose a state from `assignment`, `preflight complete`, `progress`,
+`blocked`, `merge request`, `decision`, `changes requested`, `merged`, or
+`ready for new task`. State meanings and copyable lifecycle templates are in
+[the coordinator guide](docs/COORDINATOR_GUIDE.md#communication-standard).
+
+Lead with the result, request, or decision. Use neutral, direct sentences and
+name who acts next when action is needed. Report progress only when a
+milestone, evidence, risk, or next action changes; avoid repeated status,
+filler, invented percentages, or unsupported claims. Include only relevant
+fields. Use `pending` for work awaiting completion and `unknown` for facts
+not yet verified, with the next verification step. Distinguish local results
+from CI results, and implementation readiness from merge completion.
+
+The format does not grant messaging or merge authority. Send required
+handoffs directly to `Cordinator` using the chat messaging tool, within user
+authorization. The coordinator owns the merge queue and merges unless it
+explicitly delegates a specific merge. Keep the assignment open until its
+PR is merged and required follow-up is complete.
+
 ## Coordinating agents
 
 - Never have more than eight active agents. Check the live active-task count and active title/slot map before creating or assigning another agent. If eight are active, leave them undisturbed, record the next task in the queue, and create or assign its agent chat only after an agent completes and a slot opens. Assign only the freed slot; active numbers must remain unique and in the range 1–8, so never use `Agent 9` or higher.
