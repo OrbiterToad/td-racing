@@ -195,7 +195,7 @@ export function renderPicker() {
     ? 'Choose your mode.'
     : tracks
       ? 'Choose your circuit.'
-      : 'Choose your ride.';
+      : 'Choose a car.';
   $('picker-eyebrow').textContent = 'APEX / THE DRIVING CLUB';
   $('picker-description').textContent = modes
     ? 'Choose a driving mode.'
@@ -251,7 +251,7 @@ export function renderPicker() {
         vehicle.name.toUpperCase() +
         ' / ' +
         selected.name.toUpperCase()
-      : 'YOUR RIDE / ' +
+      : 'SELECTED CAR / ' +
         selected.name.toUpperCase() +
         ' / ' +
         PAINTS[state.pendingPaint].name.toUpperCase();

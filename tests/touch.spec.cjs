@@ -7,7 +7,7 @@ test.describe('touch driving controls', () => {
     await page.setViewportSize(viewport);
     await page.goto('./');
     for (const title of [
-      'Choose your ride.',
+      'Choose a car.',
       'Choose your circuit.',
       'Choose your mode.',
     ]) {

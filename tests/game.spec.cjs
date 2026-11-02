@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 async function startSession(page) {
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
   await page.locator('#picker-apply').click();
   await expect(page.locator('#picker-title')).toHaveText(
     'Choose your circuit.',
@@ -330,7 +330,7 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
 }) => {
   await page.route('https://**/*', (route) => route.abort());
   await page.goto('./');
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
   const readStartup = () =>
     page.evaluate(async () => {
       const { state, race } = await import('./src/state.js');
@@ -358,7 +358,7 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
     .getByRole('button', { name: 'Choose Costa Azul', exact: true })
     .click();
   await page.keyboard.press('Escape');
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
   await expect(page.locator('[data-choice="sprint"]')).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -530,7 +530,7 @@ test('wizard step buttons and Back/Next navigate directly while preserving choic
   await page.goto('./');
   if (await page.locator('#tutorial-dialog').isVisible())
     await page.locator('#tutorial-skip').click();
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
 
   await expect(page.locator('#wizard-back')).toBeDisabled();
   await page.locator('[data-choice="clubsport"]').click();
@@ -609,7 +609,7 @@ test('club race can be selected on the final wizard page and survives back navig
     const { openSessionSetup } = await import('./src/ui.js');
     openSessionSetup();
   });
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
   await expect(page.locator('[data-choice="clubsport"]')).toHaveAttribute(
     'aria-pressed',
     'true',

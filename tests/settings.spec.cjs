@@ -64,7 +64,7 @@ async function openSetup(page, prefersReducedMotion = 'no-preference') {
   await page.emulateMedia({ reducedMotion: prefersReducedMotion });
   await page.route('https://**/*', (route) => route.abort());
   await page.goto('./');
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
 }
 
 async function startSession(page) {
@@ -176,7 +176,7 @@ test('fresh preferences keep sound on, activate on a gesture, and save mute and 
   await page.keyboard.press('Escape');
   await expect(page.locator('#settings-dialog')).not.toBeVisible();
   await expect(page.locator('#settings-setup')).toBeFocused();
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
   await expect(page.locator('[data-choice="drift"]')).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -198,7 +198,7 @@ test('fresh preferences keep sound on, activate on a gesture, and save mute and 
     paused: true,
   });
   await page.reload();
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
   await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'false');
   await page.locator('#settings-setup').click();
   await expect(page.locator('#settings-volume-value')).toHaveText('0%');

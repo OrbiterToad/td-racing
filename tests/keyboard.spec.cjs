@@ -12,7 +12,7 @@ async function openSetup(page) {
   await page.route('https://**/*', (route) => route.abort());
   await page.goto('./');
   await expect(
-    page.getByRole('dialog', { name: 'Choose your ride.' }),
+    page.getByRole('dialog', { name: 'Choose a car.' }),
   ).toBeVisible();
   await expect(page.locator('#picker-apply')).toBeFocused();
 }

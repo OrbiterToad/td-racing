@@ -5,7 +5,7 @@ async function openGame(page) {
   await page.goto('./');
   // Canvas creation precedes asynchronous scenery loading and event binding.
   await expect(page.locator('#race-mode')).toBeEnabled();
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
   await page.locator('#picker-apply').click();
   await expect(page.locator('#picker-title')).toHaveText(
     'Choose your circuit.',
@@ -155,7 +155,7 @@ test('paint changes preserve an active club race and persist after reload', asyn
   expect(session.time).toBeGreaterThanOrEqual(42);
   expect(session.elapsed).toBeGreaterThanOrEqual(100);
   await page.reload();
-  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
   await expect(
     page.getByRole('button', { name: 'Paint Ocean', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
