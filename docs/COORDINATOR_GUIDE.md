@@ -63,6 +63,11 @@ current `Mini`/`Big` label. If the coordinator relabels an issue because its
 true scope became clear only after investigation, the same status update
 reflects the new label.
 
+A parked implementation with an unmerged PR stays open in an unnumbered
+`Waiting for PR` chat. A blocked assignment may be retained in an unnumbered
+`Paused` chat. The issue keeps its size label while the released agent number
+is available for a separate active assignment.
+
 ## Communication standard
 
 Use these two-line structures for every direct coordination message:
@@ -78,7 +83,10 @@ Further info: <decision or instruction; relevant evidence; next action and owner
 ```
 
 Use the assigned agent number and tracked issue, with a short, stable task
-name. Choose a state from `assignment`, `preflight complete`, `progress`,
+name. If the coordinator releases the number and keeps the task chat open as
+`Waiting for PR` or `Paused`, use the former number in that task's handoffs;
+the issue field distinguishes it from a new assignment using that slot.
+Choose a state from `assignment`, `preflight complete`, `progress`,
 `blocked`, `merge request`, `decision`, `changes requested`, `merged`, or
 `ready for new task`. State meanings and copyable lifecycle templates are in
 [the message templates](#message-templates).
