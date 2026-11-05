@@ -426,13 +426,21 @@ function paintTrackPreview(canvas, map) {
               ? '#52686e'
               : map.id === 'rallycross'
                 ? '#5b5b3e'
-                : '#354b3d';
+                : map.id === 'drift'
+                  ? '#1b4654'
+                  : '#354b3d';
   c.fillRect(0, 0, canvas.width, canvas.height);
   c.save();
   c.translate(offsetX, offsetY);
   c.scale(scaleToFit, scaleToFit);
   const rand = seededRandom(
-    map.id === 'canyon' ? 513 : map.id === 'alpine' ? 719 : 318,
+    map.id === 'canyon'
+      ? 513
+      : map.id === 'alpine'
+        ? 719
+        : map.id === 'drift'
+          ? 774
+          : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =

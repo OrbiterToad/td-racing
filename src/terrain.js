@@ -373,6 +373,36 @@ export function paintRallyRoad(c, rand) {
   }
 }
 
+export function paintDriftGround(c, bounds, rand) {
+  const { x, y, width, height } = bounds;
+  c.fillStyle = '#123542';
+  c.fillRect(x, y, width, height);
+  c.fillStyle = '#1b4654';
+  for (let i = 0; i < 34; i++) {
+    const px = x + rand() * width,
+      py = y + rand() * height;
+    c.beginPath();
+    c.ellipse(
+      px,
+      py,
+      90 + rand() * 220,
+      40 + rand() * 120,
+      rand() * 6.28,
+      0,
+      6.28,
+    );
+    c.fill();
+  }
+  c.strokeStyle = '#48a8b833';
+  c.lineWidth = 3;
+  for (let px = x - height; px < x + width; px += 120) {
+    c.beginPath();
+    c.moveTo(px, y);
+    c.lineTo(px + height, y + height);
+    c.stroke();
+  }
+}
+
 export function paintSurfacePatches(c) {
   c.save();
   c.beginPath();
