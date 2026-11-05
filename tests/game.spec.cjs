@@ -45,6 +45,7 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
     'Costa Azul',
     'Juniper Raceway',
     'City Streets',
+    'Neon Harbor Drift Park',
   ];
   for (const track of tracks) {
     await page.locator('#open-tracks').click();
@@ -89,7 +90,9 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
   );
   await startSession(page);
   await expect(page.locator('#car-name')).toHaveText('FORMULA X');
-  await expect(page.locator('#track-title')).toHaveText('City Streets');
+  await expect(page.locator('#track-title')).toHaveText(
+    'Neon Harbor Drift Park',
+  );
   await expect(page.locator('#game canvas.p5Canvas')).toBeVisible();
 
   await page.locator('#pause').click();
