@@ -1,5 +1,6 @@
 import { clamp, lerpTo } from './math.js';
 import { amazonRiverFrame } from './jungle.js';
+import { mapBaseId } from './config.js';
 import { state } from './state.js';
 import { nearestDriving, surfaceAt } from './tracks.js';
 
@@ -51,9 +52,9 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
                         ? 0.43
                         : surface === 'RUNOFF'
                           ? 0.9
-                          : state.activeMap.id === 'canyon'
+                          : mapBaseId() === 'canyon'
                             ? 0.92
-                            : state.activeMap.id === 'alpine'
+                            : mapBaseId() === 'alpine'
                               ? 0.95
                               : 1,
     loose = offroad || surface === 'DIRT',

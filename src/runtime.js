@@ -2,7 +2,7 @@ import { initModalKeyboard } from './accessibility.js';
 import { toggleOpponentRace } from './opponents.js';
 import { toggleSound } from './audio.js';
 import { configureCar, loadCarArt, readBest } from './cars.js';
-import { MAPS } from './config.js';
+import { MAPS, mapBaseId } from './config.js';
 import { drawMinimap } from './minimap.js';
 import {
   beginLap,
@@ -42,6 +42,7 @@ import { prepareRewindSession, rewind } from './rewind.js';
 
 export function changeTrack(id, announce = true) {
   if (!configureTrack(id)) return;
+  const baseId = mapBaseId(state.activeMap);
   prepareRewindSession(id, state.activeCar.id);
   keys.clear();
   skidmarks.length = 0;
@@ -74,7 +75,7 @@ export function changeTrack(id, announce = true) {
     slickTime: 0,
   });
   recover(false);
-  if (id === 'city') loadTrafficArt();
+  if (baseId === 'city') loadTrafficArt();
   buildWorld();
   camera.x = car.x;
   camera.y = car.y;
@@ -87,30 +88,30 @@ export function changeTrack(id, announce = true) {
   $('grip-label').textContent = state.activeMap.gripLabel;
   document.documentElement.style.setProperty('--lime', state.activeMap.accent);
   $('game').style.background =
-    state.activeMap.id === 'canyon'
+    mapBaseId() === 'canyon'
       ? '#d5a36d'
-      : state.activeMap.id === 'alpine'
+      : mapBaseId() === 'alpine'
         ? '#dbe6e3'
-        : state.activeMap.id === 'amazonas'
+        : mapBaseId() === 'amazonas'
           ? '#28523b'
-          : state.activeMap.id === 'coast'
+          : mapBaseId() === 'coast'
             ? '#288f9c'
-            : state.activeMap.id === 'city'
+            : mapBaseId() === 'city'
               ? '#929b98'
               : '#8ba274';
   $('hint').style.opacity = '1';
   $('hint').textContent =
-    state.activeMap.id === 'city'
+    baseId === 'city'
       ? 'W to drive · Real streets, light traffic. Brake for downtown corners; flow through the suburbs.'
-      : state.activeMap.id === 'coast'
+      : baseId === 'coast'
         ? 'W to drive · Short coastal curves. Avoid the two beach sand drifts.'
-        : state.activeMap.id === 'amazonas'
+        : baseId === 'amazonas'
           ? 'W to drive · Two shallow river crossings. Slow for the water; watch for coconuts.'
-          : state.activeMap.id === 'canyon'
+          : baseId === 'canyon'
             ? 'W to drive · Brake early. Avoid the sand drifts. Mind the narrow passes.'
-            : state.activeMap.id === 'alpine'
+            : baseId === 'alpine'
               ? 'W to drive · Three ice patches. Ease off and keep steering smooth.'
-              : state.activeMap.id === 'rallycross'
+              : baseId === 'rallycross'
                 ? 'W to drive · Dirt needs a slide. Asphalt needs a clean exit.'
                 : 'W to drive · Find your apex. Avoid the dark oil slicks.';
   try {
@@ -124,7 +125,7 @@ export function changeTrack(id, announce = true) {
     notify(
       state.activeMap.name.toUpperCase() +
         ' · ' +
-        (id === 'canyon' ? 'EXPERT CIRCUIT' : 'FLOW CIRCUIT'),
+        (baseId === 'canyon' ? 'EXPERT CIRCUIT' : 'FLOW CIRCUIT'),
     );
 }
 

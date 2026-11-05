@@ -1,4 +1,4 @@
-import { CFG, MAPS } from './config.js';
+import { CFG, MAPS, mapBaseId } from './config.js';
 import { seededRandom } from './math.js';
 import { path, roundedRect } from './renderer.js';
 import { drawSceneryAsset, sceneryClear } from './scenery.js';
@@ -13,9 +13,9 @@ import {
 } from './tracks.js';
 
 export function pitAsphalt() {
-  return state.activeMap.id === 'canyon'
+  return mapBaseId() === 'canyon'
     ? '#4f5150'
-    : state.activeMap.id === 'alpine'
+    : mapBaseId() === 'alpine'
       ? '#46555c'
       : '#424d50';
 }

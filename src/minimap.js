@@ -1,4 +1,4 @@
-import { PAINTS } from './config.js';
+import { PAINTS, mapBaseId } from './config.js';
 import { coast } from './coast.js';
 import { visibleGhostPose } from './ghost.js';
 import { paintAmazonRiver } from './jungle.js';
@@ -16,7 +16,7 @@ export function buildMinimapLayer() {
   c.translate(160, 132);
   c.scale(scale, scale);
   c.translate(-(b.left + b.right) / 2, -(b.top + b.bottom) / 2);
-  if (state.activeMap.id === 'coast') {
+  if (mapBaseId() === 'coast') {
     c.save();
     c.globalAlpha = 0.3;
     path(c, coast.shore);
@@ -24,14 +24,14 @@ export function buildMinimapLayer() {
     c.fill();
     c.restore();
   }
-  if (state.activeMap.id === 'amazonas') paintAmazonRiver(c, false);
+  if (mapBaseId() === 'amazonas') paintAmazonRiver(c, false);
   path(c, pitLane.points, 0, false);
   c.strokeStyle = '#c2b98c';
   c.lineWidth = 2 / scale;
   c.stroke();
   ribbon(c, '#536258', 9 / scale);
   ribbon(c, '#abbca2', 3 / scale);
-  if (state.activeMap.id === 'amazonas') {
+  if (mapBaseId() === 'amazonas') {
     c.save();
     c.globalAlpha = 0.75;
     paintAmazonRiver(c, false);

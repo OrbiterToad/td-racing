@@ -1,4 +1,5 @@
 import { seededRandom } from './math.js';
+import { mapBaseId } from './config.js';
 import { inWorldView, path, roundedRect } from './renderer.js';
 import { drawSceneryAsset } from './scenery.js';
 import { sceneryAssetState, state } from './state.js';
@@ -329,7 +330,7 @@ export function paintCoastLandmarks(c) {
 }
 
 export function drawCoastWaves(c) {
-  if (state.activeMap.id !== 'coast') return;
+  if (mapBaseId() !== 'coast') return;
   c.save();
   c.lineCap = 'round';
   for (let i = 0; i < coast.shore.length; i += 3) {

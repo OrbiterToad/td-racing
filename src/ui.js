@@ -1,7 +1,7 @@
 import { updateOpponentHUD } from './opponents.js';
 import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
 import { coast, paintCoastGround } from './coast.js';
-import { MAPS, PAINTS, VEHICLES } from './config.js';
+import { MAPS, PAINTS, VEHICLES, mapBaseId } from './config.js';
 import { ghostStatus, liveGhostDelta } from './ghost.js';
 import { earnedMedalFor, medalTargetsFor } from './medals.js';
 import { paintAmazonRiver } from './jungle.js';
@@ -427,17 +427,17 @@ function paintTrackPreview(canvas, map) {
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.fillStyle =
-    map.id === 'city'
+    mapBaseId(map) === 'city'
       ? '#687d75'
-      : map.id === 'coast'
+      : mapBaseId(map) === 'coast'
         ? '#287f92'
-        : map.id === 'amazonas'
+        : mapBaseId(map) === 'amazonas'
           ? '#214735'
-          : map.id === 'canyon'
+          : mapBaseId(map) === 'canyon'
             ? '#694a37'
-            : map.id === 'alpine'
+            : mapBaseId(map) === 'alpine'
               ? '#52686e'
-              : map.id === 'rallycross'
+              : mapBaseId(map) === 'rallycross'
                 ? '#5b5b3e'
                 : '#354b3d';
   c.fillRect(0, 0, canvas.width, canvas.height);
@@ -445,13 +445,17 @@ function paintTrackPreview(canvas, map) {
   c.translate(offsetX, offsetY);
   c.scale(scaleToFit, scaleToFit);
   const rand = seededRandom(
-    map.id === 'canyon' ? 513 : map.id === 'alpine' ? 719 : 318,
+    mapBaseId(map) === 'canyon'
+      ? 513
+      : mapBaseId(map) === 'alpine'
+        ? 719
+        : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =
-      map.id === 'canyon'
+      mapBaseId(map) === 'canyon'
         ? '#bf80572b'
-        : map.id === 'alpine'
+        : mapBaseId(map) === 'alpine'
           ? '#d6ebe324'
           : '#a5c78516';
     c.beginPath();
@@ -470,14 +474,14 @@ function paintTrackPreview(canvas, map) {
   c.translate(240, 135);
   c.scale(scale, scale);
   c.translate(-(left + right) / 2, -(top + bottom) / 2);
-  if (map.id === 'city')
+  if (mapBaseId(map) === 'city')
     paintCityGround(c, {
       x: left - 600,
       y: top - 600,
       width: right - left + 1200,
       height: bottom - top + 1200,
     });
-  if (map.id === 'coast') {
+  if (mapBaseId(map) === 'coast') {
     paintCoastGround(
       c,
       {
@@ -497,17 +501,17 @@ function paintTrackPreview(canvas, map) {
     c.arc(coast.lighthouse.x, coast.lighthouse.y, 20, 0, Math.PI * 2);
     c.fill();
   }
-  if (map.id === 'amazonas') paintAmazonRiver(c, false);
+  if (mapBaseId(map) === 'amazonas') paintAmazonRiver(c, false);
   ribbon(c, '#12202166', 20 / scale, points);
   ribbon(c, map.accent, 9 / scale, points);
   ribbon(c, '#243435', 5 / scale, points);
-  if (map.id === 'amazonas') {
+  if (mapBaseId(map) === 'amazonas') {
     c.save();
     c.globalAlpha = 0.8;
     paintAmazonRiver(c, false);
     c.restore();
   }
-  if (map.id === 'rallycross') {
+  if (mapBaseId(map) === 'rallycross') {
     c.strokeStyle = '#d1a873';
     c.lineWidth = 5 / scale;
     for (let i = 0; i < points.length; i++) {
@@ -659,7 +663,7 @@ export function updateHUD() {
   );
   const status =
     car.surface === 'PIT LANE'
-      ? state.activeMap.id === 'city'
+      ? mapBaseId() === 'city'
         ? 'SERVICE ROAD'
         : 'PIT LANE · PADDOCK ACCESS'
       : car.surface === 'FORD'

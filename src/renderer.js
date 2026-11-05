@@ -1,7 +1,7 @@
 import { drawOpponents } from './opponents.js';
 import { updateAudio } from './audio.js';
 import { drawCoastWaves } from './coast.js';
-import { CFG, PAINTS } from './config.js';
+import { CFG, PAINTS, mapBaseId } from './config.js';
 import { visibleGhostPose } from './ghost.js';
 import { drawJungle, drawRiverCurrent } from './jungle.js';
 import { clamp, lerpTo } from './math.js';
@@ -89,7 +89,7 @@ export function paintPitConnections(c) {
 }
 
 export function paintPitRails(c) {
-  const street = state.activeMap.id === 'city';
+  const street = mapBaseId() === 'city';
   for (const side of [-1, 1])
     for (let i = 0; i < pitLane.points.length - 1; i++) {
       const p = pitLane.points[i],
@@ -306,15 +306,15 @@ export function draw() {
   state.ctx.save();
   state.ctx.setTransform(pixelDensity(), 0, 0, pixelDensity(), 0, 0);
   state.ctx.fillStyle =
-    state.activeMap.id === 'canyon'
+    mapBaseId() === 'canyon'
       ? '#d5a36d'
-      : state.activeMap.id === 'alpine'
+      : mapBaseId() === 'alpine'
         ? '#dbe6e3'
-        : state.activeMap.id === 'amazonas'
+        : mapBaseId() === 'amazonas'
           ? '#28523b'
-          : state.activeMap.id === 'coast'
+          : mapBaseId() === 'coast'
             ? '#288f9c'
-            : state.activeMap.id === 'city'
+            : mapBaseId() === 'city'
               ? '#929b98'
               : '#8ba274';
   state.ctx.fillRect(0, 0, width, height);

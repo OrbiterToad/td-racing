@@ -1,6 +1,6 @@
 import { bestKeyFor } from './cars.js';
 import { coast, coastLandDistance } from './coast.js';
-import { CFG, MAPS } from './config.js';
+import { CFG, MAPS, mapBaseId } from './config.js';
 import { resetGhostRecording } from './ghost.js';
 import {
   amazonRiverDistance,
@@ -24,7 +24,7 @@ import {
 import { resetCityTraffic } from './traffic.js';
 
 export function narrowFactor(progress) {
-  if (state.activeMap.id !== 'canyon') return 1;
+  if (mapBaseId() !== 'canyon') return 1;
   let squeeze = 0;
   for (const [start, end] of [
     [0.15, 0.26],
@@ -50,7 +50,7 @@ export function configureTrack(id) {
   if (!Object.hasOwn(MAPS, id)) return false;
   state.activeMap = MAPS[id];
   state.controlPoints = state.activeMap.points;
-  if (id !== 'juniper' || state.activeCar.id !== 'clubsport')
+  if (mapBaseId(state.activeMap) !== 'juniper' || state.activeCar.id !== 'clubsport')
     opponentRace.enabled = false;
   opponentRace.cars.length = 0;
   state.BEST_KEY = bestKeyFor();
@@ -72,7 +72,7 @@ export function configureTrack(id) {
 }
 
 export function sampleMap(map, steps = 40) {
-  return map.id === 'city'
+  return mapBaseId(map) === 'city'
     ? sampleCityCurve(map.points, steps)
     : sampleCurve(map.points, steps);
 }
@@ -204,7 +204,7 @@ export function makeTrack() {
     top: Math.min(...ys),
     bottom: Math.max(...ys),
   };
-  const margin = state.activeMap.id === 'coast' ? 850 : 600;
+  const margin = mapBaseId() === 'coast' ? 850 : 600;
   state.worldBounds = {
     x: Math.floor(state.trackBounds.left - margin),
     y: Math.floor(state.trackBounds.top - margin),
@@ -435,7 +435,7 @@ export function findPaddockPlacement() {
   // Check the whole apron, including room around its edges, against every
   // nearby track section. A fixed screen offset can land on the next bend.
   for (const offset of [300, 380, 460, 560, 680])
-    for (const side of state.activeMap.id === 'coast' ? [-1, 1] : [1, -1])
+    for (const side of mapBaseId() === 'coast' ? [-1, 1] : [1, -1])
       for (const along of [0, 180, -180, 360, -360, 540, -540]) {
         const placement = {
           side,
@@ -461,9 +461,9 @@ export function findPaddockPlacement() {
               p.y - state.worldBounds.y - 20,
               state.worldBounds.y + state.worldBounds.height - p.y - 20,
             );
-            if (state.activeMap.id === 'coast')
+            if (mapBaseId() === 'coast')
               clearance = Math.min(clearance, coastLandDistance(p.x, p.y) - 70);
-            if (state.activeMap.id === 'amazonas')
+            if (mapBaseId() === 'amazonas')
               clearance = Math.min(
                 clearance,
                 amazonRiverDistance(p.x, p.y) - 145,
@@ -582,7 +582,7 @@ export function nearest(x, y) {
 }
 
 export function surfaceAt(n, x = n.x, y = n.y) {
-  if (state.activeMap.id === 'amazonas' && n.distance <= CFG.wall + 7) {
+  if (mapBaseId() === 'amazonas' && n.distance <= CFG.wall + 7) {
     const river = amazonRiverFrame(x, y);
     if (river.distance < 83 * amazonRiverScale(river.t)) return 'FORD';
   }
@@ -594,9 +594,9 @@ export function surfaceAt(n, x = n.x, y = n.y) {
     return rallySurface(n.progress);
   }
   if (n.distance < widthAt('runoff', n.progress)) return 'RUNOFF';
-  if (state.activeMap.id === 'canyon') return 'SAND';
-  if (state.activeMap.id === 'alpine') return 'SNOW';
-  if (state.activeMap.id === 'coast') return 'SAND';
+  if (mapBaseId() === 'canyon') return 'SAND';
+  if (mapBaseId() === 'alpine') return 'SNOW';
+  if (mapBaseId() === 'coast') return 'SAND';
   // Gravel at the outer edge of fast turns; grass covers the remaining verge.
   return (n.progress > 0.12 && n.progress < 0.38) ||
     (n.progress > 0.51 && n.progress < 0.77)
@@ -612,7 +612,7 @@ export function dirtProgress(progress) {
 }
 
 export function rallySurface(progress) {
-  return state.activeMap.id === 'rallycross' && dirtProgress(progress)
+  return mapBaseId() === 'rallycross' && dirtProgress(progress)
     ? 'DIRT'
     : 'ASPHALT';
 }

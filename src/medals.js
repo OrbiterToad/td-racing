@@ -41,7 +41,7 @@ export const MEDAL_TARGETS = Object.freeze(
                   medal,
                   Number(
                     (
-                      TRACK_BRONZE[trackId] *
+                      TRACK_BRONZE[MAPS[trackId].baseId ?? trackId] *
                       CAR_PACE[carId] *
                       MEDAL_FACTORS[medal]
                     ).toFixed(3),
