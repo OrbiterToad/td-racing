@@ -1292,7 +1292,7 @@
           gap: 8px;
         }
         .feature-copy {
-          padding: 14px 24px;
+          padding: 8px 16px;
         }
         .feature-record {
           padding-top: 6px;
@@ -1306,7 +1306,7 @@
           gap: 2px;
         }
         .medal-target {
-          padding: 3px 4px;
+          padding: 2px 3px;
           gap: 2px;
         }
         .medal-target b {
@@ -1376,20 +1376,29 @@
       }
       @media (min-width: 651px) and (max-width: 850px) {
         .feature-copy {
-          padding: 12px 16px;
+          padding: 6px 12px;
           overflow: hidden;
         }
         .feature-copy h3 {
-          font-size: 32px;
-          margin: 6px 0;
+          font-size: 28px;
+          margin: 3px 0;
         }
         .feature-copy p {
+          display: none;
+        }
+        .choice-tag {
           display: none;
         }
         .mode-summary {
           gap: 6px;
           padding-top: 8px;
           font-size: 9px;
+        }
+      }
+      @media (min-width: 651px) and (max-width: 850px) and (max-height: 500px) {
+        #selection-dialog .car-stats {
+          line-height: 1.1;
+          gap: 2px;
         }
       }
       @media (max-width: 650px) {
@@ -1430,7 +1439,7 @@
         .feature-copy {
           border-left: 0;
           border-top: 1px solid #ffffff0c;
-          padding: 18px;
+          padding: 12px 16px;
         }
         .feature-copy h3 {
           font-size: 36px;
@@ -1748,6 +1757,45 @@
         color: #9eb0a4;
         margin: 6px 0 0;
       }
+      /* Keep compact selection copy readable at every supported viewport. */
+      #selection-dialog {
+        --compact-label-size: 11px;
+      }
+
+      #selection-dialog .picker-steps,
+      #selection-dialog .picker-step,
+      #selection-dialog .choice-tag,
+      #selection-dialog .tile-number,
+      #selection-dialog .paint-row,
+      #selection-dialog .navigation-hint,
+      #selection-dialog .picker-bottom p,
+      #selection-dialog .mode-summary,
+      #selection-dialog .mode-note,
+      #selection-dialog .car-stats,
+      #selection-dialog .feature-record,
+      #selection-dialog .medal-earned,
+      #selection-dialog .medal-target b,
+      #selection-dialog .medal-target time {
+        font-size: var(--compact-label-size);
+        line-height: 1.35;
+      }
+
+      #selection-dialog .medal-target {
+        flex-wrap: wrap;
+      }
+
+      #selection-dialog .car-stats {
+        gap: 4px;
+      }
+
+      #selection-dialog .medal-target time {
+        margin-left: auto;
+      }
+
+      #selection-dialog .picker-bottom p {
+        max-width: 42ch;
+      }
+
       #race-mode[aria-pressed='true'] {
         color: var(--lime);
       }
