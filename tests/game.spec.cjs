@@ -44,6 +44,7 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
     'Amazonas',
     'Costa Azul',
     'Juniper Raceway',
+    'Summit Grand Prix',
     'City Streets',
   ];
   for (const track of tracks) {
@@ -464,7 +465,7 @@ for (const viewport of [
       );
       for (
         let choice = 0;
-        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 7 : 1);
+        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 8 : 1);
         choice++
       ) {
         const dimensions = await page
@@ -518,7 +519,7 @@ for (const viewport of [
         mode === 'garage'
           ? '02 / 06'
           : mode === 'tracks'
-            ? '02 / 07'
+            ? '02 / 08'
             : '04 / 06',
       );
       await page.locator('#picker-apply').click();
