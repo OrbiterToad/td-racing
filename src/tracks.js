@@ -409,7 +409,7 @@ export function nearestPit(x, y) {
   best.pit = true;
   best.road = pitLane.road;
   best.runoff = pitLane.runoff;
-  best.wall = state.activeMap.variant === 'forward' ? pitLane.wall : 25;
+  best.wall = state.activeMap.variant === 'forward' ? pitLane.wall : 40;
   return best;
 }
 
@@ -422,7 +422,7 @@ export function nearestDriving(x, y) {
   const margin =
     main.distance -
     main.wall +
-    (state.activeMap.variant === 'forward' ? pitLane.wall : 25);
+    (state.activeMap.variant === 'forward' ? pitLane.wall : 40);
   if (
     margin <= 0 ||
     boundsDistanceSquared(pitLane.corridorBounds, x, y) >= margin * margin
