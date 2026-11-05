@@ -88,15 +88,15 @@ export function changeTrack(id, announce = true) {
   $('grip-label').textContent = state.activeMap.gripLabel;
   document.documentElement.style.setProperty('--lime', state.activeMap.accent);
   $('game').style.background =
-    mapBaseId() === 'canyon'
+    baseId === 'canyon'
       ? '#d5a36d'
-      : mapBaseId() === 'alpine'
+      : baseId === 'alpine'
         ? '#dbe6e3'
-        : mapBaseId() === 'amazonas'
+        : baseId === 'amazonas'
           ? '#28523b'
-          : mapBaseId() === 'coast'
+          : baseId === 'coast'
             ? '#288f9c'
-            : mapBaseId() === 'city'
+            : baseId === 'city'
               ? '#929b98'
               : '#8ba274';
   $('hint').style.opacity = '1';

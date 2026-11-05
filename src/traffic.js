@@ -33,7 +33,7 @@ export function updateTrafficPose(vehicle) {
 }
 
 export function spawnCityTraffic() {
-  if (mapBaseId() !== 'city' || cityTraffic.cars.length >= 2)
+  if (mapBaseId(state.activeMap) !== 'city' || cityTraffic.cars.length >= 2)
     return false;
   const rand = cityTraffic.random,
     near = nearest(car.x, car.y),
@@ -70,7 +70,7 @@ export function spawnCityTraffic() {
 }
 
 export function updateCityTraffic(dt) {
-  if (mapBaseId() !== 'city') return;
+  if (mapBaseId(state.activeMap) !== 'city') return;
   cityTraffic.wait -= dt;
   if (cityTraffic.wait <= 0) {
     if (spawnCityTraffic()) cityTraffic.wait = 14 + cityTraffic.random() * 9;
@@ -104,7 +104,7 @@ export function updateCityTraffic(dt) {
 }
 
 export function resolveCityTraffic() {
-  if (mapBaseId() !== 'city') return;
+  if (mapBaseId(state.activeMap) !== 'city') return;
   for (const vehicle of cityTraffic.cars) {
     const dx = car.x - vehicle.x,
       dy = car.y - vehicle.y;
@@ -188,7 +188,7 @@ export function resolveCityTraffic() {
 }
 
 export function drawCityTraffic(c) {
-  if (mapBaseId() !== 'city') return;
+  if (mapBaseId(state.activeMap) !== 'city') return;
   const colors = {
     blue: '#7fa6b2',
     black: '#687778',

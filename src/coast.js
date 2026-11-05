@@ -330,7 +330,7 @@ export function paintCoastLandmarks(c) {
 }
 
 export function drawCoastWaves(c) {
-  if (mapBaseId() !== 'coast') return;
+  if (mapBaseId(state.activeMap) !== 'coast') return;
   c.save();
   c.lineCap = 'round';
   for (let i = 0; i < coast.shore.length; i += 3) {

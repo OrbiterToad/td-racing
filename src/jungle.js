@@ -66,7 +66,7 @@ export function paintAmazonFords(c) {
 }
 
 export function drawRiverCurrent(c) {
-  if (mapBaseId() !== 'amazonas') return;
+  if (mapBaseId(state.activeMap) !== 'amazonas') return;
   c.save();
   c.lineCap = 'round';
   c.lineWidth = 1.7;
@@ -263,7 +263,7 @@ export function monkeyPosition() {
 
 export function updateJungle(dt) {
   car.coconutSlip = Math.max(0, (car.coconutSlip || 0) - dt);
-  if (mapBaseId() !== 'amazonas') return;
+  if (mapBaseId(state.activeMap) !== 'amazonas') return;
   jungle.flowTime += dt;
   jungle.cooldown = Math.max(0, jungle.cooldown - dt);
   jungle.throwTime = Math.max(0, jungle.throwTime - dt);
@@ -314,7 +314,7 @@ export function updateJungle(dt) {
 }
 
 export function drawJungle(c) {
-  if (mapBaseId() !== 'amazonas') return;
+  if (mapBaseId(state.activeMap) !== 'amazonas') return;
   const m = monkeyPosition();
   if (inWorldView(m.x, m.y, 140)) {
     c.save();

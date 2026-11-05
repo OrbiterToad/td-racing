@@ -52,9 +52,9 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
                         ? 0.43
                         : surface === 'RUNOFF'
                           ? 0.9
-                          : mapBaseId() === 'canyon'
+                          : mapBaseId(state.activeMap) === 'canyon'
                             ? 0.92
-                            : mapBaseId() === 'alpine'
+                            : mapBaseId(state.activeMap) === 'alpine'
                               ? 0.95
                               : 1,
     loose = offroad || surface === 'DIRT',

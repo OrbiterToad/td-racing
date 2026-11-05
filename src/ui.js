@@ -445,11 +445,7 @@ function paintTrackPreview(canvas, map) {
   c.translate(offsetX, offsetY);
   c.scale(scaleToFit, scaleToFit);
   const rand = seededRandom(
-    mapBaseId(map) === 'canyon'
-      ? 513
-      : mapBaseId(map) === 'alpine'
-        ? 719
-        : 318,
+    mapBaseId(map) === 'canyon' ? 513 : mapBaseId(map) === 'alpine' ? 719 : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =
@@ -663,7 +659,7 @@ export function updateHUD() {
   );
   const status =
     car.surface === 'PIT LANE'
-      ? mapBaseId() === 'city'
+      ? mapBaseId(state.activeMap) === 'city'
         ? 'SERVICE ROAD'
         : 'PIT LANE · PADDOCK ACCESS'
       : car.surface === 'FORD'

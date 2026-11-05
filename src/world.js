@@ -32,11 +32,11 @@ export function buildWorld() {
   state.worldCanvas.width = state.worldBounds.width;
   state.worldCanvas.height = state.worldBounds.height;
   state.worldCtx = state.worldCanvas.getContext('2d');
-  const desert = mapBaseId() === 'canyon',
-    alpine = mapBaseId() === 'alpine',
-    amazon = mapBaseId() === 'amazonas',
-    seaside = mapBaseId() === 'coast',
-    urban = mapBaseId() === 'city',
+  const desert = mapBaseId(state.activeMap) === 'canyon',
+    alpine = mapBaseId(state.activeMap) === 'alpine',
+    amazon = mapBaseId(state.activeMap) === 'amazonas',
+    seaside = mapBaseId(state.activeMap) === 'coast',
+    urban = mapBaseId(state.activeMap) === 'city',
     c = state.worldCtx,
     rand = seededRandom(
       desert
@@ -225,7 +225,7 @@ export function buildWorld() {
     c.fillRect(p.x + p.nx * offset, p.y + p.ny * offset, 1.2, 1.2);
   }
   c.restore();
-  if (mapBaseId() === 'rallycross') paintRallyRoad(c, rand);
+  if (mapBaseId(state.activeMap) === 'rallycross') paintRallyRoad(c, rand);
   // Continue the pit asphalt across the main circuit's verge at both merges.
   paintPitConnections(c);
   if (urban) paintCityRoadMarkings(c);

@@ -13,9 +13,9 @@ import {
 } from './tracks.js';
 
 export function pitAsphalt() {
-  return mapBaseId() === 'canyon'
+  return mapBaseId(state.activeMap) === 'canyon'
     ? '#4f5150'
-    : mapBaseId() === 'alpine'
+    : mapBaseId(state.activeMap) === 'alpine'
       ? '#46555c'
       : '#424d50';
 }

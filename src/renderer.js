@@ -89,7 +89,7 @@ export function paintPitConnections(c) {
 }
 
 export function paintPitRails(c) {
-  const street = mapBaseId() === 'city';
+  const street = mapBaseId(state.activeMap) === 'city';
   for (const side of [-1, 1])
     for (let i = 0; i < pitLane.points.length - 1; i++) {
       const p = pitLane.points[i],
@@ -306,15 +306,15 @@ export function draw() {
   state.ctx.save();
   state.ctx.setTransform(pixelDensity(), 0, 0, pixelDensity(), 0, 0);
   state.ctx.fillStyle =
-    mapBaseId() === 'canyon'
+    mapBaseId(state.activeMap) === 'canyon'
       ? '#d5a36d'
-      : mapBaseId() === 'alpine'
+      : mapBaseId(state.activeMap) === 'alpine'
         ? '#dbe6e3'
-        : mapBaseId() === 'amazonas'
+        : mapBaseId(state.activeMap) === 'amazonas'
           ? '#28523b'
-          : mapBaseId() === 'coast'
+          : mapBaseId(state.activeMap) === 'coast'
             ? '#288f9c'
-            : mapBaseId() === 'city'
+            : mapBaseId(state.activeMap) === 'city'
               ? '#929b98'
               : '#8ba274';
   state.ctx.fillRect(0, 0, width, height);

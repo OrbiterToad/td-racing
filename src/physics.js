@@ -31,7 +31,7 @@ export function simulate(dt) {
   if (opponentRace.enabled && opponentRace.finished) return;
   lapGhost.previous = [car.x, car.y, car.angle];
   updateJungle(dt);
-  if (mapBaseId() === 'coast') coast.time += dt;
+  if (mapBaseId(state.activeMap) === 'coast') coast.time += dt;
   if (race.countdown > 0) {
     race.countdown = Math.max(0, race.countdown - dt);
     car.vx = 0;

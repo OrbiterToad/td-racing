@@ -31,9 +31,7 @@ test('alternate layouts keep traversable geometry and transform hazards', () => 
       const samples = sampleMap(map, 8);
       assert.equal(samples.length > 0, true);
       assert.equal(
-        samples.every((point) =>
-          [point.x, point.y].every(Number.isFinite),
-        ),
+        samples.every((point) => [point.x, point.y].every(Number.isFinite)),
         true,
       );
       assert.equal(map.points.length, base.points.length);

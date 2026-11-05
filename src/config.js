@@ -425,7 +425,10 @@ for (const [id, base] of Object.entries(MAPS)) {
     base,
     id,
     'reverse',
-    base.points.slice().reverse().map(([x, y]) => [x, y]),
+    base.points
+      .slice()
+      .reverse()
+      .map(([x, y]) => [x, y]),
     base.patches.map((patch) => ({
       ...patch,
       progress: 1 - patch.progress,
