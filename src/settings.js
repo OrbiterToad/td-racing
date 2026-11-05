@@ -335,7 +335,8 @@ export function initSettings() {
     $('settings-lap-coaching').textContent = state.settings.showLapCoaching
       ? 'ON'
       : 'OFF';
-    $('settings-lap-coaching-value').textContent = state.settings.showLapCoaching
+    $('settings-lap-coaching-value').textContent = state.settings
+      .showLapCoaching
       ? 'Lap coaching shown'
       : 'Lap coaching hidden';
     persistSettings();
