@@ -328,7 +328,7 @@
   }
 
   .setting-row {
-    min-height: 74px;
+    min-height: 68px;
     padding: 7px 0;
   }
 
@@ -485,6 +485,10 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .settings-heading p {
+    display: none;
+  }
+
+  .setting-copy p {
     display: none;
   }
 
