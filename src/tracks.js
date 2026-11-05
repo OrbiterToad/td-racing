@@ -246,9 +246,16 @@ export function buildPitLane() {
   const entry = pointOnTrack(-650),
     exit = pointOnTrack(700),
     side = state.paddock.side;
+  pitLane.wall = state.activeMap.variant === 'forward' ? 52 : 5;
   const a = paddockPoint(-200, side === 1 ? -145 : 180),
     b = paddockPoint(220, side === 1 ? -145 : 180),
     points = [];
+  const gridDx = b.x - a.x,
+    gridDy = b.y - a.y,
+    gridLength = Math.hypot(gridDx, gridDy),
+    gridTx = gridDx / gridLength,
+    gridTy = gridDy / gridLength,
+    pitControl = state.activeMap.variant === 'forward' ? 180 : 140;
   function curve(p, c1, c2, q) {
     for (let i = 0; i < 60; i++) {
       const t = i / 60,
@@ -269,16 +276,16 @@ export function buildPitLane() {
   }
   curve(
     entry,
-    { x: entry.x + entry.tx * 180, y: entry.y + entry.ty * 180 },
-    { x: a.x - state.paddock.tx * 180, y: a.y - state.paddock.ty * 180 },
+    { x: entry.x + entry.tx * pitControl, y: entry.y + entry.ty * pitControl },
+    { x: a.x - gridTx * pitControl, y: a.y - gridTy * pitControl },
     a,
   );
   for (let i = 0; i < 60; i++)
     points.push({ x: lerpTo(a.x, b.x, i / 60), y: lerpTo(a.y, b.y, i / 60) });
   curve(
     b,
-    { x: b.x + state.paddock.tx * 180, y: b.y + state.paddock.ty * 180 },
-    { x: exit.x - exit.tx * 180, y: exit.y - exit.ty * 180 },
+    { x: b.x + gridTx * pitControl, y: b.y + gridTy * pitControl },
+    { x: exit.x - exit.tx * pitControl, y: exit.y - exit.ty * pitControl },
     exit,
   );
   points.push({ x: exit.x, y: exit.y });
@@ -402,7 +409,7 @@ export function nearestPit(x, y) {
   best.pit = true;
   best.road = pitLane.road;
   best.runoff = pitLane.runoff;
-  best.wall = pitLane.wall;
+  best.wall = state.activeMap.variant === 'forward' ? pitLane.wall : 25;
   return best;
 }
 
@@ -412,7 +419,10 @@ export function nearestDriving(x, y) {
   main.runoff = widthAt('runoff', main.progress);
   main.wall = widthAt('wall', main.progress);
   // A pit candidate can win only if its distance is less than this margin.
-  const margin = main.distance - main.wall + pitLane.wall;
+  const margin =
+    main.distance -
+    main.wall +
+    (state.activeMap.variant === 'forward' ? pitLane.wall : 25);
   if (
     margin <= 0 ||
     boundsDistanceSquared(pitLane.corridorBounds, x, y) >= margin * margin
