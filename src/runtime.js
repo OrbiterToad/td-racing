@@ -169,6 +169,7 @@ export function initializeGame() {
   state.pendingTrack = initial;
   $('pause').onclick = () => setPaused(!state.paused);
   $('resume').onclick = () => setPaused(false);
+  $('pause-restart').onclick = restartRun;
   $('sound').onclick = toggleSound;
   $('restart').onclick = restartRun;
   $('race-mode').onclick = toggleOpponentRace;
