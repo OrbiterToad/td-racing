@@ -361,7 +361,7 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
   await page
     .getByRole('button', { name: 'Choose Costa Azul', exact: true })
     .click();
-  await page.keyboard.press('Escape');
+  await page.locator('#picker-close').click();
   await expect(page.locator('#selection-dialog')).toBeVisible();
   await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   await expect(guide).not.toBeVisible();
@@ -467,7 +467,7 @@ for (const viewport of [
       );
       for (
         let choice = 0;
-        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 7 : 1);
+        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 8 : 1);
         choice++
       ) {
         const dimensions = await page
@@ -521,7 +521,7 @@ for (const viewport of [
         mode === 'garage'
           ? '02 / 06'
           : mode === 'tracks'
-            ? '02 / 07'
+            ? '02 / 08'
             : '04 / 06',
       );
       await page.locator('#picker-apply').click();

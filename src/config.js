@@ -414,8 +414,7 @@ export const MAPS = {
     name: 'Neon Harbor Drift Park',
     label: 'HARBOR / FIGURE EIGHT',
     subtitle: 'Wide links, a central crossover, and open runoff.',
-    description:
-      'A wide figure-eight route with linked corners, a hairpin transition, and room to hold a slide.',
+    description: 'Linked corners, a hairpin, and open runoff for slides.',
     temperature: '18°C',
     gripLabel: 'DRY / OPEN RUNOFF',
     bestKey: 'apex-neon-harbor-drift-v1',

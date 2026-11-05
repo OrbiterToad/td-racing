@@ -198,6 +198,7 @@ export function renderPicker() {
   const selected = pickerChoices()[selectedId];
   const vehicle = VEHICLES[state.pendingCar];
   $('selection-dialog').dataset.mode = state.pickerMode;
+  $('selection-dialog').dataset.track = tracks ? selectedId : '';
   $('picker-title').textContent = modes
     ? 'Choose your mode.'
     : tracks
