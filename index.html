@@ -1376,14 +1376,17 @@
       }
       @media (min-width: 651px) and (max-width: 850px) {
         .feature-copy {
-          padding: 8px 16px;
+          padding: 6px 12px;
           overflow: hidden;
         }
         .feature-copy h3 {
-          font-size: 22px;
-          margin: 6px 0;
+          font-size: 28px;
+          margin: 3px 0;
         }
         .feature-copy p {
+          display: none;
+        }
+        .choice-tag {
           display: none;
         }
         #selection-dialog[data-mode='tracks'][data-track='drift']
@@ -1394,6 +1397,12 @@
           gap: 6px;
           padding-top: 8px;
           font-size: 9px;
+        }
+      }
+      @media (min-width: 651px) and (max-width: 850px) and (max-height: 500px) {
+        #selection-dialog .car-stats {
+          line-height: 1.1;
+          gap: 2px;
         }
       }
       @media (max-width: 650px) {
