@@ -1946,8 +1946,10 @@
           <span>CURRENT LAP</span><span class="lap" id="lap">01</span>
         </div>
         <div class="clock" id="clock">00:00.000</div>
-        <div class="live-delta">
-          <span>LAST SECTOR TO BEST</span><b id="lap-delta">—</b>
+        <div id="lap-coaching">
+          <div class="live-delta">
+            <span>LIVE LAP DELTA</span><b id="lap-delta">—</b>
+          </div>
         </div>
         <div class="time-row best">
           <span>PERSONAL BEST</span><b id="best">— — : — —</b>
@@ -1961,24 +1963,34 @@
         <div class="live-delta ghost-delta">
           <span>LIVE TO GHOST</span><b id="ghost-delta">—</b>
         </div>
-        <div id="sector"><i></i><i></i><i></i><i></i></div>
-        <div class="sector-grid">
-          <div class="sector-cell">
-            S1 <b id="sector-time-0">—</b><small id="sector-diff-0"></small>
+        <div id="lap-coaching-sectors">
+          <div id="sector"><i></i><i></i><i></i><i></i></div>
+          <div class="sector-grid">
+            <div class="sector-cell">
+              S1
+              <b id="sector-time-0">—</b>
+              <small id="sector-diff-0"></small>
+            </div>
+            <div class="sector-cell">
+              S2
+              <b id="sector-time-1">—</b>
+              <small id="sector-diff-1"></small>
+            </div>
+            <div class="sector-cell">
+              S3
+              <b id="sector-time-2">—</b>
+              <small id="sector-diff-2"></small>
+            </div>
+            <div class="sector-cell">
+              S4
+              <b id="sector-time-3">—</b>
+              <small id="sector-diff-3"></small>
+            </div>
           </div>
-          <div class="sector-cell">
-            S2 <b id="sector-time-1">—</b><small id="sector-diff-1"></small>
+          <div class="split-flash" id="split-flash"></div>
+          <div class="sector-status" id="sector-status">
+            Complete a clean lap to set sector references.
           </div>
-          <div class="sector-cell">
-            S3 <b id="sector-time-2">—</b><small id="sector-diff-2"></small>
-          </div>
-          <div class="sector-cell">
-            S4 <b id="sector-time-3">—</b><small id="sector-diff-3"></small>
-          </div>
-        </div>
-        <div class="split-flash" id="split-flash"></div>
-        <div class="sector-status" id="sector-status">
-          Complete a clean lap to set sector references.
         </div>
       </div>
       <div class="overlay surface-readout" id="grip-status">
@@ -2262,6 +2274,30 @@
                 aria-checked="false"
               >
                 OFF
+              </button>
+            </div>
+          </section>
+          <section class="setting-row">
+            <div class="setting-copy">
+              <span id="settings-lap-coaching-label" class="setting-label"
+                >Lap and sector coaching</span
+              >
+              <p id="settings-lap-coaching-description">
+                Show live lap delta and sector comparisons to your best valid lap.
+              </p>
+            </div>
+            <div class="setting-control motion-control">
+              <span id="settings-lap-coaching-value">Lap coaching shown</span>
+              <button
+                id="settings-lap-coaching"
+                type="button"
+                class="motion-switch"
+                role="switch"
+                aria-labelledby="settings-lap-coaching-label"
+                aria-describedby="settings-lap-coaching-description"
+                aria-checked="true"
+              >
+                ON
               </button>
             </div>
           </section>
