@@ -61,3 +61,43 @@ for (const viewport of [
     expect(new Set(glyphs).size).toBe(6);
   });
 }
+
+test.describe('touch selection', () => {
+  test.use({
+    isMobile: true,
+    hasTouch: true,
+    viewport: { width: 375, height: 667 },
+  });
+  test('car, paint, circuit and mode can be selected by touch before launch', async ({
+    page,
+  }) => {
+    await page.route('https://**/*', (route) => route.abort());
+    await page.goto('./');
+    await page.locator('[data-choice="formula"]').tap();
+    await page.locator('[data-paint="blue"]').tap();
+    await expect(page.locator('[data-choice="formula"]')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.locator('[data-paint="blue"]')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.locator('#picker-apply').tap();
+    await page
+      .getByRole('button', { name: 'Choose Summit Grand Prix', exact: true })
+      .tap();
+    await page.locator('#picker-apply').tap();
+    await expect(page.locator('[data-choice="race"]')).toBeDisabled();
+    await page.locator('[data-choice="slalom"]').tap();
+    await expect(page.locator('[data-choice="slalom"]')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.locator('#picker-apply').tap();
+    await expect(page.locator('#selection-dialog')).not.toBeVisible();
+    await expect(page.locator('#skill-trial-dialog')).toBeVisible();
+    await expect(page.locator('#car-name')).toHaveText('FORMULA X');
+    await expect(page.locator('#track-title')).toHaveText('Summit Grand Prix');
+  });
+});
