@@ -2,7 +2,7 @@ import { clamp, lerpTo } from './math.js';
 import { amazonRiverFrame } from './jungle.js';
 import { mapBaseId } from './config.js';
 import { state } from './state.js';
-import { nearestDriving, surfaceAt } from './tracks.js';
+import { nearestDriving, nearestPit, surfaceAt } from './tracks.js';
 
 const OFFROAD = ['GRASS', 'GRAVEL', 'SAND', 'SAND PATCH', 'SNOW'];
 
@@ -154,8 +154,12 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
 }
 
 export function resolveVehicleBarrier(vehicle, spec = state.activeCar) {
-  const after = nearestDriving(vehicle.x, vehicle.y),
-    ax = Math.cos(vehicle.angle),
+  let after = nearestDriving(vehicle.x, vehicle.y);
+  if (state.activeMap.variant !== 'forward' && !after.pit) {
+    const pit = nearestPit(vehicle.x, vehicle.y);
+    if (pit && pit.distance < 8) after = pit;
+  }
+  const ax = Math.cos(vehicle.angle),
     ay = Math.sin(vehicle.angle),
     support =
       (Math.abs(ax * after.nx + ay * after.ny) * spec.length) / 2 +

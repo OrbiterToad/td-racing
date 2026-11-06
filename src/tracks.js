@@ -431,11 +431,7 @@ export function nearestDriving(x, y) {
     main.wall +
     (state.activeMap.variant === 'forward' ? pitLane.wall : 40);
   const pit = nearestPit(x, y);
-  if (
-    state.activeMap.variant !== 'forward' &&
-    pit &&
-    pit.distance < (mapBaseId(state.activeMap) === 'canyon' ? 0.01 : 0.5)
-  )
+  if (state.activeMap.variant !== 'forward' && pit && pit.distance < 0.01)
     return pit;
   if (
     margin <= 0 ||
