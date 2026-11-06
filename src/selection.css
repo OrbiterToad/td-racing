@@ -246,6 +246,7 @@
   font-size: 11px;
   letter-spacing: 1px;
 }
+.picker-step[hidden],
 .picker-steps[hidden] {
   display: none;
 }
@@ -268,22 +269,6 @@
 .mode-summary b {
   color: #edf0e8;
   font-weight: 600;
-}
-.player-two-car {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: #a9bbb4;
-}
-.player-two-car select {
-  min-height: 40px;
-  color: #edf0e8;
-  background: #203033;
-  border: 1px solid #ffffff30;
-  border-radius: 3px;
-  padding: 6px 10px;
 }
 .mode-tile {
   flex-wrap: wrap;
