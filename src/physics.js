@@ -26,6 +26,24 @@ import { recordRewindFrame } from './rewind.js';
 import { $ } from './ui.js';
 import { updateSkillTrial } from './skill-trials.js';
 
+export function routeKeepingSteering(
+  vehicle,
+  frame = nearestDriving(vehicle.x, vehicle.y),
+) {
+  if (!frame) return 0;
+  const offset =
+    (vehicle.x - frame.x) * frame.nx + (vehicle.y - frame.y) * frame.ny;
+  const heading = Math.atan2(
+    Math.sin(vehicle.angle - Math.atan2(frame.ty, frame.tx)),
+    Math.cos(vehicle.angle - Math.atan2(frame.ty, frame.tx)),
+  );
+  return clamp(
+    (-offset / Math.max(frame.road, 1)) * 1.35 + heading * 0.75,
+    -1,
+    1,
+  );
+}
+
 export function simulate(dt) {
   if (opponentRace.enabled && opponentRace.finished) return;
   lapGhost.previous = [car.x, car.y, car.angle];
@@ -50,10 +68,13 @@ export function simulate(dt) {
   feedback.impactCooldown = Math.max(0, feedback.impactCooldown - dt);
   timing.flashTime = Math.max(0, timing.flashTime - dt);
   const gamepad = state.gamepadControls,
-    gas = keys.has('KeyW') || keys.has('ArrowUp') ? 1 : gamepad.throttle,
+    gas =
+      state.settings.autoAccelerate || keys.has('KeyW') || keys.has('ArrowUp')
+        ? 1
+        : gamepad.throttle,
     braking = keys.has('KeyS') || keys.has('ArrowDown') ? 1 : gamepad.brake,
     hand = keys.has('Space') || gamepad.handbrake > 0,
-    steering = Math.max(
+    manualSteering = Math.max(
       -1,
       Math.min(
         1,
@@ -62,6 +83,9 @@ export function simulate(dt) {
           gamepad.steer,
       ),
     ),
+    steering = state.settings.steeringAssist
+      ? clamp(manualSteering + routeKeepingSteering(car) * 0.65, -1, 1)
+      : manualSteering,
     drive = driveVehicle(
       car,
       {

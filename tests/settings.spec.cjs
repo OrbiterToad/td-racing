@@ -76,6 +76,73 @@ async function startSession(page) {
     await page.locator('#tutorial-skip').click();
 }
 
+test('driving assists default off, toggle independently, persist, and preserve manual controls', async ({
+  page,
+}) => {
+  await openSetup(page);
+  await expect(page.locator('#settings-setup')).toBeVisible();
+  await page.locator('#settings-setup').click();
+  await expect(page.locator('#settings-steering-assist')).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+  await expect(page.locator('#settings-auto-accelerate')).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+  await page.locator('#settings-steering-assist').click();
+  await expect(page.locator('#settings-steering-assist')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await expect(page.locator('#settings-auto-accelerate')).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+  await page.locator('#settings-auto-accelerate').click();
+  await expect(page.locator('#settings-auto-accelerate')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('apex-settings-v1')),
+    ),
+  ).toMatchObject({ steeringAssist: true, autoAccelerate: true });
+  await page.locator('#settings-done').click();
+  await page.reload();
+  await page.locator('#settings-setup').click();
+  await expect(page.locator('#settings-steering-assist')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await expect(page.locator('#settings-auto-accelerate')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await page.locator('#settings-done').click();
+  await startSession(page);
+  await page.evaluate(async () => {
+    const { car, keys, race, state } = await import('./src/state.js');
+    const { simulate } = await import('./src/physics.js');
+    race.countdown = 0;
+    race.started = true;
+    keys.clear();
+    simulate(1 / 60);
+    if (car.throttle !== 1)
+      throw new Error('auto-accelerate did not apply throttle');
+    keys.add('KeyS');
+    simulate(1 / 60);
+    if (car.brake !== 1) throw new Error('manual braking was not preserved');
+    state.settings.autoAccelerate = false;
+    state.settings.steeringAssist = false;
+    keys.delete('KeyS');
+    keys.add('KeyD');
+    simulate(1 / 60);
+    if (car.steer <= 0) throw new Error('manual steering was not preserved');
+  });
+});
+
 test('fresh preferences keep sound on, activate on a gesture, and save mute and volume', async ({
   page,
 }) => {
