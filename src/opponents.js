@@ -23,6 +23,7 @@ import { $, formatTime, notify } from './ui.js';
 
 export { opponentRace };
 export const opponentArt = {};
+const VEHICLE_PACE = { clubsport: 0.85, sprint: 0.75, rally: 0.9, drift: 0.85 };
 
 export function toggleOpponentRace() {
   opponentRace.enabled = !opponentRace.enabled;
@@ -45,15 +46,16 @@ export function resetOpponentRace() {
     profile: [],
   });
   if (!opponentRace.enabled) return;
-  const count = Math.ceil(track.totalLength / 80);
+  const sampleRadius = state.activeMap.id === 'summit' ? 10 : 40;
+  const count = Math.ceil(track.totalLength / (sampleRadius * 2));
   opponentRace.spacing = track.totalLength / count;
   // Set safe target speeds for each corner, then let the shared car physics
   // decide how the AI reaches those speeds.
   for (let i = 0; i < count; i++) {
     const s = i * opponentRace.spacing,
       p = pointOnTrack(s),
-      before = pointOnTrack(s - 40),
-      ahead = pointOnTrack(s + 40),
+      before = pointOnTrack(s - sampleRadius),
+      ahead = pointOnTrack(s + sampleRadius),
       turn = Math.abs(
         Math.atan2(
           before.tx * ahead.ty - before.ty * ahead.tx,
@@ -67,7 +69,7 @@ export function resetOpponentRace() {
     opponentRace.profile.push(
       Math.min(
         335,
-        Math.sqrt(40 / Math.max(turn / 80, 0.0001)),
+        Math.sqrt(40 / Math.max(turn / (sampleRadius * 2), 0.0001)),
         oily ? 125 : Infinity,
       ),
     );
@@ -136,6 +138,17 @@ export function positionOpponent(rival) {
   rival.angle = Math.atan2(ahead.y - before.y, ahead.x - before.x);
 }
 
+// Track progress is a segment index fraction, not an arc-length fraction.
+// Unequal control-point spacing (especially tight chicanes) makes the distinction
+// significant for steering previews, speed profiles and traffic gaps.
+function distanceAtProgress(progress) {
+  const scaled = progress * track.length,
+    index = Math.min(track.length - 1, Math.floor(scaled)),
+    a = track[index],
+    b = track[(index + 1) % track.length];
+  return a.s + (scaled - index) * Math.hypot(b.x - a.x, b.y - a.y);
+}
+
 export function updateOpponents(dt) {
   if (!opponentRace.enabled || opponentRace.finished || race.countdown > 0)
     return;
@@ -147,19 +160,29 @@ export function updateOpponents(dt) {
     if (rival.finish !== null) continue;
     const vehicle = VEHICLES[rival.vehicleId] || state.activeCar;
     const current = nearestDriving(rival.x, rival.y),
-      currentS = current.progress * length,
+      currentS = distanceAtProgress(current.progress),
       s = ((rival.s % length) + length) % length,
       index = Math.floor(s / opponentRace.spacing),
-      target =
+      target = Math.max(
+        12,
         opponentRace.profile[index] *
-        rival.pace *
-        0.7 *
-        tuning.pace *
-        Math.min(1, Math.sqrt(vehicle.grip)) *
-        (vehicle.id === 'sprint' || vehicle.id === 'clubsport' ? 0.85 : 1) *
-        (vehicle.yawResponse ? 0.45 : 1) *
-        (state.activeMap.id === 'city' ? (vehicle.yawResponse ? 0.9 : 0.6) : 1),
-      lookAhead = clamp(70 + rival.speed * 0.12, 70, 130),
+          rival.pace *
+          0.7 *
+          tuning.pace *
+          Math.min(1, Math.sqrt(vehicle.grip)) *
+          (state.activeMap.id === 'summit' ? 0.6 : 1) *
+          (VEHICLE_PACE[vehicle.id] || 1) *
+          (vehicle.yawResponse ? 0.45 : 1) *
+          (state.activeMap.id === 'city'
+            ? vehicle.yawResponse
+              ? 0.9
+              : 0.6
+            : 1),
+      ),
+      lookAhead =
+        state.activeMap.id === 'summit'
+          ? clamp(70 + rival.speed * 0.2, 70, 110)
+          : clamp(70 + rival.speed * 0.12, 70, 130),
       ahead = pointOnTrack(currentS + lookAhead),
       currentAngle = Math.atan2(current.ty, current.tx),
       aheadAngle = Math.atan2(ahead.ty, ahead.tx),
@@ -176,7 +199,7 @@ export function updateOpponents(dt) {
         )
         .map((other) => {
           const p = nearestDriving(other.x, other.y);
-          let gap = p.progress * length - currentS;
+          let gap = distanceAtProgress(p.progress) - currentS;
           if (gap > length / 2) gap -= length;
           if (gap < -length / 2) gap += length;
           return {
@@ -209,13 +232,31 @@ export function updateOpponents(dt) {
       lateralError = current.side * current.distance - rival.lane,
       steeringRange =
         (0.52 / (1 + Math.max(0, rival.speed) / 190)) * vehicle.steering,
-      desiredAngle =
-        Math.atan((vehicle.wheelbase * turnAhead) / lookAhead) +
-        headingError -
-        Math.atan2(
-          (vehicle.yawResponse ? 1.5 : 4) * lateralError,
-          rival.speed + 15,
-        ),
+      lineAngle = Math.atan2(
+        ahead.y + ahead.tx * rival.lane - rival.y,
+        ahead.x - ahead.ty * rival.lane - rival.x,
+      ),
+      goalError = Math.atan2(
+        Math.sin(lineAngle - rival.angle),
+        Math.cos(lineAngle - rival.angle),
+      ),
+      desiredAngle = ['summit', 'city', 'drift'].includes(state.activeMap.id)
+        ? Math.atan2(
+            2 * vehicle.wheelbase * Math.sin(goalError),
+            Math.max(
+              25,
+              Math.hypot(
+                ahead.x - ahead.ty * rival.lane - rival.x,
+                ahead.y + ahead.tx * rival.lane - rival.y,
+              ),
+            ),
+          )
+        : Math.atan((vehicle.wheelbase * turnAhead) / lookAhead) +
+          headingError -
+          Math.atan2(
+            (vehicle.yawResponse ? 1.5 : 4) * lateralError,
+            rival.speed + 15,
+          ),
       steer = clamp(desiredAngle / steeringRange, -1, 1);
     rival.brake =
       rival.speed > target + tuning.brakeMargin ||
@@ -229,7 +270,7 @@ export function updateOpponents(dt) {
       vehicle,
     );
     const previous = rival.s,
-      progress = nearestDriving(rival.x, rival.y).progress * length;
+      progress = distanceAtProgress(nearestDriving(rival.x, rival.y).progress);
     let distance = progress - rival.trackS;
     if (distance < -length / 2) distance += length;
     else if (distance > length / 2) distance -= length;

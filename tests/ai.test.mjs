@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { AI_DIFFICULTIES, aiDifficulty } from '../src/ai-racecraft.js';
 import { configureCar } from '../src/cars.js';
-import { MAPS, VEHICLES } from '../src/config.js';
+import { CFG, MAPS, VEHICLES } from '../src/config.js';
 import {
   resetOpponentRace,
+  positionOpponent,
   updateOpponents,
   resolveOpponentCollisions,
 } from '../src/opponents.js';
@@ -62,19 +63,26 @@ for (const difficulty of Object.keys(AI_DIFFICULTIES)) {
         const rival = opponentRace.cars[0];
         opponentRace.cars = [rival];
         let checkpoint = rival.s;
-        for (let step = 0; step < 2700 * 30 && rival.finish === null; step++) {
-          updateOpponents(1 / 30);
+        for (
+          let step = 0;
+          step < 2700 / CFG.step && rival.finish === null;
+          step++
+        ) {
+          updateOpponents(CFG.step);
           assert(
             Number.isFinite(rival.x + rival.y + rival.speed),
             `${map}/${vehicle}: finite`,
           );
-          if (step % 30 === 29)
+          if (step % Math.round(1 / CFG.step) === Math.round(1 / CFG.step) - 1)
             assert(
               nearestDriving(rival.x, rival.y).distance <
                 MAPS[map].road - VEHICLES[vehicle].width / 2,
               `${map}/${vehicle}: on route`,
             );
-          if (step % 900 === 899) {
+          if (
+            step % Math.round(30 / CFG.step) ===
+            Math.round(30 / CFG.step) - 1
+          ) {
             assert(
               rival.s > checkpoint + 50,
               `${map}/${vehicle}: progress at ${rival.s}`,
@@ -120,4 +128,32 @@ test('mixed roster cycles specs and collision dispatch uses each footprint', () 
   );
   assert.equal(a.vx + a.vy + b.vx + b.vy, 0);
   opponentRace.grid = 'matched';
+});
+
+test('AI progress follows physical distance on unevenly spaced track segments', () => {
+  for (const map of Object.keys(MAPS)) {
+    setup(map, 'clubsport');
+    const rival = opponentRace.cars[0];
+    opponentRace.cars = [rival];
+    for (const fraction of [0.2, 0.5, 0.8]) {
+      const distance = fraction * track.totalLength;
+      Object.assign(rival, {
+        s: distance,
+        trackS: distance,
+        vx: 0,
+        vy: 0,
+        speed: 0,
+        yaw: 0,
+        steer: 0,
+      });
+      positionOpponent(rival);
+      const before = { x: rival.x, y: rival.y };
+      updateOpponents(1 / 60);
+      assert(Math.abs(rival.s - distance) < 1, `${map}: no progress jump`);
+      assert(
+        Math.hypot(rival.x - before.x, rival.y - before.y) < 1,
+        `${map}: no physical jump`,
+      );
+    }
+  }
 });
