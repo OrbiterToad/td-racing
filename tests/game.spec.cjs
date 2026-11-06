@@ -468,7 +468,7 @@ for (const viewport of [
       );
       for (
         let choice = 0;
-        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 8 : 1);
+        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 9 : 1);
         choice++
       ) {
         const dimensions = await page
@@ -522,7 +522,7 @@ for (const viewport of [
         mode === 'garage'
           ? '02 / 06'
           : mode === 'tracks'
-            ? '02 / 08'
+            ? '02 / 09'
             : '04 / 06',
       );
       await page.locator('#picker-apply').click();
