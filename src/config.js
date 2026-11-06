@@ -68,7 +68,7 @@ export const neonHarborDriftParkPoints = [
 ];
 
 // Summit GP pairs a full-throttle start straight with two fast direction
-// changes, a slow 180-degree braking corner, and a compact infield chicane.
+// changes, a slow 180-degree braking corner, and a linked infield chicane.
 export const summitPoints = [
   [-1800, 950],
   [-1050, 950],
@@ -88,6 +88,8 @@ export const summitPoints = [
   [100, -170],
   [165, -470],
   [440, -630],
+  [560, -760],
+  [760, -500],
   [760, -555],
   [950, -760],
   [930, -1110],
