@@ -619,6 +619,24 @@ export const PAINTS = {
 };
 
 export const SCENERY_ASSETS = [
+  'alpine-cable-station',
+  'alpine-snow-gate',
+  'amazonas-canopy-bridge',
+  'amazonas-river-shrine',
+  'canyon-rock-arch',
+  'canyon-water-pump',
+  'city-clock-tower',
+  'city-tram-stop',
+  'coast-lifeguard-tower',
+  'coast-marina-crane',
+  'drift-harbor-gantry',
+  'drift-neon-pylons',
+  'juniper-canopy-lookout',
+  'juniper-trail-gate',
+  'rallycross-timing-tower',
+  'rallycross-tyre-stack',
+  'summit-grandstand',
+  'summit-mountain-tunnel',
   'cafe-terrace',
   'control-room',
   'control-room-snow',
@@ -668,6 +686,18 @@ export const SCENERY_ASSETS = [
   'water-tank',
   'wood-crates',
 ];
+
+export const MAP_SCENERY_ASSETS = {
+  juniper: ['juniper-canopy-lookout', 'juniper-trail-gate'],
+  canyon: ['canyon-rock-arch', 'canyon-water-pump'],
+  alpine: ['alpine-cable-station', 'alpine-snow-gate'],
+  amazonas: ['amazonas-canopy-bridge', 'amazonas-river-shrine'],
+  coast: ['coast-lifeguard-tower', 'coast-marina-crane'],
+  city: ['city-clock-tower', 'city-tram-stop'],
+  rallycross: ['rallycross-timing-tower', 'rallycross-tyre-stack'],
+  drift: ['drift-harbor-gantry', 'drift-neon-pylons'],
+  summit: ['summit-grandstand', 'summit-mountain-tunnel'],
+};
 
 // Place large sites first, then details, then trees. Every object reserves its
 // complete rotated sprite footprint, including the shadow, before anything draws.

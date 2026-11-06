@@ -34,6 +34,7 @@ import {
   notify,
   openSessionSetup,
   setPaused,
+  syncTrackChoiceButton,
   updateHUD,
 } from './ui.js';
 import { buildWorld } from './world.js';
@@ -87,7 +88,7 @@ export function changeTrack(id, announce = true) {
   camera.x = car.x;
   camera.y = car.y;
   camera.zoom = desiredZoom();
-  $('open-tracks').textContent = state.activeMap.name + ' ▾';
+  syncTrackChoiceButton();
   $('track-label').textContent = state.activeMap.label;
   $('track-title').textContent = state.activeMap.name;
   $('track-subtitle').textContent = state.activeMap.description;

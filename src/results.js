@@ -1,3 +1,5 @@
+import { renderUiIcon } from './ui-icons.js';
+
 let dialog;
 let dismissedFinish = null;
 let actions = { raceAgain() {}, backToSetup() {} };
@@ -233,7 +235,7 @@ function ensureDialog() {
         <ol class="rr-list" data-result="standings"></ol>
       </section>
       <footer class="rr-actions">
-        <button type="button" class="rr-button rr-button-primary" data-action="again">Race again <span aria-hidden="true">→</span></button>
+        <button type="button" class="rr-button rr-button-primary" data-action="again">Race again ${renderUiIcon('forward', { size: 16 })}</button>
         <button type="button" class="rr-button" data-action="setup">Back to setup</button>
       </footer>
     </div>`;

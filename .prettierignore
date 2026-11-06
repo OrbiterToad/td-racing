@@ -8,3 +8,6 @@ test-results/
 preview-profile/
 # Keep npm's generated lockfile in npm's own format.
 package-lock.json
+# Synced verbatim from the agent-coordinator template; see AGENTS.project.md.
+AGENTS.md
+CORDINATOR_AGENT.md
