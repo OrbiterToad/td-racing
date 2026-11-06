@@ -495,6 +495,54 @@ export const MAPS = {
   },
 };
 
+export function mapBaseId(map) {
+  return map?.baseId ?? map?.id;
+}
+
+function variantMap(base, id, variant, points, patches) {
+  return {
+    ...base,
+    id: `${id}:${variant}`,
+    baseId: id,
+    variant,
+    bestKey: `${base.bestKey}-${variant}`,
+    name: `${base.name} · ${variant === 'reverse' ? 'Reverse' : 'Mirrored'}`,
+    label: `${base.label} / ${variant.toUpperCase()}`,
+    subtitle:
+      variant === 'reverse'
+        ? `${base.subtitle} Drive it the other way.`
+        : `${base.subtitle} Reflected for a fresh line.`,
+    points,
+    patches,
+  };
+}
+
+for (const [id, base] of Object.entries(MAPS)) {
+  base.baseId = id;
+  base.variant = 'forward';
+  MAPS[`${id}:reverse`] = variantMap(
+    base,
+    id,
+    'reverse',
+    base.points
+      .slice()
+      .reverse()
+      .map(([x, y]) => [x, y]),
+    base.patches.map((patch) => ({
+      ...patch,
+      progress: 1 - patch.progress,
+      lateral: -patch.lateral,
+    })),
+  );
+  MAPS[`${id}:mirrored`] = variantMap(
+    base,
+    id,
+    'mirrored',
+    base.points.map(([x, y]) => [-x, y]),
+    base.patches.map((patch) => ({ ...patch, lateral: -patch.lateral })),
+  );
+}
+
 export const VEHICLES = {
   clubsport: {
     id: 'clubsport',

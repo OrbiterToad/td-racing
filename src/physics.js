@@ -4,6 +4,7 @@ import { coast } from './coast.js';
 import { recordGhostFrame } from './ghost.js';
 import { updateJungle } from './jungle.js';
 import { clamp } from './math.js';
+import { mapBaseId } from './config.js';
 import { beginLap, recover, updateRace } from './race.js';
 import {
   car,
@@ -30,7 +31,7 @@ export function simulate(dt) {
   if (opponentRace.enabled && opponentRace.finished) return;
   lapGhost.previous = [car.x, car.y, car.angle];
   updateJungle(dt);
-  if (state.activeMap.id === 'coast') coast.time += dt;
+  if (mapBaseId(state.activeMap) === 'coast') coast.time += dt;
   if (race.countdown > 0) {
     race.countdown = Math.max(0, race.countdown - dt);
     car.vx = 0;

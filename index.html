@@ -814,6 +814,8 @@
       .picker-content {
         flex: 1;
         min-height: 0;
+        min-width: 0;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -821,6 +823,7 @@
       .selection-feature {
         flex: 1;
         min-height: 0;
+        min-width: 0;
         display: grid;
         grid-template-columns: 58% 42%;
         border: 1px solid #ffffff18;
@@ -877,6 +880,7 @@
         object-fit: contain;
       }
       .feature-copy {
+        min-width: 0;
         padding: clamp(20px, 3vw, 48px);
         display: flex;
         flex-direction: column;
@@ -1053,9 +1057,15 @@
       }
       .choice-rail {
         display: grid;
+        min-width: 0;
+        overflow: hidden;
         grid-template-columns: repeat(var(--choice-count), minmax(0, 1fr));
         gap: 10px;
         flex: none;
+      }
+      #selection-dialog[data-mode='tracks'] .choice-rail {
+        gap: 2px;
+        width: 100%;
       }
       .choice-tile {
         position: relative;
@@ -1082,6 +1092,10 @@
         color: var(--lime);
       }
       .choice-tile strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font:
           700 clamp(14px, 1.4vw, 22px)/1.1 'Barlow Condensed',
           Impact,

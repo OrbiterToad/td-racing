@@ -1,5 +1,5 @@
 import { coast, coastLandDistance, paintCoastBuilding } from './coast.js';
-import { MAPS, SCENERY_ASSETS, SCENERY_LAYERS } from './config.js';
+import { MAPS, SCENERY_ASSETS, SCENERY_LAYERS, mapBaseId } from './config.js';
 import { amazonRiverDistance, monkeyPosition } from './jungle.js';
 import { clamp, lerpTo, seededRandom } from './math.js';
 import { roundedRect } from './renderer.js';
@@ -80,7 +80,7 @@ export function paddockAssetLayout() {
       rallycross: 'industrial',
       drift: 'industrial',
       summit: 'industrial',
-    }[state.activeMap.id],
+    }[mapBaseId(state.activeMap)],
     front = state.paddock.side === 1 ? -1 : 1,
     y = front < 0 ? 18 : -5,
     angle = front < 0 ? Math.PI : 0,
@@ -97,7 +97,10 @@ export function paddockAssetLayout() {
       team: i < 2 ? 'blue' : i < 4 ? 'red' : null,
     });
   props.push({
-    key: state.activeMap.id === 'alpine' ? 'control-room-snow' : 'control-room',
+    key:
+      mapBaseId(state.activeMap) === 'alpine'
+        ? 'control-room-snow'
+        : 'control-room',
     x: 214,
     y,
     w: 64,
@@ -183,7 +186,7 @@ export function paintPaddock(c) {
     rallycross: '#b4ad8e',
     drift: '#5e7b82',
     summit: '#aaa88f',
-  }[state.activeMap.id];
+  }[mapBaseId(state.activeMap)];
   c.save();
   c.translate(state.paddock.x, state.paddock.y);
   c.rotate(Math.atan2(state.paddock.ty, state.paddock.tx));
@@ -307,7 +310,7 @@ export function sceneryClear(x, y, radius, margin = 24) {
     py < 150 + radius
   )
     return false;
-  if (state.activeMap.id === 'amazonas') {
+  if (mapBaseId(state.activeMap) === 'amazonas') {
     const m = monkeyPosition();
     if (
       amazonRiverDistance(x, y) < 125 + radius ||
@@ -315,10 +318,10 @@ export function sceneryClear(x, y, radius, margin = 24) {
     )
       return false;
   }
-  if (state.activeMap.id === 'city' && !cityParkClear(x, y, radius))
+  if (mapBaseId(state.activeMap) === 'city' && !cityParkClear(x, y, radius))
     return false;
   if (
-    state.activeMap.id === 'coast' &&
+    mapBaseId(state.activeMap) === 'coast' &&
     (coastLandDistance(x, y) < 90 + radius ||
       Math.hypot(x - coast.lighthouse.x, y - coast.lighthouse.y) < 130 + radius)
   )
@@ -327,7 +330,7 @@ export function sceneryClear(x, y, radius, margin = 24) {
 }
 
 export function buildSceneryBuildings() {
-  if (state.activeMap.id === 'coast') {
+  if (mapBaseId(state.activeMap) === 'coast') {
     const rand = seededRandom(891);
     for (let i = 0; i < 64; i++) {
       const x = -2200 + rand() * 1200,
@@ -352,7 +355,7 @@ export function buildSceneryBuildings() {
       );
     }
   }
-  if (state.activeMap.id === 'city') {
+  if (mapBaseId(state.activeMap) === 'city') {
     const rand = seededRandom(4209);
     for (let x = -2320; x < 1700; x += 235)
       for (let y = -2000; y < -240; y += 245) {
@@ -477,28 +480,25 @@ export function buildSceneryDetails() {
         'rock',
         'tool-trolley',
         'spectator-stand',
+        'cabin',
       ],
       drift: [
         'tires',
         'canopy',
         'service-transporter',
+        'rock',
         'tool-trolley',
         'spectator-stand',
-        'rock',
         'cafe-terrace',
         'shed-garden',
       ],
       summit: [
         'rock',
         'pine',
-        'spectator-stand',
+        'snowdrift',
         'cabin',
         'shed-garden',
-        'greenhouse',
-        'canopy',
-        'service-transporter',
-        'tires',
-        'drygrass',
+        'spectator-stand',
       ],
       coast: [
         'umbrella',
@@ -519,7 +519,7 @@ export function buildSceneryDetails() {
         'greenhouse',
         'cafe-terrace',
       ],
-    }[state.activeMap.id];
+    }[mapBaseId(state.activeMap)];
   for (let i = 0; i < 360; i++) {
     const p = track[Math.floor(rand() * track.length)],
       size = 22 + rand() * 32,
@@ -536,13 +536,13 @@ export function buildSceneryDetails() {
         layer === SCENERY_LAYERS.structures ||
         ['service-transporter', 'bench', 'picnic'].includes(kind),
       angle = aligned
-        ? state.activeMap.id === 'city'
+        ? mapBaseId(state.activeMap) === 'city'
           ? 0
           : Math.atan2(p.ty, p.tx) + (side === 1 ? Math.PI : 0)
         : rotation;
     // Buildings belong outside the central park; paths and the fountain stay open.
     if (
-      state.activeMap.id === 'city' &&
+      mapBaseId(state.activeMap) === 'city' &&
       ['citybuilding', 'greenhouse', 'cafe-terrace'].includes(kind) &&
       x > -400 - radius &&
       x < 780 + radius &&
@@ -630,7 +630,7 @@ export function buildSceneryAccess() {
     const entrance = sceneryEntrance(owner);
     if (!entrance) continue;
     const width =
-        state.activeMap.id === 'city' && owner.kind === 'home'
+        mapBaseId(state.activeMap) === 'city' && owner.kind === 'home'
           ? 18
           : owner.kind === 'office'
             ? 22
@@ -652,7 +652,7 @@ export function buildSceneryAccess() {
       next = track[(n.i + 1) % track.length],
       s = start.s + n.t * Math.hypot(next.x - start.x, next.y - start.y);
     let connected = false;
-    for (const offset of [0, 70, -70, 140, -140]) {
+    for (const offset of [0, 70, -70, 140, -140, 210, -210, 280, -280]) {
       if (connected) break;
       const p = pointOnTrack(s + offset),
         distance = widthAt('wall', p.progress) + half + 10,
@@ -675,7 +675,7 @@ export function buildSceneryAccess() {
           owner,
           width,
           points,
-          kind: state.activeMap.id === 'city' ? 'paved' : 'gravel',
+          kind: mapBaseId(state.activeMap) === 'city' ? 'paved' : 'gravel',
           layer: SCENERY_LAYERS.ground,
         };
         let clear = true;
@@ -747,7 +747,7 @@ export function paintSceneryAccess(c) {
 }
 
 export function buildSceneryTrees() {
-  const id = state.activeMap.id,
+  const id = mapBaseId(state.activeMap),
     rand = seededRandom(7300 + Object.keys(MAPS).indexOf(id) * 113),
     keys = {
       juniper: [
@@ -777,7 +777,6 @@ export function buildSceneryTrees() {
       key = keys[Math.floor(rand() * keys.length)],
       angle = rand() * Math.PI * 2;
     if (id === 'city' && y < -100) continue;
-    if (id === 'drift' && y < -1700) continue;
     if (id === 'amazonas' && Math.abs(x + 500) < 180 && Math.abs(y + 220) < 110)
       continue;
     reserveScenery(
@@ -864,8 +863,8 @@ export function paintSceneryScene(c) {
 }
 
 export function paintSceneryRock(c, size, rand) {
-  const desert = state.activeMap.id === 'canyon',
-    snow = state.activeMap.id === 'alpine';
+  const desert = mapBaseId(state.activeMap) === 'canyon',
+    snow = mapBaseId(state.activeMap) === 'alpine';
   c.fillStyle = '#203b2c25';
   c.beginPath();
   c.ellipse(5, 6, size * 0.7, size * 0.47, 0, 0, Math.PI * 2);
@@ -917,11 +916,11 @@ export function paintSceneryDetails(c, props = sceneryDetails) {
         : kind === 'tires'
           ? 'tyre-rack'
           : kind === 'cabin'
-            ? state.activeMap.id === 'alpine'
+            ? mapBaseId(state.activeMap) === 'alpine'
               ? 'cottage-snow'
               : 'cottage-wood'
             : kind === 'hut'
-              ? state.activeMap.id === 'amazonas'
+              ? mapBaseId(state.activeMap) === 'amazonas'
                 ? 'hut-jungle'
                 : 'house-sandstone'
               : kind === 'picnic'

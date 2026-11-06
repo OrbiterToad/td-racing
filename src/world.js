@@ -1,5 +1,5 @@
 import { paintCoastGround, paintCoastLandmarks } from './coast.js';
-import { CFG } from './config.js';
+import { CFG, mapBaseId } from './config.js';
 import { paintAmazonFords, paintAmazonRiver } from './jungle.js';
 import { seededRandom } from './math.js';
 import {
@@ -22,7 +22,6 @@ import {
   paintCanyonMesas,
   paintCityGround,
   paintCityRoadMarkings,
-  paintDriftGround,
   paintRallyRoad,
   paintSurfacePatches,
 } from './terrain.js';
@@ -33,13 +32,13 @@ export function buildWorld() {
   state.worldCanvas.width = state.worldBounds.width;
   state.worldCanvas.height = state.worldBounds.height;
   state.worldCtx = state.worldCanvas.getContext('2d');
-  const desert = state.activeMap.id === 'canyon',
-    alpine = state.activeMap.id === 'alpine',
-    amazon = state.activeMap.id === 'amazonas',
-    seaside = state.activeMap.id === 'coast',
-    urban = state.activeMap.id === 'city',
-    drift = state.activeMap.id === 'drift',
-    summit = state.activeMap.id === 'summit',
+  const desert = mapBaseId(state.activeMap) === 'canyon',
+    alpine = mapBaseId(state.activeMap) === 'alpine',
+    amazon = mapBaseId(state.activeMap) === 'amazonas',
+    seaside = mapBaseId(state.activeMap) === 'coast',
+    urban = mapBaseId(state.activeMap) === 'city',
+    drift = mapBaseId(state.activeMap) === 'drift',
+    summit = mapBaseId(state.activeMap) === 'summit',
     c = state.worldCtx,
     rand = seededRandom(
       desert
@@ -87,13 +86,9 @@ export function buildWorld() {
           ? i % 2
             ? '#315e40'
             : '#204832'
-          : drift
-            ? i % 2
-              ? '#1b4654'
-              : '#123542'
-            : i % 2
-              ? '#91a97c'
-              : '#849d6e';
+          : i % 2
+            ? '#91a97c'
+            : '#849d6e';
     c.beginPath();
     c.ellipse(
       rand() * w + state.worldBounds.x,
@@ -127,8 +122,6 @@ export function buildWorld() {
   if (amazon) paintAmazonRiver(c);
   if (desert) paintCanyonMesas(c, rand, w, h);
   if (alpine) paintAlpineRidges(c, rand, w, h);
-  if (drift) paintDriftGround(c, state.worldBounds, rand);
-  if (alpine || summit) paintAlpineRidges(c, rand, w, h);
   paintSceneryGround(c);
   if (urban) {
     c.fillStyle = '#e5e8d2';
@@ -146,9 +139,7 @@ export function buildWorld() {
           ? '#bead85'
           : urban
             ? '#727f7b'
-            : summit
-              ? '#65735f'
-              : '#71895e',
+            : '#71895e',
     (p) => widthAt('wall', p) * 2 + 25,
   );
   ribbon(
@@ -161,9 +152,7 @@ export function buildWorld() {
           ? '#e1cf9f'
           : urban
             ? '#b2bab0'
-            : summit
-              ? '#b9b59c'
-              : '#a3ac87',
+            : '#a3ac87',
     (p) => widthAt('wall', p) * 2,
   );
   for (const [from, to] of [
@@ -174,7 +163,7 @@ export function buildWorld() {
       Math.floor(from * track.length),
       Math.ceil(to * track.length),
     );
-    if (!desert && !alpine && !seaside && !urban && !drift) {
+    if (!desert && !alpine && !seaside && !urban) {
       c.beginPath();
       section.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
       c.strokeStyle = '#cbb88f';
@@ -215,20 +204,12 @@ export function buildWorld() {
   }
   ribbon(
     c,
-    desert
-      ? '#a28c74'
-      : alpine
-        ? '#95a8ae'
-        : urban
-          ? '#abb4aa'
-          : summit
-            ? '#c0b9a0'
-            : '#757e76',
+    desert ? '#a28c74' : alpine ? '#95a8ae' : urban ? '#abb4aa' : '#757e76',
     (p) => widthAt('runoff', p) * 2,
   );
   ribbon(
     c,
-    desert ? '#8c8170' : alpine ? '#81969c' : summit ? '#6d766e' : '#6a746e',
+    desert ? '#8c8170' : alpine ? '#81969c' : '#6a746e',
     (p) => widthAt('road', p) * 2 + 24,
   );
   ribbon(
@@ -254,7 +235,7 @@ export function buildWorld() {
     c.fillRect(p.x + p.nx * offset, p.y + p.ny * offset, 1.2, 1.2);
   }
   c.restore();
-  if (state.activeMap.id === 'rallycross') paintRallyRoad(c, rand);
+  if (mapBaseId(state.activeMap) === 'rallycross') paintRallyRoad(c, rand);
   // Continue the pit asphalt across the main circuit's verge at both merges.
   paintPitConnections(c);
   if (urban) paintCityRoadMarkings(c);

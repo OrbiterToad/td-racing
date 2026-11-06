@@ -1,9 +1,8 @@
 import { updateOpponentHUD } from './opponents.js';
 import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
 import { coast, paintCoastGround } from './coast.js';
-import { MAPS, PAINTS, VEHICLES } from './config.js';
+import { MAPS, PAINTS, VEHICLES, mapBaseId } from './config.js';
 import { ghostStatus, liveGhostDelta } from './ghost.js';
-import { lapCoachingDelta } from './lap-coaching.js';
 import { earnedMedalFor, medalTargetsFor } from './medals.js';
 import { paintAmazonRiver } from './jungle.js';
 import { seededRandom } from './math.js';
@@ -199,7 +198,6 @@ export function renderPicker() {
   const selected = pickerChoices()[selectedId];
   const vehicle = VEHICLES[state.pendingCar];
   $('selection-dialog').dataset.mode = state.pickerMode;
-  $('selection-dialog').dataset.track = tracks ? selectedId : '';
   $('picker-title').textContent = modes
     ? 'Choose your mode.'
     : tracks
@@ -430,43 +428,41 @@ function paintTrackPreview(canvas, map) {
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.fillStyle =
     map.previewColor ||
-    (map.id === 'city'
+    (mapBaseId(map) === 'city'
       ? '#687d75'
-      : map.id === 'coast'
+      : mapBaseId(map) === 'coast'
         ? '#287f92'
-        : map.id === 'amazonas'
+        : mapBaseId(map) === 'amazonas'
           ? '#214735'
-          : map.id === 'canyon'
+          : mapBaseId(map) === 'canyon'
             ? '#694a37'
-            : map.id === 'alpine'
+            : mapBaseId(map) === 'alpine'
               ? '#52686e'
-              : map.id === 'rallycross'
+              : mapBaseId(map) === 'rallycross'
                 ? '#5b5b3e'
-                : map.id === 'drift'
-                  ? '#1b4654'
-                  : '#354b3d');
+                : '#354b3d');
   c.fillRect(0, 0, canvas.width, canvas.height);
   c.save();
   c.translate(offsetX, offsetY);
   c.scale(scaleToFit, scaleToFit);
   const rand = seededRandom(
-    map.id === 'canyon'
+    mapBaseId(map) === 'canyon'
       ? 513
-      : map.id === 'alpine'
+      : mapBaseId(map) === 'alpine'
         ? 719
-        : map.id === 'drift'
+        : mapBaseId(map) === 'drift'
           ? 774
-          : map.id === 'summit'
+          : mapBaseId(map) === 'summit'
             ? 941
             : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =
-      map.id === 'canyon'
+      mapBaseId(map) === 'canyon'
         ? '#bf80572b'
-        : map.id === 'alpine'
+        : mapBaseId(map) === 'alpine'
           ? '#d6ebe324'
-          : map.id === 'summit'
+          : mapBaseId(map) === 'summit'
             ? '#f4d4a21b'
             : '#a5c78516';
     c.beginPath();
@@ -485,14 +481,14 @@ function paintTrackPreview(canvas, map) {
   c.translate(240, 135);
   c.scale(scale, scale);
   c.translate(-(left + right) / 2, -(top + bottom) / 2);
-  if (map.id === 'city')
+  if (mapBaseId(map) === 'city')
     paintCityGround(c, {
       x: left - 600,
       y: top - 600,
       width: right - left + 1200,
       height: bottom - top + 1200,
     });
-  if (map.id === 'coast') {
+  if (mapBaseId(map) === 'coast') {
     paintCoastGround(
       c,
       {
@@ -512,17 +508,17 @@ function paintTrackPreview(canvas, map) {
     c.arc(coast.lighthouse.x, coast.lighthouse.y, 20, 0, Math.PI * 2);
     c.fill();
   }
-  if (map.id === 'amazonas') paintAmazonRiver(c, false);
+  if (mapBaseId(map) === 'amazonas') paintAmazonRiver(c, false);
   ribbon(c, '#12202166', 20 / scale, points);
   ribbon(c, map.accent, 9 / scale, points);
   ribbon(c, '#243435', 5 / scale, points);
-  if (map.id === 'amazonas') {
+  if (mapBaseId(map) === 'amazonas') {
     c.save();
     c.globalAlpha = 0.8;
     paintAmazonRiver(c, false);
     c.restore();
   }
-  if (map.id === 'rallycross') {
+  if (mapBaseId(map) === 'rallycross') {
     c.strokeStyle = '#d1a873';
     c.lineWidth = 5 / scale;
     for (let i = 0; i < points.length; i++) {
@@ -610,12 +606,6 @@ export function formatDelta(t) {
     : '—';
 }
 
-function coachingLabel(delta) {
-  if (!Number.isFinite(delta)) return '—';
-  const ahead = delta <= 0;
-  return `${ahead ? '▼ AHEAD' : '▲ BEHIND'} ${formatDelta(delta)}`;
-}
-
 export function updateHUD() {
   updateOpponentHUD();
   $('touch-rewind').hidden = opponentRace.enabled;
@@ -675,14 +665,12 @@ export function updateHUD() {
                 ? '#b5d686'
                 : state.activeMap.accent;
   $('clock').style.color = race.invalid ? '#e7a083' : '';
-  $('lap-coaching').hidden = !state.settings.showLapCoaching;
-  $('lap-coaching-sectors').hidden = !state.settings.showLapCoaching;
   [...$('sector').children].forEach((el, i) =>
     el.classList.toggle('passed', i < race.next - 1),
   );
   const status =
     car.surface === 'PIT LANE'
-      ? state.activeMap.id === 'city'
+      ? mapBaseId(state.activeMap) === 'city'
         ? 'SERVICE ROAD'
         : 'PIT LANE · PADDOCK ACCESS'
       : car.surface === 'FORD'
@@ -706,14 +694,11 @@ export function updateHUD() {
                         (race.started ? 'ON TRACK' : 'READY');
   $('grip-status').textContent = status;
   $('grip-status').style.color = $('surface').style.color;
-  const delta = race.invalid
-    ? null
-    : race.started && race.crossedStart
-      ? lapCoachingDelta(timing.splits, timing.best, race.time, race.previous)
-      : null;
+  const delta =
+    race.invalid || timing.flashTime <= 0 ? null : timing.flashDelta;
   $('lap-delta').textContent = race.invalid
     ? 'INVALID LAP'
-    : coachingLabel(delta);
+    : formatDelta(delta);
   $('lap-delta').style.color =
     delta === null ? '#9eb0a4' : delta <= 0 ? '#d5f578' : '#f0a28a';
   for (let i = 0; i < 4; i++) {
@@ -734,7 +719,7 @@ export function updateHUD() {
       : '#e5ede2';
     $('sector-diff-' + i).textContent =
       difference !== null
-        ? coachingLabel(difference)
+        ? formatDelta(difference)
         : running
           ? 'RUNNING'
           : timing.best[i] !== undefined
