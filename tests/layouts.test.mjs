@@ -8,7 +8,7 @@ import { sampleMap } from '../src/tracks.js';
 const baseIds = Object.keys(MAPS).filter((id) => !id.includes(':'));
 
 test('every circuit exposes forward, reverse, and mirrored layouts', () => {
-  assert.equal(baseIds.length, 7);
+  assert.equal(baseIds.length, 9);
   for (const id of baseIds) {
     const base = MAPS[id];
     const reverse = MAPS[`${id}:reverse`];
