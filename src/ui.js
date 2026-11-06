@@ -37,9 +37,9 @@ const GAME_MODES = {
   trial: {
     id: 'trial',
     name: 'Time trial',
-    tag: 'SOLO / CHASE YOUR PERSONAL BEST',
+    tag: 'SOLO / PERSONAL BEST',
     description:
-      'An open track. Unlimited laps. Find your rhythm, set a clean lap and chase your best-lap ghost.',
+      'An open track with unlimited laps, personal-best timing, and a lap ghost.',
   },
   race: {
     id: 'race',
@@ -53,7 +53,7 @@ const GAME_MODES = {
     name: 'Local split screen',
     tag: 'TWO DRIVERS / THREE LAPS',
     description:
-      'Race a friend on the same circuit. Player 1 uses WASD; Player 2 uses IJKL or a second gamepad.',
+      'Two players on one circuit and one screen, three laps. Player 1 uses WASD; Player 2 uses IJKL or a second gamepad.',
   },
   ...SKILL_TRIALS,
 };
@@ -238,13 +238,10 @@ export function renderPicker() {
       : 'Choose your ride.';
   $('picker-eyebrow').textContent = 'APEX / THE DRIVING CLUB';
   $('picker-description').textContent = modes
-    ? 'One last choice. How do you want to drive?'
+    ? 'Choose a driving mode.'
     : tracks
-      ? vehicle.name +
-        ' · ' +
-        PAINTS[state.pendingPaint].name +
-        ' / Find your next apex.'
-      : 'Six machines. Five colors. Make the grid your own.';
+      ? vehicle.name + ' · ' + PAINTS[state.pendingPaint].name
+      : 'Choose a car and paint.';
   document.querySelector('.picker-steps').hidden = !state.selectingSession;
   document.querySelector('.wizard-nav-actions').hidden =
     !state.selectingSession;
@@ -294,7 +291,7 @@ export function renderPicker() {
         vehicle.name.toUpperCase() +
         ' / ' +
         selected.name.toUpperCase()
-      : 'YOUR RIDE / ' +
+      : 'SELECTED CAR / ' +
         selected.name.toUpperCase() +
         ' / ' +
         PAINTS[state.pendingPaint].name.toUpperCase();
@@ -321,7 +318,7 @@ export function renderPicker() {
     medalDetails = `<div class="medal-progress" aria-label="Medal progress for ${selected.name} and ${vehicle.name}"><span class="medal-earned">EARNED / <b>${earned ? earned.toUpperCase() : 'NONE'}</b></span><div class="medal-targets" aria-label="Medal target times">${['bronze', 'silver', 'gold'].map((medal) => `<span class="medal-target ${medal}" data-medal="${medal}"><b>${medal.toUpperCase()}</b><time>${formatTime(targets[medal])}</time></span>`).join('')}</div></div>`;
   }
   const art = modes
-    ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : selectedId === 'local' ? '2 DRIVERS / SPLIT SCREEN' : SKILL_TRIALS[selectedId] ? 'SHORT DRIVING CHALLENGE' : 'YOUR TRACK. YOUR PACE.'}</span>`
+    ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : selectedId === 'local' ? '2 DRIVERS / SPLIT SCREEN' : SKILL_TRIALS[selectedId] ? 'SHORT DRIVING CHALLENGE' : 'TIME TRIAL'}</span>`
     : tracks
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
       : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;
