@@ -41,18 +41,22 @@ export const juniperPoints = [
 ];
 
 export const neonHarborDriftParkPoints = [
-  [-2200, 0],
-  [-1500, 1000],
-  [-500, 1150],
-  [0, 150],
-  [500, -1150],
-  [1500, -1000],
-  [2200, 0],
-  [1500, 1000],
-  [500, 1150],
-  [0, -150],
-  [-500, -1150],
-  [-1500, -1000],
+  [-2400, -100],
+  [-1900, 850],
+  [-950, 1250],
+  [0, 1250],
+  [950, 1050],
+  [1700, 500],
+  [1950, -250],
+  [1650, -700],
+  [1050, -900],
+  [650, -550],
+  [250, -900],
+  [-150, -550],
+  [-650, -900],
+  [-1250, -1050],
+  [-1900, -800],
+  [-2350, -450],
 ];
 
 // Summit GP pairs a full-throttle start straight with two fast direction
@@ -447,8 +451,9 @@ export const MAPS = {
     id: 'drift',
     name: 'Neon Harbor Drift Park',
     label: 'HARBOR / FIGURE EIGHT',
-    subtitle: 'Wide links, a central crossover, and open runoff.',
-    description: 'Linked corners, a hairpin, and open runoff for slides.',
+    subtitle: 'Flowing harbor links feed a tight neon chicane.',
+    description:
+      'A sweeping waterfront run, linked chicane corners, and open runoff for slides.',
     temperature: '18°C',
     gripLabel: 'DRY / OPEN RUNOFF',
     bestKey: 'apex-neon-harbor-drift-v1',
