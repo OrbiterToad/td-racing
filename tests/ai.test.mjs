@@ -51,48 +51,45 @@ test('difficulty changes measured progress with repeatable starts and unchanged 
   assert(progress[0] < progress[1] && progress[1] < progress[2]);
 });
 
-for (const map of Object.keys(MAPS)) {
-  test(`full AI vehicle roster completes three laps on ${map}`, () => {
-    // Run each supported spec against the actual controller, track surfaces and barriers.
-    for (const vehicle of Object.keys(VEHICLES)) {
-      setup(map, vehicle);
-      assert.equal(opponentRace.enabled, true);
-      assert.equal(opponentRace.cars[0].vehicleId, vehicle);
-      const rival = opponentRace.cars[0];
-      opponentRace.cars = [rival];
-      let checkpoint = rival.s;
-      for (let step = 0; step < 1800 * 30 && rival.finish === null; step++) {
-        updateOpponents(1 / 30);
-        assert(
-          Number.isFinite(rival.x + rival.y + rival.speed),
-          `${map}/${vehicle}: finite`,
-        );
-        if (step % 30 === 29)
+for (const difficulty of Object.keys(AI_DIFFICULTIES)) {
+  for (const map of Object.keys(MAPS)) {
+    test(`full AI vehicle roster completes three laps on ${map} at ${difficulty}`, () => {
+      // Run each supported spec against the actual controller, track surfaces and barriers.
+      for (const vehicle of Object.keys(VEHICLES)) {
+        setup(map, vehicle, difficulty);
+        assert.equal(opponentRace.enabled, true);
+        assert.equal(opponentRace.cars[0].vehicleId, vehicle);
+        const rival = opponentRace.cars[0];
+        opponentRace.cars = [rival];
+        let checkpoint = rival.s;
+        for (let step = 0; step < 2700 * 30 && rival.finish === null; step++) {
+          updateOpponents(1 / 30);
           assert(
-            nearestDriving(rival.x, rival.y).distance <
-              MAPS[map].road - VEHICLES[vehicle].width / 2,
-            `${map}/${vehicle}: on route`,
+            Number.isFinite(rival.x + rival.y + rival.speed),
+            `${map}/${vehicle}: finite`,
           );
-        if (step % 900 === 899) {
-          assert(
-            rival.s > checkpoint + 50,
-            `${map}/${vehicle}: progress at ${rival.s}`,
-          );
-          checkpoint = rival.s;
-          assert(
-            nearestDriving(rival.x, rival.y).distance <
-              MAPS[map].road - VEHICLES[vehicle].width / 2,
-            `${map}/${vehicle}: on route`,
-          );
+          if (step % 30 === 29)
+            assert(
+              nearestDriving(rival.x, rival.y).distance <
+                MAPS[map].road - VEHICLES[vehicle].width / 2,
+              `${map}/${vehicle}: on route`,
+            );
+          if (step % 900 === 899) {
+            assert(
+              rival.s > checkpoint + 50,
+              `${map}/${vehicle}: progress at ${rival.s}`,
+            );
+            checkpoint = rival.s;
+          }
         }
+        assert(
+          rival.finish > 0,
+          `${map}/${vehicle}: completed at ${rival.s / track.totalLength} laps`,
+        );
+        assert.equal(rival.s, track.totalLength * 3);
       }
-      assert(
-        rival.finish > 0,
-        `${map}/${vehicle}: completed at ${rival.s / track.totalLength} laps`,
-      );
-      assert.equal(rival.s, track.totalLength * 3);
-    }
-  });
+    });
+  }
 }
 
 test('mixed roster cycles specs and collision dispatch uses each footprint', () => {

@@ -158,7 +158,7 @@ export function updateOpponents(dt) {
         Math.min(1, Math.sqrt(vehicle.grip)) *
         (vehicle.id === 'sprint' || vehicle.id === 'clubsport' ? 0.85 : 1) *
         (vehicle.yawResponse ? 0.45 : 1) *
-        (state.activeMap.id === 'city' ? (vehicle.yawResponse ? 0.9 : 0.7) : 1),
+        (state.activeMap.id === 'city' ? (vehicle.yawResponse ? 0.9 : 0.6) : 1),
       lookAhead = clamp(70 + rival.speed * 0.12, 70, 130),
       ahead = pointOnTrack(currentS + lookAhead),
       currentAngle = Math.atan2(current.ty, current.tx),
@@ -217,7 +217,11 @@ export function updateOpponents(dt) {
           rival.speed + 15,
         ),
       steer = clamp(desiredAngle / steeringRange, -1, 1);
-    rival.brake = rival.speed > target + tuning.brakeMargin;
+    rival.brake =
+      rival.speed > target + tuning.brakeMargin ||
+      (!vehicle.yawResponse &&
+        (Math.abs(turnAhead) > 0.04 || rival.slickTime > 0) &&
+        rival.speed > Math.max(15, target - 3));
     driveVehicle(
       rival,
       { steer, throttle: rival.speed < target - 4, brake: rival.brake },

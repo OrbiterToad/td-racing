@@ -15,9 +15,13 @@ steering, grip, power and brakes, including during vehicle contact.
 
 Targets retain curvature and slippery-patch preview with backward braking
 propagation. Slippery-patch targets are capped at 125 (previously 155) to keep
-different grid slots and car footprints on the road. Lower-grip cars get lower targets; Clubsport and Sprint use a 0.85 safety factor; slow-yaw cars and the
-city circuit receive extra conservative speed margins. These are controller
-choices; all cars still use the shared vehicle physics and collision solver.
+different grid slots and car footprints on the road. Lower-grip cars get lower
+targets; Clubsport and Sprint use a 0.85 safety factor. Slow-yaw cars use 0.45
+and a gentler lateral correction. City targets use 0.9 for slow-yaw cars and 0.6
+otherwise. Cars with standard yaw response brake proactively within three speed
+units of the target in bends or while recovering from a slippery patch; the
+table threshold applies otherwise. These are controller choices; all cars still
+use the shared vehicle physics and collision solver.
 
 On gentle bends or straights, a faster approaching driver can choose a clear
 passing lane. A driver approached from behind can choose a clear inside line
@@ -30,6 +34,7 @@ Settings apply on starting a session and survive race restarts. No saved setting
 migration is needed. Difficulty and grid choices are session settings.
 
 `tests/ai-racecraft.test.mjs` covers deterministic decisions and safe fallbacks.
-`tests/ai.test.mjs` enumerates the current car and track catalogs, so roster
-additions automatically enter three-lap completion and route/progress coverage.
+`tests/ai.test.mjs` enumerates the current car, track and difficulty catalogs, so
+roster additions automatically enter three-lap completion and route/progress
+coverage at every difficulty.
 The collision regression suite continues to exercise the shared solver.

@@ -4,6 +4,8 @@ for (const difficulty of ['easy', 'normal', 'hard']) {
   test(`club race starts on another track with mixed cars at ${difficulty}`, async ({
     page,
   }) => {
+    if (difficulty === 'normal')
+      await page.setViewportSize({ width: 800, height: 600 });
     await page.route('https://**/*', (route) => route.abort());
     await page.goto('./');
     await expect(page.locator('#race-mode')).toBeEnabled();

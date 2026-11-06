@@ -523,7 +523,7 @@ for (const viewport of [
           ? '02 / 06'
           : mode === 'tracks'
             ? '02 / 09'
-            : '04 / 06',
+            : '03 / 06',
       );
       await page.locator('#picker-apply').click();
     }
