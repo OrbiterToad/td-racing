@@ -44,6 +44,7 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
     'Amazonas',
     'Costa Azul',
     'Juniper Raceway',
+    'Summit Grand Prix',
     'City Streets',
     'Neon Harbor Drift Park',
   ];

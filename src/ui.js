@@ -428,7 +428,8 @@ function paintTrackPreview(canvas, map) {
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.fillStyle =
-    map.id === 'city'
+    map.previewColor ||
+    (map.id === 'city'
       ? '#687d75'
       : map.id === 'coast'
         ? '#287f92'
@@ -442,7 +443,7 @@ function paintTrackPreview(canvas, map) {
                 ? '#5b5b3e'
                 : map.id === 'drift'
                   ? '#1b4654'
-                  : '#354b3d';
+                  : '#354b3d');
   c.fillRect(0, 0, canvas.width, canvas.height);
   c.save();
   c.translate(offsetX, offsetY);
@@ -454,7 +455,9 @@ function paintTrackPreview(canvas, map) {
         ? 719
         : map.id === 'drift'
           ? 774
-          : 318,
+          : map.id === 'summit'
+            ? 941
+            : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =
@@ -462,7 +465,9 @@ function paintTrackPreview(canvas, map) {
         ? '#bf80572b'
         : map.id === 'alpine'
           ? '#d6ebe324'
-          : '#a5c78516';
+          : map.id === 'summit'
+            ? '#f4d4a21b'
+            : '#a5c78516';
     c.beginPath();
     c.ellipse(
       rand() * 480,

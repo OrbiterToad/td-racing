@@ -55,6 +55,40 @@ export const neonHarborDriftParkPoints = [
   [-1500, -1000],
 ];
 
+// Summit GP pairs a full-throttle start straight with two fast direction
+// changes, a slow 180-degree braking corner, and a compact infield chicane.
+export const summitPoints = [
+  [-1800, 950],
+  [-1050, 950],
+  [-200, 950],
+  [650, 950],
+  [1400, 900],
+  [1800, 720],
+  [1990, 430],
+  [2020, 100],
+  [1860, -180],
+  [1570, -330],
+  [1280, -290],
+  [1080, -80],
+  [830, 145],
+  [540, 220],
+  [285, 90],
+  [100, -170],
+  [165, -470],
+  [440, -630],
+  [760, -555],
+  [950, -760],
+  [930, -1110],
+  [650, -1430],
+  [120, -1570],
+  [-470, -1480],
+  [-1050, -1250],
+  [-1510, -920],
+  [-1780, -480],
+  [-1840, 20],
+  [-1740, 520],
+];
+
 export const MAPS = {
   juniper: {
     id: 'juniper',
@@ -424,6 +458,25 @@ export const MAPS = {
     wall: 244,
     patches: [],
     points: neonHarborDriftParkPoints,
+  },
+  summit: {
+    id: 'summit',
+    name: 'Summit Grand Prix',
+    label: 'SUMMIT / HIGH SPEED',
+    subtitle: 'Build speed. Brake late. Hit every apex.',
+    description:
+      'A full-throttle mountain straight, fast sweepers, a heavy-braking hairpin and a technical chicane.',
+    temperature: '18°C',
+    gripLabel: 'DRY / WIDE RUNOFF',
+    bestKey: 'apex-summit-grand-prix-v1',
+    accent: '#f4b36c',
+    previewColor: '#354f51',
+    groundColor: '#78846c',
+    road: 100,
+    runoff: 190,
+    wall: 238,
+    patches: [],
+    points: summitPoints,
   },
 };
 
