@@ -5,6 +5,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   volume: 0.7,
   steeringSensitivity: 1,
   reducedMotion: false,
+  colorblindCues: false,
   showLapCoaching: true,
 });
 
@@ -62,6 +63,7 @@ export function loadSettings(storage, prefersReducedMotion) {
     reducedMotion: reducedMotionSaved
       ? saved.reducedMotion
       : matchReducedMotion(prefersReducedMotion),
+    colorblindCues: saved?.colorblindCues === true,
     reducedMotionSaved,
     showLapCoaching:
       typeof saved?.showLapCoaching === 'boolean'
@@ -77,6 +79,7 @@ export function saveSettings(settings, storage) {
     soundEnabled: Boolean(settings.soundEnabled),
     volume: settings.volume,
     steeringSensitivity: settings.steeringSensitivity,
+    colorblindCues: Boolean(settings.colorblindCues),
     showLapCoaching: settings.showLapCoaching !== false,
   };
   if (settings.reducedMotionSaved)

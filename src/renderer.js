@@ -667,6 +667,19 @@ export function drawPatchHighlights(c, time) {
       c.lineTo(x, y + 3);
       c.stroke();
     }
+    if (state.settings.colorblindCues) {
+      c.globalAlpha = 0.72;
+      c.strokeStyle = '#edf0e8';
+      c.lineWidth = 2;
+      c.setLineDash(patch.type === 'ICE' ? [7, 5] : [2, 5]);
+      c.strokeRect(
+        -patch.length * 0.5,
+        -patch.width * 0.5,
+        patch.length,
+        patch.width,
+      );
+      c.setLineDash([]);
+    }
     c.restore();
   }
 }

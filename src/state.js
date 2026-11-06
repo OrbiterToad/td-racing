@@ -22,6 +22,7 @@ export const state = {
     steeringSensitivity: 1,
     reducedMotion: false,
     reducedMotionSaved: false,
+    colorblindCues: false,
     showLapCoaching: true,
   },
   audioMasterGain: undefined,

@@ -57,6 +57,16 @@ function updateSettingsUI() {
   $('settings-motion-value').textContent = state.settings.reducedMotion
     ? 'Reduced motion on'
     : 'Reduced motion off';
+  $('settings-colorblind').setAttribute(
+    'aria-checked',
+    String(state.settings.colorblindCues),
+  );
+  $('settings-colorblind').textContent = state.settings.colorblindCues
+    ? 'ON'
+    : 'OFF';
+  $('settings-colorblind-value').textContent = state.settings.colorblindCues
+    ? 'Additional cues on'
+    : 'Additional cues off';
   $('settings-motion-description').textContent = state.settings
     .reducedMotionSaved
     ? 'Uses your saved preference instead of the device setting.'
@@ -220,6 +230,7 @@ export function initSettings() {
     steeringSensitivity: preferences.steeringSensitivity,
     reducedMotion: preferences.reducedMotion,
     reducedMotionSaved: preferences.reducedMotionSaved,
+    colorblindCues: preferences.colorblindCues,
     showLapCoaching: preferences.showLapCoaching,
   });
   state.soundEnabled = preferences.soundEnabled;
@@ -324,6 +335,11 @@ export function initSettings() {
       : 'Reduced motion off';
     $('settings-motion-description').textContent =
       'Uses your saved preference instead of the device setting.';
+    persistSettings();
+  });
+  $('settings-colorblind').addEventListener('click', () => {
+    state.settings.colorblindCues = !state.settings.colorblindCues;
+    updateSettingsUI();
     persistSettings();
   });
   $('settings-lap-coaching').addEventListener('click', () => {
