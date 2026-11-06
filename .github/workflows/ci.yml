@@ -49,10 +49,16 @@ jobs:
       - name: Run check
         run: ${{ matrix.command }}
 
-  browser:
-    name: Build and browser tests
+  browser-shard:
+    # Shards run in parallel on separate runners, each with one Playwright
+    # worker, so wall time drops without adding CPU contention per runner.
+    name: Browser tests (shard ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -75,22 +81,37 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Test packaged site at the Pages subpath
-        run: npm run test:browser
+        run: npm run test:browser -- --shard=${{ matrix.shard }}/3
       - name: Upload browser diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: browser-diagnostics
+          name: browser-diagnostics-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
           if-no-files-found: ignore
           retention-days: 7
       - name: Upload tested site
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        if: matrix.shard == 1 && github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+
+  browser:
+    # Required status check: keep this name stable for branch protection.
+    name: Build and browser tests
+    needs: browser-shard
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every browser shard to pass
+        env:
+          SHARD_RESULT: ${{ needs.browser-shard.result }}
+        run: |
+          echo "Browser shards: $SHARD_RESULT"
+          test "$SHARD_RESULT" = success
 
   deploy:
     name: Deploy to GitHub Pages
