@@ -1209,87 +1209,82 @@
     </main>
     <dialog id="selection-dialog" aria-labelledby="picker-title">
       <div class="picker-head">
-        <div class="eyebrow" id="picker-eyebrow">THE CIRCUIT COLLECTION</div>
-        <h2 id="picker-title">Choose your ride.</h2>
-        <p id="picker-description"></p>
-        <nav class="picker-steps" aria-label="Session setup">
-          <button
-            type="button"
-            id="step-car"
-            class="picker-step active"
-            data-step="garage"
-          >
-            01 / CAR
-          </button>
-          <button
-            type="button"
-            id="step-track"
-            class="picker-step"
-            data-step="tracks"
-          >
-            02 / CIRCUIT
-          </button>
-          <button
-            type="button"
-            id="step-mode"
-            class="picker-step"
-            data-step="modes"
-          >
-            03 / MODE
-          </button>
-        </nav>
-        <button
-          class="picker-settings"
-          id="settings-setup"
-          aria-label="Open settings"
-          aria-haspopup="dialog"
-        >
-          ⚙ SETTINGS
-        </button>
-        <button
-          class="picker-close"
-          id="picker-close"
-          aria-label="Close selection"
-        >
-          ESC / BACK
-        </button>
-      </div>
-      <div class="picker-content" id="picker-content"></div>
-      <div class="picker-navigation" aria-label="Browse selections">
-        <button
-          class="browse-button"
-          id="picker-prev"
-          aria-label="Previous selection"
-        >
-          ←
-        </button>
-        <span id="picker-count" aria-live="polite"></span>
-        <button
-          class="browse-button"
-          id="picker-next"
-          aria-label="Next selection"
-        >
-          →
-        </button>
-        <span class="navigation-hint"
-          >← → / SELECT &nbsp; · &nbsp; ENTER / CONFIRM</span
-        >
-      </div>
-      <div class="picker-bottom">
-        <p id="picker-footnote"></p>
-        <div class="picker-actions">
-          <div class="wizard-nav-actions">
-            <button type="button" class="picker-step-control" id="wizard-back">
-              ← BACK
+        <div class="picker-heading">
+          <div class="eyebrow" id="picker-eyebrow">THE CIRCUIT COLLECTION</div>
+          <h2 id="picker-title">Choose your ride.</h2>
+          <p id="picker-description"></p>
+          <nav class="picker-steps" aria-label="Session setup">
+            <button
+              type="button"
+              id="step-car"
+              class="picker-step active"
+              data-step="garage"
+            >
+              01 / CAR
             </button>
             <button
               type="button"
-              class="picker-step-control"
-              id="wizard-forward"
+              id="step-track"
+              class="picker-step"
+              data-step="tracks"
             >
-              NEXT →
+              02 / CIRCUIT
             </button>
-          </div>
+            <button
+              type="button"
+              id="step-mode"
+              class="picker-step"
+              data-step="modes"
+            >
+              03 / MODE
+            </button>
+          </nav>
+        </div>
+        <div class="picker-head-actions">
+          <button
+            class="picker-settings"
+            id="settings-setup"
+            aria-label="Open settings"
+            aria-haspopup="dialog"
+          >
+            ⚙ SETTINGS
+          </button>
+          <button
+            class="picker-close"
+            id="picker-close"
+            aria-label="Close selection"
+          >
+            ESC / BACK
+          </button>
+        </div>
+      </div>
+      <div class="picker-content" id="picker-content"></div>
+      <div class="picker-bottom">
+        <div class="picker-navigation" aria-label="Browse selections">
+          <button
+            class="browse-button"
+            id="picker-prev"
+            aria-label="Previous selection"
+          >
+            ←
+          </button>
+          <span id="picker-count" aria-live="polite"></span>
+          <button
+            class="browse-button"
+            id="picker-next"
+            aria-label="Next selection"
+          >
+            →
+          </button>
+          <span class="navigation-hint"
+            >← → / SELECT &nbsp; · &nbsp; ENTER / CONFIRM</span
+          >
+        </div>
+        <p id="picker-footnote"></p>
+        <div class="picker-actions">
+          <button type="button" class="picker-step-control" id="wizard-back">
+            ← BACK
+          </button>
           <button class="primary" id="picker-apply" autofocus>DRIVE →</button>
         </div>
       </div>

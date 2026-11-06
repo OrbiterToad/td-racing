@@ -98,15 +98,12 @@ function navigateWizardStep(mode) {
   $('picker-apply').focus();
 }
 
-function moveWizardStep(direction) {
+// The footer keeps one back action; the primary button is the only forward one.
+function moveWizardBack() {
   if (!state.selectingSession) return;
   const index = WIZARD_STEPS.indexOf(state.pickerMode);
-  const nextIndex = Math.max(
-    0,
-    Math.min(WIZARD_STEPS.length - 1, index + direction),
-  );
-  navigateWizardStep(WIZARD_STEPS[nextIndex]);
-  (direction < 0 ? $('wizard-back') : $('wizard-forward')).focus();
+  navigateWizardStep(WIZARD_STEPS[Math.max(0, index - 1)]);
+  $(state.pickerMode === 'garage' ? 'picker-apply' : 'wizard-back').focus();
 }
 
 function pendingChoiceKey() {
@@ -122,8 +119,7 @@ export function initPicker() {
   $('open-garage').onclick = () => openPicker('garage');
   $('picker-close').onclick = () => closePicker();
   $('picker-apply').onclick = applyPicker;
-  $('wizard-back').onclick = () => moveWizardStep(-1);
-  $('wizard-forward').onclick = () => moveWizardStep(1);
+  $('wizard-back').onclick = moveWizardBack;
   for (const button of document.querySelectorAll('.picker-step'))
     button.onclick = () => navigateWizardStep(button.dataset.step);
   $('picker-prev').onclick = () => stepSelection(-1);
@@ -243,11 +239,8 @@ export function renderPicker() {
       ? vehicle.name + ' · ' + PAINTS[state.pendingPaint].name
       : 'Choose a car and paint.';
   document.querySelector('.picker-steps').hidden = !state.selectingSession;
-  document.querySelector('.wizard-nav-actions').hidden =
-    !state.selectingSession;
-  $('wizard-back').disabled =
-    !state.selectingSession || state.pickerMode === 'garage';
-  $('wizard-forward').disabled = !state.selectingSession || modes;
+  $('wizard-back').hidden = !state.selectingSession;
+  $('wizard-back').disabled = state.pickerMode === 'garage';
   for (const [id, mode] of [
     ['step-car', 'garage'],
     ['step-track', 'tracks'],
@@ -258,18 +251,15 @@ export function renderPicker() {
     if (state.pickerMode === mode) $(id).setAttribute('aria-current', 'step');
     else $(id).removeAttribute('aria-current');
   }
-  $('picker-close').hidden =
-    state.selectingSession && state.pickerMode === 'garage';
-  $('picker-close').textContent = state.selectingSession
-    ? '← BACK'
-    : 'ESC / BACK';
-  $('picker-close').setAttribute(
+  // During setup the footer Back replaces the header close button.
+  $('picker-close').hidden = state.selectingSession;
+  $('wizard-back').setAttribute(
     'aria-label',
-    state.selectingSession
-      ? modes
-        ? 'Back to circuit selection'
-        : 'Back to car selection'
-      : 'Close selection',
+    modes
+      ? 'Back to circuit selection'
+      : tracks
+        ? 'Back to car selection'
+        : 'Back',
   );
   $('picker-apply').textContent = state.selectingSession
     ? modes
