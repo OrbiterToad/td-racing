@@ -1,3 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-<ellipse cx="64" cy="74" rx="45" ry="36" fill="#173f33" opacity=".25"/><path d="M64 15L111 63L64 111L17 63Z" fill="#567c4e" stroke="#c1a86b" stroke-width="4"/><path d="M64 24L101 63L64 101L27 63Z" fill="#a68b59" stroke="#ead19a" stroke-width="3"/><circle cx="64" cy="62" r="22" fill="#3f6d50" stroke="#dbc389" stroke-width="4"/><path d="M64 42V82M44 62H84M50 48L78 76M78 48L50 76" stroke="#e6d39e" stroke-width="4"/><path d="M31 90L20 103M97 89L108 102" stroke="#426c46" stroke-width="6" stroke-linecap="round"/><circle cx="64" cy="62" r="7" fill="#d67f55"/>
+<path d="M64 13L115 64L64 115L13 64Z" fill="#49774d" stroke="#c6aa69" stroke-width="5"/>
+<path d="M64 26L102 64L64 102L26 64Z" fill="#b69758" stroke="#e5d297" stroke-width="3"/>
+<path d="M64 40L88 64L64 88L40 64Z" fill="#566e49" stroke="#d3bd7d" stroke-width="3"/>
+<circle cx="64" cy="64" r="8" fill="#ddcc91"/>
+<path d="M64 19V34M109 64H94M64 109V94M19 64H34" stroke="#e4d5a2" stroke-width="3"/>
 </svg>
