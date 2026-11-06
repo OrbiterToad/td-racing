@@ -125,8 +125,8 @@ test('game controls use decorative icons and keep their accessible names', async
   );
 
   await page.locator('#picker-apply').click();
-  await expect(page.locator('#picker-close svg.ui-icon')).toHaveCount(1);
-  await expect(page.locator('#picker-close')).toHaveAccessibleName(
+  await expect(page.locator('#wizard-back svg.ui-icon')).toHaveCount(1);
+  await expect(page.locator('#wizard-back')).toHaveAccessibleName(
     'Back to car selection',
   );
   await expect(page.locator('#picker-apply svg.ui-icon')).toHaveCount(1);

@@ -22,7 +22,7 @@ test('track selection shows targets and earned medals for the selected car pairi
     .locator('[data-medal="gold"] time')
     .textContent();
 
-  await page.locator('#picker-close').click();
+  await page.locator('#wizard-back').click();
   await page
     .getByRole('button', { name: 'Choose Formula X', exact: true })
     .click();
