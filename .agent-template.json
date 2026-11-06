@@ -1,6 +1,6 @@
 {
   "repository": "OrbiterToad/agent-coordinator-template",
-  "ref": "main",
+  "ref": "0f2179e2c185253147b8dae9e36209183ac211ce",
   "files": {
     "AGENTS.md": "AGENTS.md",
     "CORDINATOR_AGENT.md": "CORDINATOR_AGENT.md"
