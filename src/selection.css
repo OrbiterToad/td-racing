@@ -327,7 +327,9 @@
   position: absolute;
   top: 8px;
   right: 10px;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--lime);
 }
 .choice-tile img {

@@ -2,6 +2,7 @@ import { clamp } from './math.js';
 import { car, feedback, state } from './state.js';
 import { $, notify } from './ui.js';
 import { saveSettings } from './settings-preferences.js';
+import { renderUiIcon } from './ui-icons.js';
 
 export function playImpact(strength) {
   if (!state.soundEnabled || !state.audioCtx || !state.audioLayers) return;
@@ -90,7 +91,8 @@ export function ensureAudio() {
 export function syncSoundButtons() {
   for (const button of [$('sound'), $('settings-sound')]) {
     if (!button) continue;
-    button.textContent = state.soundEnabled ? '♪ Sound on' : '♪ Sound off';
+    const label = state.soundEnabled ? 'Sound on' : 'Sound off';
+    button.innerHTML = `${renderUiIcon(state.soundEnabled ? 'soundOn' : 'soundOff', { size: 14 })} ${label}`;
     button.classList.toggle('sound-on', state.soundEnabled);
     button.setAttribute('aria-pressed', String(state.soundEnabled));
   }

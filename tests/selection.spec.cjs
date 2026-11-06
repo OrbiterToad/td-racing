@@ -38,7 +38,7 @@ for (const viewport of [
         expect(textFits).toBe(true);
         if (step === 'modes') {
           await expect(choice.locator('svg.mode-icon')).toHaveCount(1);
-          await expect(choice.locator('svg')).toHaveAttribute(
+          await expect(choice.locator('svg.mode-icon')).toHaveAttribute(
             'aria-hidden',
             'true',
           );

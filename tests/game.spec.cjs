@@ -655,7 +655,7 @@ test('wizard step buttons and Back/Next navigate directly while preserving choic
   await page.getByRole('button', { name: 'Paint Ocean', exact: true }).click();
   await page.locator('#step-mode').click();
   await expect(page.locator('#picker-title')).toHaveText('Choose your mode.');
-  await expect(page.locator('#picker-apply')).toHaveText('START DRIVING →');
+  await expect(page.locator('#picker-apply')).toHaveText('START DRIVING');
   await expect(page.locator('#step-mode')).toHaveAttribute(
     'aria-current',
     'step',
