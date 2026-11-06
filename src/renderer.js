@@ -26,6 +26,7 @@ import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
 import { rewind } from './rewind.js';
 import { handleGamepadAction } from './tutorial.js';
+import { drawSkillTrialMarkers } from './skill-trials.js';
 import {
   $,
   applyPicker,
@@ -305,7 +306,8 @@ export function draw() {
   state.ctx.save();
   state.ctx.setTransform(pixelDensity(), 0, 0, pixelDensity(), 0, 0);
   state.ctx.fillStyle =
-    state.activeMap.id === 'canyon'
+    state.activeMap.groundColor ||
+    (state.activeMap.id === 'canyon'
       ? '#d5a36d'
       : state.activeMap.id === 'alpine'
         ? '#dbe6e3'
@@ -315,7 +317,9 @@ export function draw() {
             ? '#288f9c'
             : state.activeMap.id === 'city'
               ? '#929b98'
-              : '#8ba274';
+              : state.activeMap.id === 'drift'
+                ? '#152e3a'
+                : '#8ba274');
   state.ctx.fillRect(0, 0, width, height);
   state.ctx.translate(width / 2, height * 0.54);
   state.ctx.scale(camera.zoom, camera.zoom);
@@ -327,6 +331,7 @@ export function draw() {
   }
   drawSkidmarks(state.ctx);
   drawStartingGridSelection(state.ctx);
+  drawSkillTrialMarkers(state.ctx);
   for (const p of particles) {
     state.ctx.globalAlpha = (p.life / p.max) * 0.35;
     state.ctx.fillStyle =
@@ -566,6 +571,19 @@ export function drawPatchHighlights(c, time) {
       c.moveTo(x, y - 3);
       c.lineTo(x, y + 3);
       c.stroke();
+    }
+    if (state.settings.colorblindCues) {
+      c.globalAlpha = 0.72;
+      c.strokeStyle = '#edf0e8';
+      c.lineWidth = 2;
+      c.setLineDash(patch.type === 'ICE' ? [7, 5] : [2, 5]);
+      c.strokeRect(
+        -patch.length * 0.5,
+        -patch.width * 0.5,
+        patch.length,
+        patch.width,
+      );
+      c.setLineDash([]);
     }
     c.restore();
   }

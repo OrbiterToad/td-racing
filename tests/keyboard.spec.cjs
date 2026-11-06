@@ -12,7 +12,7 @@ async function openSetup(page) {
   await page.route('https://**/*', (route) => route.abort());
   await page.goto('./');
   await expect(
-    page.getByRole('dialog', { name: 'Choose a car.' }),
+    page.getByRole('dialog', { name: 'Choose your ride.' }),
   ).toBeVisible();
   await expect(page.locator('#picker-apply')).toBeFocused();
 }
@@ -96,9 +96,10 @@ test('setup supports keyboard selection, paint, Back, disabled modes and contain
     'Requires Juniper + Clubsport R',
   );
   await page.keyboard.press('ArrowRight');
-  await expect(page.locator('[data-choice="trial"]')).toBeFocused();
+  await expect(page.locator('[data-choice="braking"]')).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.locator('#selection-dialog')).not.toBeVisible();
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
 });
 
 for (const picker of ['garage', 'tracks']) {
@@ -159,6 +160,31 @@ test('pause accepts Space, focuses Resume, ignores driving and restart inputs, a
   await expect(page.locator('#resume')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(pause).toBeFocused();
+});
+
+test('pause menu restart starts a fresh run and closes the pause screen', async ({
+  page,
+}) => {
+  await startTrial(page);
+  await page.locator('#pause').click();
+  await expect(page.locator('#pause-screen')).toHaveClass('open');
+
+  await page.locator('#pause-restart').click();
+
+  await expect(page.locator('#pause-screen')).not.toHaveClass('open');
+  await expect(page.locator('#start-countdown')).toHaveText(/^[123]$|^GO!$/);
+  await expect(page.locator('#pause')).toBeFocused();
+  expect(
+    await page.evaluate(async () => {
+      const { car, race, state } = await import('./src/state.js');
+      return {
+        speed: Math.hypot(car.vx, car.vy),
+        countdown: race.countdown,
+        time: race.time,
+        paused: state.paused,
+      };
+    }),
+  ).toMatchObject({ speed: 0, time: 0, paused: false });
 });
 
 test('starting a session hands focus to driving so Space remains a handbrake', async ({

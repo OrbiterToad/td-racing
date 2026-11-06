@@ -2101,7 +2101,7 @@ for (const key of [
     'New asset must actually appear in a map: ' + key,
   );
 console.log(
-  'PASS: shared footprint reservations, rotated sprite bounds, deterministic placement, park/monkey clearance, layered draw order, and new asset coverage across all seven maps.',
+  'PASS: shared footprint reservations, rotated sprite bounds, deterministic placement, park/monkey clearance, layered draw order, and new asset coverage across every map.',
 );
 
 for (const id of Object.keys(MAPS)) {

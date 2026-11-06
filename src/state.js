@@ -17,8 +17,11 @@ export const state = {
     steeringSensitivity: 1,
     reducedMotion: false,
     reducedMotionSaved: false,
+    colorblindCues: false,
+    showLapCoaching: true,
   },
   audioMasterGain: undefined,
+  engineFilter: undefined,
   rewindUsed: false,
   rewindKey: '',
   rewindHistory: [],
@@ -169,4 +172,21 @@ export const opponentRace = {
   cars: [],
   profile: [],
   spacing: 80,
+};
+
+// Skill attempts have their own lifecycle and persistence, separate from laps.
+export const skillTrial = {
+  id: null,
+  active: false,
+  started: false,
+  elapsed: 0,
+  startProgress: 0,
+  previousProgress: 0,
+  score: 0,
+  gates: 0,
+  gateIndex: 0,
+  clean: true,
+  bestDrift: 0,
+  startSpeed: 0,
+  brakingDistance: 0,
 };

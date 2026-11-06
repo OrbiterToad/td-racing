@@ -3,6 +3,7 @@ import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
 import { coast, paintCoastGround } from './coast.js';
 import { MAPS, PAINTS, VEHICLES } from './config.js';
 import { ghostStatus, liveGhostDelta } from './ghost.js';
+import { lapCoachingDelta } from './lap-coaching.js';
 import { earnedMedalFor, medalTargetsFor } from './medals.js';
 import { paintAmazonRiver } from './jungle.js';
 import { seededRandom } from './math.js';
@@ -11,6 +12,11 @@ import { changeTrack } from './runtime.js';
 import { car, keys, opponentRace, race, state, timing } from './state.js';
 import { paintCityGround } from './terrain.js';
 import { dirtProgress, sampleMap } from './tracks.js';
+import {
+  beginSkillTrial,
+  readSkillProgress,
+  SKILL_TRIALS,
+} from './skill-trials.js';
 
 export const $ = (id) => document.getElementById(id);
 
@@ -42,7 +48,24 @@ const GAME_MODES = {
     description:
       'Line up against Alex, Blair and Casey. Three laps, fixed opponent pace, and full vehicle contact.',
   },
+  ...SKILL_TRIALS,
 };
+
+// Small, decorative mode glyphs keep the text label as the accessible name.
+const MODE_ICON_PATHS = {
+  trial:
+    '<circle cx="16" cy="17" r="10"/><path d="M16 11v6l4 3M12 3h8M16 3v4"/>',
+  race: '<path d="M7 29V4m0 1h18v13H7m6-13v13m6-13v13M7 11h18"/>',
+  braking: '<path d="M8 5h16l5 11-5 11H8L3 16zM12 10v12m8-12v12"/>',
+  slalom: '<path d="M6 5v6m20 2v6M6 23v6M13 4c15 4-9 9 2 14s6 7 4 11"/>',
+  handbrake: '<path d="M7 26V15a9 9 0 0 1 18 0v4m-5-5 5 5 5-5M4 26h6"/>',
+  cornering:
+    '<path d="M5 28V16A11 11 0 0 1 16 5h12M12 28V16a4 4 0 0 1 4-4h12M19 19l7-7-7-7"/>',
+};
+
+function modeIcon(id) {
+  return `<svg class="mode-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${MODE_ICON_PATHS[id]}</svg>`;
+}
 
 function clubRaceAvailable() {
   return state.pendingTrack === 'juniper' && state.pendingCar === 'clubsport';
@@ -185,17 +208,19 @@ export function stepSelection(direction) {
 export function renderPicker() {
   const tracks = state.pickerMode === 'tracks';
   const modes = state.pickerMode === 'modes';
-  if (modes && !clubRaceAvailable()) state.pendingGameMode = 'trial';
+  if (modes && state.pendingGameMode === 'race' && !clubRaceAvailable())
+    state.pendingGameMode = 'trial';
   const choices = Object.values(pickerChoices());
   const selectedId = state[pendingChoiceKey()];
   const selected = pickerChoices()[selectedId];
   const vehicle = VEHICLES[state.pendingCar];
   $('selection-dialog').dataset.mode = state.pickerMode;
+  $('selection-dialog').dataset.track = tracks ? selectedId : '';
   $('picker-title').textContent = modes
     ? 'Choose your mode.'
     : tracks
       ? 'Choose your circuit.'
-      : 'Choose a car.';
+      : 'Choose your ride.';
   $('picker-eyebrow').textContent = 'APEX / THE DRIVING CLUB';
   $('picker-description').textContent = modes
     ? 'Choose a driving mode.'
@@ -278,12 +303,14 @@ export function renderPicker() {
     medalDetails = `<div class="medal-progress" aria-label="Medal progress for ${selected.name} and ${vehicle.name}"><span class="medal-earned">EARNED / <b>${earned ? earned.toUpperCase() : 'NONE'}</b></span><div class="medal-targets" aria-label="Medal target times">${['bronze', 'silver', 'gold'].map((medal) => `<span class="medal-target ${medal}" data-medal="${medal}"><b>${medal.toUpperCase()}</b><time>${formatTime(targets[medal])}</time></span>`).join('')}</div></div>`;
   }
   const art = modes
-    ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : 'TIME TRIAL'}</span>`
+    ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : SKILL_TRIALS[selectedId] ? 'SHORT DRIVING CHALLENGE' : 'TIME TRIAL'}</span>`
     : tracks
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
       : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;
   const details = modes
-    ? `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
+    ? SKILL_TRIALS[selectedId]
+      ? `<div class="mode-summary"><span>${vehicle.name} / ${MAPS[state.pendingTrack].name}</span><span>LOCAL SKILL PROGRESS / ${readSkillProgress()[selectedId]?.completions || 0} COMPLETED · BEST ${readSkillProgress()[selectedId]?.best ?? '—'}%</span></div>`
+      : `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
     : tracks
       ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div>${medalDetails}<span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
       : `<div class="car-stats">${['PACE', 'HANDLING', 'OFF ROAD'].map((label, i) => `<span>${label}<i><b style="width:${selected.bars[i] * 100}%"></b></i></span>`).join('')}</div>`;
@@ -297,7 +324,7 @@ export function renderPicker() {
       </div>
     </div>
     <div class="choice-rail" aria-label="${modes ? 'Game modes' : tracks ? 'Circuits' : 'Cars'}" style="--choice-count:${choices.length}">
-      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? '' : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R'}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
+      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? modeIcon(item.id) : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? (clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R') : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
 
     </div>
     ${
@@ -334,6 +361,7 @@ export function renderPicker() {
 
 export function applyPicker() {
   const startingSession = state.selectingSession;
+  const selectedSkill = startingSession ? state.pendingGameMode : null;
   if (state.selectingSession && state.pickerMode !== 'modes') {
     state.pickerMode = state.pickerMode === 'garage' ? 'tracks' : 'modes';
     renderPicker();
@@ -363,9 +391,12 @@ export function applyPicker() {
         state.pendingGameMode === 'race' && clubRaceAvailable();
     changeTrack(state.pendingTrack, false);
   }
+  if (startingSession && SKILL_TRIALS[state.pendingGameMode])
+    opponentRace.enabled = false;
   state.selectingSession = false;
   document.body.classList.remove('starting');
   closePicker(true);
+  if (SKILL_TRIALS[selectedSkill]) beginSkillTrial(selectedSkill);
   if (startingSession) $('game').focus();
   syncCarHUD();
   notify(
@@ -411,7 +442,8 @@ function paintTrackPreview(canvas, map) {
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.fillStyle =
-    map.id === 'city'
+    map.previewColor ||
+    (map.id === 'city'
       ? '#687d75'
       : map.id === 'coast'
         ? '#287f92'
@@ -423,13 +455,23 @@ function paintTrackPreview(canvas, map) {
               ? '#52686e'
               : map.id === 'rallycross'
                 ? '#5b5b3e'
-                : '#354b3d';
+                : map.id === 'drift'
+                  ? '#1b4654'
+                  : '#354b3d');
   c.fillRect(0, 0, canvas.width, canvas.height);
   c.save();
   c.translate(offsetX, offsetY);
   c.scale(scaleToFit, scaleToFit);
   const rand = seededRandom(
-    map.id === 'canyon' ? 513 : map.id === 'alpine' ? 719 : 318,
+    map.id === 'canyon'
+      ? 513
+      : map.id === 'alpine'
+        ? 719
+        : map.id === 'drift'
+          ? 774
+          : map.id === 'summit'
+            ? 941
+            : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =
@@ -437,7 +479,9 @@ function paintTrackPreview(canvas, map) {
         ? '#bf80572b'
         : map.id === 'alpine'
           ? '#d6ebe324'
-          : '#a5c78516';
+          : map.id === 'summit'
+            ? '#f4d4a21b'
+            : '#a5c78516';
     c.beginPath();
     c.ellipse(
       rand() * 480,
@@ -543,7 +587,7 @@ export function setPaused(value, moveFocus = true) {
   }
   if (state.engineGain)
     state.engineGain.gain.setTargetAtTime(
-      !state.paused && state.soundEnabled ? 0.018 + car.throttle * 0.014 : 0,
+      !state.paused && state.soundEnabled ? 0.014 + car.throttle * 0.018 : 0,
       state.audioCtx.currentTime,
       0.05,
     );
@@ -577,6 +621,12 @@ export function formatDelta(t) {
   return Number.isFinite(t)
     ? (t < 0 ? '−' : '+') + Math.abs(t).toFixed(3) + 's'
     : '—';
+}
+
+function coachingLabel(delta) {
+  if (!Number.isFinite(delta)) return '—';
+  const ahead = delta <= 0;
+  return `${ahead ? '▼ AHEAD' : '▲ BEHIND'} ${formatDelta(delta)}`;
 }
 
 export function updateHUD() {
@@ -638,6 +688,8 @@ export function updateHUD() {
                 ? '#b5d686'
                 : state.activeMap.accent;
   $('clock').style.color = race.invalid ? '#e7a083' : '';
+  $('lap-coaching').hidden = !state.settings.showLapCoaching;
+  $('lap-coaching-sectors').hidden = !state.settings.showLapCoaching;
   [...$('sector').children].forEach((el, i) =>
     el.classList.toggle('passed', i < race.next - 1),
   );
@@ -667,11 +719,14 @@ export function updateHUD() {
                         (race.started ? 'ON TRACK' : 'READY');
   $('grip-status').textContent = status;
   $('grip-status').style.color = $('surface').style.color;
-  const delta =
-    race.invalid || timing.flashTime <= 0 ? null : timing.flashDelta;
+  const delta = race.invalid
+    ? null
+    : race.started && race.crossedStart
+      ? lapCoachingDelta(timing.splits, timing.best, race.time, race.previous)
+      : null;
   $('lap-delta').textContent = race.invalid
     ? 'INVALID LAP'
-    : formatDelta(delta);
+    : coachingLabel(delta);
   $('lap-delta').style.color =
     delta === null ? '#9eb0a4' : delta <= 0 ? '#d5f578' : '#f0a28a';
   for (let i = 0; i < 4; i++) {
@@ -692,7 +747,7 @@ export function updateHUD() {
       : '#e5ede2';
     $('sector-diff-' + i).textContent =
       difference !== null
-        ? formatDelta(difference)
+        ? coachingLabel(difference)
         : running
           ? 'RUNNING'
           : timing.best[i] !== undefined

@@ -11,7 +11,7 @@ test('track selection shows targets and earned medals for the selected car pairi
     );
   });
   await page.goto('./');
-  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   await page.locator('#picker-apply').click();
   await expect(page.locator('#picker-title')).toHaveText(
     'Choose your circuit.',

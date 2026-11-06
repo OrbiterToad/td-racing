@@ -64,7 +64,7 @@ async function openSetup(page, prefersReducedMotion = 'no-preference') {
   await page.emulateMedia({ reducedMotion: prefersReducedMotion });
   await page.route('https://**/*', (route) => route.abort());
   await page.goto('./');
-  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
 }
 
 async function startSession(page) {
@@ -176,7 +176,7 @@ test('fresh preferences keep sound on, activate on a gesture, and save mute and 
   await page.keyboard.press('Escape');
   await expect(page.locator('#settings-dialog')).not.toBeVisible();
   await expect(page.locator('#settings-setup')).toBeFocused();
-  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   await expect(page.locator('[data-choice="drift"]')).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -198,13 +198,37 @@ test('fresh preferences keep sound on, activate on a gesture, and save mute and 
     paused: true,
   });
   await page.reload();
-  await expect(page.locator('#picker-title')).toHaveText('Choose a car.');
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'false');
   await page.locator('#settings-setup').click();
   await expect(page.locator('#settings-volume-value')).toHaveText('0%');
   await expect(page.locator('#settings-sound')).toHaveAttribute(
     'aria-pressed',
     'false',
+  );
+});
+
+test('colorblind-friendly track cues persist and are opt-in', async ({
+  page,
+}) => {
+  await installAudio(page);
+  await openSetup(page);
+  await page.locator('#settings-setup').click();
+  const toggle = page.locator('#settings-colorblind');
+  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('apex-settings-v1')),
+    ),
+  ).toMatchObject({ colorblindCues: true });
+  await page.reload();
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await page.locator('#settings-setup').click();
+  await expect(page.locator('#settings-colorblind')).toHaveAttribute(
+    'aria-checked',
+    'true',
   );
 });
 
@@ -299,6 +323,47 @@ test('settings suppress nonessential effects and remember an explicit motion cho
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute(
     'data-reduced-motion',
+    'false',
+  );
+});
+
+test('lap coaching visibility persists without changing lap timing or validity', async ({
+  page,
+}) => {
+  await openSetup(page);
+  await page.evaluate(async () => {
+    const { race } = await import('./src/state.js');
+    race.time = 42.5;
+    race.invalid = true;
+  });
+  await page.locator('#settings-setup').click();
+  await expect(page.locator('#settings-lap-coaching')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await page.locator('#settings-lap-coaching').click();
+  await expect(page.locator('#settings-lap-coaching')).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+  await page.locator('#settings-done').click();
+  expect(
+    await page.evaluate(async () => {
+      const { race, state } = await import('./src/state.js');
+      return {
+        time: race.time,
+        invalid: race.invalid,
+        preference: state.settings.showLapCoaching,
+        saved: JSON.parse(localStorage.getItem('apex-settings-v1'))
+          .showLapCoaching,
+      };
+    }),
+  ).toEqual({ time: 42.5, invalid: true, preference: false, saved: false });
+  await page.reload();
+  await expect(page.locator('#settings-setup')).toBeVisible();
+  await page.locator('#settings-setup').click();
+  await expect(page.locator('#settings-lap-coaching')).toHaveAttribute(
+    'aria-checked',
     'false',
   );
 });

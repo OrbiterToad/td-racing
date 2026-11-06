@@ -97,7 +97,9 @@ export function changeTrack(id, announce = true) {
             ? '#288f9c'
             : state.activeMap.id === 'city'
               ? '#929b98'
-              : '#8ba274';
+              : state.activeMap.id === 'drift'
+                ? '#152e3a'
+                : '#8ba274';
   $('hint').style.opacity = '1';
   $('hint').textContent =
     state.activeMap.id === 'city'
@@ -112,7 +114,9 @@ export function changeTrack(id, announce = true) {
               ? 'W to drive · Three ice patches. Ease off and keep steering smooth.'
               : state.activeMap.id === 'rallycross'
                 ? 'W to drive · Dirt needs a slide. Asphalt needs a clean exit.'
-                : 'W to drive · Avoid the dark oil slicks.';
+                : state.activeMap.id === 'drift'
+                  ? 'W to drive · Use the wide runoff to link controlled slides.'
+                  : 'W to drive · Avoid the dark oil slicks.';
   try {
     localStorage.setItem('apex-selected-track', id);
   } catch (_) {}
@@ -124,7 +128,11 @@ export function changeTrack(id, announce = true) {
     notify(
       state.activeMap.name.toUpperCase() +
         ' · ' +
-        (id === 'canyon' ? 'EXPERT CIRCUIT' : 'FLOW CIRCUIT'),
+        (id === 'canyon'
+          ? 'EXPERT CIRCUIT'
+          : id === 'drift'
+            ? 'DRIFT PARK'
+            : 'FLOW CIRCUIT'),
     );
 }
 
@@ -161,6 +169,7 @@ export function initializeGame() {
   state.pendingTrack = initial;
   $('pause').onclick = () => setPaused(!state.paused);
   $('resume').onclick = () => setPaused(false);
+  $('pause-restart').onclick = restartRun;
   $('sound').onclick = toggleSound;
   $('restart').onclick = restartRun;
   $('race-mode').onclick = toggleOpponentRace;

@@ -40,6 +40,69 @@ export const juniperPoints = [
   [-1050, 800],
 ];
 
+// Rounded alternating dockside bends give the drift coupe room to link slides.
+// The two banks stay separated by a broad infield and retain open runoff.
+export const neonHarborDriftParkPoints = [
+  [-3000, 0],
+  [-2900, 950],
+  [-2350, 1550],
+  [-1700, 850],
+  [-1050, 1550],
+  [-400, 850],
+  [250, 1550],
+  [900, 850],
+  [1550, 1550],
+  [2200, 1100],
+  [2850, 700],
+  [3050, 0],
+  [2800, -850],
+  [2200, -1450],
+  [1550, -750],
+  [900, -1450],
+  [250, -750],
+  [-400, -1450],
+  [-1050, -750],
+  [-1700, -1450],
+  [-2350, -1100],
+  [-2850, -700],
+];
+
+// Summit GP pairs a full-throttle start straight with two fast direction
+// changes, a slow 180-degree braking corner, and a linked infield chicane.
+export const summitPoints = [
+  [-1800, 950],
+  [-1050, 950],
+  [-200, 950],
+  [650, 950],
+  [1400, 900],
+  [1800, 720],
+  [1990, 430],
+  [2020, 100],
+  [1860, -180],
+  [1570, -330],
+  [1280, -290],
+  [1080, -80],
+  [830, 145],
+  [540, 220],
+  [285, 90],
+  [100, -170],
+  [165, -470],
+  [440, -630],
+  [560, -760],
+  [760, -500],
+  [760, -555],
+  [950, -760],
+  [930, -1110],
+  [650, -1430],
+  [120, -1570],
+  [-470, -1480],
+  [-1050, -1250],
+  [-1510, -920],
+  [-1780, -480],
+  [-1840, 20],
+  [-1740, 520],
+];
+
 export const MAPS = {
   juniper: {
     id: 'juniper',
@@ -386,6 +449,40 @@ export const MAPS = {
       [-1300, -250],
       [-1050, 300],
     ].map((p) => p.map((v) => v * 0.9)),
+  },
+  drift: {
+    id: 'drift',
+    name: 'Neon Harbor Drift Park',
+    label: 'HARBOR / LINKED DRIFT',
+    description:
+      'Tight rounded left-right transitions and open runoff built for connected slides.',
+    temperature: '18°C',
+    gripLabel: 'DRY / OPEN RUNOFF',
+    bestKey: 'apex-neon-harbor-drift-v2',
+    accent: '#e78cff',
+    road: 112,
+    runoff: 188,
+    wall: 244,
+    patches: [],
+    points: neonHarborDriftParkPoints,
+  },
+  summit: {
+    id: 'summit',
+    name: 'Summit Grand Prix',
+    label: 'SUMMIT / HIGH SPEED',
+    description:
+      'A full-throttle mountain straight, fast sweepers, a heavy-braking hairpin and a technical chicane.',
+    temperature: '18°C',
+    gripLabel: 'DRY / WIDE RUNOFF',
+    bestKey: 'apex-summit-grand-prix-v1',
+    accent: '#f4b36c',
+    previewColor: '#354f51',
+    groundColor: '#78846c',
+    road: 100,
+    runoff: 190,
+    wall: 238,
+    patches: [],
+    points: summitPoints,
   },
 };
 
