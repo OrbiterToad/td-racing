@@ -5,6 +5,13 @@ communication between the coordinator and agents. It is the public
 repository-facing counterpart to the coordinator's private operating notes
 in `CORDINATOR_AGENT.md`; the policies described here must match that file.
 
+`AGENTS.md` and `CORDINATOR_AGENT.md` are synced verbatim from the shared
+[agent-coordinator template](https://github.com/OrbiterToad/agent-coordinator-template)
+and are not edited in this repository. Project-specific agent rules — the
+default branch, required checks, commands, and the push policy — live in
+[`AGENTS.project.md`](../AGENTS.project.md), which also documents the sync
+workflow and its drift check.
+
 ## Labeling issues by size
 
 Every actionable task issue (a tracked feature request, bug report, or
@@ -55,6 +62,21 @@ similar — and states that reason in the next status update.
 This preference is strictly about ordering work within the existing
 eight-agent limit. It never justifies starting a ninth agent or otherwise
 exceeding the cap to get a Mini issue moving sooner.
+
+## Status reports
+
+Agent status reports pair every percentage with a color marker and a ten-cell
+text progress bar: one `█` per completed 10%, rounded down, padded to ten
+cells with `░` — for example `🟢 ████████░░ 80%` or `✅ ██████████ 100%`. Markers are
+🔴 0–24%, 🟠 25–49%, 🟡 50–74%, 🟢 75–99%, and ✅ only after a merge.
+Percentages follow concrete milestones (implementation, local checks, PR
+opened, required checks and review, merge); an open PR or passing local tests
+alone is not 100%.
+
+Repository work, including resolving a queued PR's conflicts, is always
+delegated to an agent in its own branch or worktree. The coordinator owning
+conflict resolution means it gets the conflicts resolved and verifies the
+result, not that it edits agent branches itself.
 
 ## Status updates stay consistent with labels
 

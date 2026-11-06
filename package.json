@@ -15,6 +15,8 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "check": "npm run format:check && npm run lint && npm test && npm run build && npm run test:browser",
+    "sync:agents": "node tools/sync-agent-instructions.mjs",
+    "sync:agents:check": "node tools/sync-agent-instructions.mjs --check",
     "benchmark": "node tools/benchmark.cjs"
   },
   "devDependencies": {
