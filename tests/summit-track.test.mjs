@@ -7,6 +7,7 @@ import {
   configureTrack,
   nearestDriving,
   pointOnTrack,
+  sampleCurve,
   timingGateHalfWidth,
 } from '../src/tracks.js';
 
@@ -30,6 +31,24 @@ test('Summit Grand Prix builds a wide, complete route for every car', () => {
   assert.ok(CFG.road < CFG.runoff && CFG.runoff < CFG.wall);
   assert.equal(startingGrid.length, 6);
   assert.ok(timingGateHalfWidth(0) > CFG.runoff);
+
+  const chicane = sampleCurve(map.points).slice(16 * 40, 21 * 40);
+  const turnDirections = [];
+  for (let i = 0; i < chicane.length; i++) {
+    const previous = chicane[(i + chicane.length - 1) % chicane.length];
+    const current = chicane[i];
+    const next = chicane[(i + 1) % chicane.length];
+    const cross =
+      (current.x - previous.x) * (next.y - current.y) -
+      (current.y - previous.y) * (next.x - current.x);
+    if (Math.abs(cross) < 1e-5) continue;
+    const direction = Math.sign(cross);
+    if (turnDirections.at(-1) !== direction) turnDirections.push(direction);
+  }
+  assert.ok(
+    turnDirections.length >= 4,
+    'the infield chicane links several direction changes',
+  );
 
   for (const carId of Object.keys(VEHICLES)) {
     assert.equal(configureCar(carId), true);
