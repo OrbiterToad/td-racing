@@ -336,59 +336,118 @@ test('local split screen selects two cars, drives separate viewports, pauses and
   await page.goto('./');
   await page.locator('#picker-apply').click();
   await page.locator('#picker-apply').click();
+  await expect(page.locator('#step-player-two')).toBeHidden();
   await page.locator('[data-choice="local"]').click();
-  await page.locator('#player-two-car').selectOption('formula');
+  await expect(page.locator('#step-player-two')).toBeVisible();
+  await expect(page.locator('#picker-apply')).toContainText(
+    'NEXT / PLAYER 2 CAR',
+  );
+  await expect(page.locator('#selection-dialog')).toContainText(
+    'arrow keys or a second gamepad',
+  );
+  await page.locator('#picker-apply').click();
+
+  // Player 2 gets the full car roster and every paint, like Player 1.
+  await expect(page.locator('#selection-dialog')).toHaveAttribute(
+    'data-mode',
+    'playerTwo',
+  );
+  await expect(page.locator('#picker-title')).toHaveText('Player 2 ride.');
+  const { VEHICLES, PAINTS } = await page.evaluate(async () => {
+    const config = await import('./src/config.js');
+    return {
+      VEHICLES: Object.keys(config.VEHICLES),
+      PAINTS: Object.keys(config.PAINTS),
+    };
+  });
+  await expect(page.locator('[data-choice]')).toHaveCount(VEHICLES.length);
+  await expect(page.locator('[data-paint]')).toHaveCount(PAINTS.length);
+  await page.locator('[data-choice="formula"]').click();
+  await page.locator('[data-paint="yellow"]').click();
+  await expect(page.locator('#picker-footnote')).toContainText(
+    'PLAYER 2 / FORMULA',
+  );
+  await expect(page.locator('.feature-art img')).toHaveAttribute(
+    'src',
+    /formula.*yellow|yellow.*formula/,
+  );
+  // Going back keeps the choice and shows it on the mode step.
+  await page.locator('#wizard-back').click();
+  await expect(page.locator('.player-two-summary')).toContainText('Sunburst');
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('[data-choice="formula"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await page.locator('#picker-apply').click();
   await expect(page.locator('#selection-dialog')).not.toBeVisible();
   const guide = page.locator('#tutorial-dialog');
   if (await guide.isVisible()) await page.locator('#tutorial-skip').click();
+  await expect(page.locator('#split-hint')).toBeVisible();
+  await expect(page.locator('#drive-hint')).toBeHidden();
 
   const initial = await page.evaluate(async () => {
     const { state, car } = await import('./src/state.js');
-    const { localViewport } = await import('./src/local-race.js');
     return {
       cars: state.localRace.carSpecs.map((spec) => spec.id),
+      paints: state.localRace.paints,
+      saved: JSON.parse(localStorage.getItem('apex-player-two')),
       p1: { x: car.x, y: car.y },
       p2: { x: state.localRace.players[1].x, y: state.localRace.players[1].y },
       countdown: state.localRace.countdown,
-      viewport: localViewport(
-        state.localRace.players[1],
-        state.worldBounds,
-        600,
-        800,
-      ),
-      world: state.worldBounds,
     };
   });
   expect(initial.cars).toEqual(['clubsport', 'formula']);
+  expect(initial.paints[1]).toBe('yellow');
+  expect(initial.saved).toEqual({ car: 'formula', paint: 'yellow' });
   expect(initial.countdown).toBeGreaterThan(0);
-  expect(initial.viewport.sx).toBeGreaterThanOrEqual(0);
 
-  const moved = await page.evaluate(async () => {
-    const { state, car, race, keys } = await import('./src/state.js');
-    const { simulate } = await import('./src/physics.js');
-    race.countdown = 0;
-    state.localRace.countdown = 0;
-    keys.add('KeyW');
-    keys.add('KeyI');
-    for (let i = 0; i < 120; i++) simulate(1 / 60);
-    keys.clear();
-    const { localViewport } = await import('./src/local-race.js');
-    return {
-      p1: { x: car.x, y: car.y },
-      p2: { x: state.localRace.players[1].x, y: state.localRace.players[1].y },
-      viewports: [car, state.localRace.players[1]].map((player) =>
-        localViewport(player, state.worldBounds, 600, 800),
-      ),
-    };
+  // WASD drives only the left car, the arrow keys only the right car.
+  const drive = (codes) =>
+    page.evaluate(async (codes) => {
+      const { state, car, race, keys } = await import('./src/state.js');
+      const { simulate } = await import('./src/physics.js');
+      race.countdown = 0;
+      state.localRace.countdown = 0;
+      for (const p of [car, state.localRace.players[1]])
+        Object.assign(p, { vx: 0, vy: 0, yaw: 0 });
+      const before = [
+        { x: car.x, y: car.y },
+        { x: state.localRace.players[1].x, y: state.localRace.players[1].y },
+      ];
+      for (const code of codes) keys.add(code);
+      for (let i = 0; i < 60; i++) simulate(1 / 60);
+      keys.clear();
+      const after = [car, state.localRace.players[1]];
+      return after.map((p, i) =>
+        Math.hypot(p.x - before[i].x, p.y - before[i].y),
+      );
+    }, codes);
+  const arrows = await drive(['ArrowUp']);
+  expect(arrows[0]).toBeLessThan(1);
+  expect(arrows[1]).toBeGreaterThan(10);
+  const wasd = await drive(['KeyW']);
+  expect(wasd[0]).toBeGreaterThan(10);
+  expect(wasd[1]).toBeLessThan(1);
+  const ijkl = await drive(['KeyI']);
+  expect(ijkl[1]).toBeLessThan(1);
+
+  // Each half follows its own car with its own camera.
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        let frames = 0;
+        const tick = () =>
+          ++frames === 6 ? resolve() : requestAnimationFrame(tick);
+        requestAnimationFrame(tick);
+      }),
+  );
+  const cameras = await page.evaluate(async () => {
+    const { state } = await import('./src/state.js');
+    return state.localRace.cameras.map(({ x, y }) => ({ x, y }));
   });
-  expect(
-    Math.hypot(moved.p1.x - initial.p1.x, moved.p1.y - initial.p1.y),
-  ).toBeGreaterThan(10);
-  expect(
-    Math.hypot(moved.p2.x - initial.p2.x, moved.p2.y - initial.p2.y),
-  ).toBeGreaterThan(10);
-  expect(moved.viewports[0].sx).not.toBe(moved.viewports[1].sx);
+  expect(cameras).toHaveLength(2);
+  expect(cameras[0]).not.toEqual(cameras[1]);
 
   await page.locator('#pause').click();
   const frozen = await page.evaluate(async () => {

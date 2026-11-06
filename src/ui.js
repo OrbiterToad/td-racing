@@ -99,7 +99,7 @@ const GAME_MODES = {
     name: 'Local split screen',
     tag: 'TWO DRIVERS / THREE LAPS',
     description:
-      'Two players on one circuit and one screen, three laps. Player 1 uses WASD; Player 2 uses IJKL or a second gamepad.',
+      'Two players on one circuit, side by side on one screen, three laps. Player 1 (left) uses WASD; Player 2 (right) uses the arrow keys or a second gamepad.',
   },
   ...SKILL_TRIALS,
 };
@@ -134,10 +134,17 @@ function pickerChoices() {
       : VEHICLES;
 }
 
-const WIZARD_STEPS = ['garage', 'tracks', 'modes'];
+// The Player 2 step only exists when split screen is the chosen mode.
+const WIZARD_STEPS = ['garage', 'tracks', 'modes', 'playerTwo'];
+
+function wizardSteps() {
+  return state.pendingGameMode === 'local'
+    ? WIZARD_STEPS
+    : WIZARD_STEPS.slice(0, 3);
+}
 
 function navigateWizardStep(mode) {
-  if (!state.selectingSession || !WIZARD_STEPS.includes(mode)) return;
+  if (!state.selectingSession || !wizardSteps().includes(mode)) return;
   if (mode === 'modes' && !clubRaceAvailable()) state.pendingGameMode = 'trial';
   state.pickerMode = mode;
   renderPicker();
@@ -147,8 +154,9 @@ function navigateWizardStep(mode) {
 // The footer keeps one back action; the primary button is the only forward one.
 function moveWizardBack() {
   if (!state.selectingSession) return;
-  const index = WIZARD_STEPS.indexOf(state.pickerMode);
-  navigateWizardStep(WIZARD_STEPS[Math.max(0, index - 1)]);
+  const steps = wizardSteps();
+  const index = steps.indexOf(state.pickerMode);
+  navigateWizardStep(steps[Math.max(0, index - 1)]);
   $(state.pickerMode === 'garage' ? 'picker-apply' : 'wizard-back').focus();
 }
 
@@ -157,7 +165,9 @@ function pendingChoiceKey() {
     ? 'pendingGameMode'
     : state.pickerMode === 'tracks'
       ? 'pendingTrack'
-      : 'pendingCar';
+      : state.pickerMode === 'playerTwo'
+        ? 'pendingPlayerTwoCar'
+        : 'pendingCar';
 }
 
 export function initPicker() {
@@ -189,6 +199,14 @@ export function initPicker() {
   syncCarHUD();
 }
 
+// Split screen splits the keyboard: WASD for Player 1, arrows for Player 2.
+export function syncControlHints() {
+  const split = !!state.localRace;
+  $('drive-hint').hidden = split;
+  $('split-hint').hidden = !split;
+  $('split-controls').hidden = !split;
+}
+
 export function syncCarHUD() {
   $('car-name').textContent = state.activeCar.name.toUpperCase();
   $('car-drive').textContent = state.activeCar.id === 'rally' ? 'AWD' : 'RWD';
@@ -214,7 +232,7 @@ export function openPicker(mode) {
   state.pendingCar = state.activeCar.id;
   state.pendingPaint = state.paint;
   state.pendingPlayerTwoCar = state.playerTwoCar;
-  state.pendingPaint = state.paint;
+  state.pendingPlayerTwoPaint = state.playerTwoPaint;
   state.pickerWasPaused = state.paused;
   setPaused(true, false);
   document.body.classList.add('choosing');
@@ -226,7 +244,12 @@ export function openPicker(mode) {
 export function closePicker(resume = false) {
   if (state.selectingSession) {
     if (state.pickerMode !== 'garage') {
-      state.pickerMode = state.pickerMode === 'modes' ? 'tracks' : 'garage';
+      state.pickerMode =
+        state.pickerMode === 'playerTwo'
+          ? 'modes'
+          : state.pickerMode === 'modes'
+            ? 'tracks'
+            : 'garage';
       renderPicker();
       $('picker-apply').focus();
     }
@@ -263,6 +286,10 @@ export function stepSelection(direction) {
 export function renderPicker() {
   const tracks = state.pickerMode === 'tracks';
   const modes = state.pickerMode === 'modes';
+  const playerTwo = state.pickerMode === 'playerTwo';
+  const paintKey = playerTwo ? 'pendingPlayerTwoPaint' : 'pendingPaint';
+  const pendingPaint = state[paintKey];
+  const localNext = modes && state.pendingGameMode === 'local';
   if (modes && state.pendingGameMode === 'race' && !clubRaceAvailable())
     state.pendingGameMode = 'trial';
   const choices = Object.values(pickerChoices());
@@ -275,20 +302,26 @@ export function renderPicker() {
     ? 'Choose your mode.'
     : tracks
       ? 'Choose your circuit.'
-      : 'Choose your ride.';
+      : playerTwo
+        ? 'Player 2 ride.'
+        : 'Choose your ride.';
   $('picker-eyebrow').textContent = 'APEX / THE DRIVING CLUB';
   $('picker-description').textContent = modes
     ? 'Choose a driving mode.'
     : tracks
       ? vehicle.name + ' · ' + PAINTS[state.pendingPaint].name
-      : 'Choose a car and paint.';
+      : playerTwo
+        ? 'Player 2 chooses a car and paint and drives the right view.'
+        : 'Choose a car and paint.';
   document.querySelector('.picker-steps').hidden = !state.selectingSession;
   $('wizard-back').hidden = !state.selectingSession;
   $('wizard-back').disabled = state.pickerMode === 'garage';
+  $('step-player-two').hidden = state.pendingGameMode !== 'local';
   for (const [id, mode] of [
     ['step-car', 'garage'],
     ['step-track', 'tracks'],
     ['step-mode', 'modes'],
+    ['step-player-two', 'playerTwo'],
   ]) {
     $(id).classList.toggle('active', state.pickerMode === mode);
     $(id).disabled = !state.selectingSession;
@@ -299,18 +332,22 @@ export function renderPicker() {
   $('picker-close').hidden = state.selectingSession;
   $('wizard-back').setAttribute(
     'aria-label',
-    modes
-      ? 'Back to circuit selection'
-      : tracks
-        ? 'Back to car selection'
-        : 'Back',
+    playerTwo
+      ? 'Back to mode selection'
+      : modes
+        ? 'Back to circuit selection'
+        : tracks
+          ? 'Back to car selection'
+          : 'Back',
   );
   const applyLabel = state.selectingSession
-    ? modes
-      ? 'START DRIVING'
-      : tracks
-        ? 'NEXT / SELECT GAME MODE'
-        : 'NEXT / SELECT CIRCUIT'
+    ? localNext
+      ? 'NEXT / PLAYER 2 CAR'
+      : modes || playerTwo
+        ? 'START DRIVING'
+        : tracks
+          ? 'NEXT / SELECT GAME MODE'
+          : 'NEXT / SELECT CIRCUIT'
     : tracks
       ? 'DRIVE THIS CIRCUIT'
       : 'APPLY & DRIVE';
@@ -327,10 +364,10 @@ export function renderPicker() {
         vehicle.name.toUpperCase() +
         ' / ' +
         selected.name.toUpperCase()
-      : 'SELECTED CAR / ' +
+      : (playerTwo ? 'PLAYER 2 / ' : 'SELECTED CAR / ') +
         selected.name.toUpperCase() +
         ' / ' +
-        PAINTS[state.pendingPaint].name.toUpperCase();
+        PAINTS[pendingPaint].name.toUpperCase();
   $('picker-count').textContent =
     String(choices.findIndex((item) => item.id === selectedId) + 1).padStart(
       2,
@@ -357,20 +394,13 @@ export function renderPicker() {
     ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : selectedId === 'local' ? '2 DRIVERS / SPLIT SCREEN' : SKILL_TRIALS[selectedId] ? 'SHORT DRIVING CHALLENGE' : 'TIME TRIAL'}</span>`
     : tracks
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
-      : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;
+      : `<img src="${carImagePath(selectedId, pendingPaint)}" alt="${selected.name} in ${PAINTS[pendingPaint].name} paint">`;
   const details = modes
     ? SKILL_TRIALS[selectedId]
       ? `<div class="mode-summary"><span>${vehicle.name} / ${MAPS[state.pendingTrack].name}</span><span>LOCAL SKILL PROGRESS / ${readSkillProgress()[selectedId]?.completions || 0} COMPLETED · BEST ${readSkillProgress()[selectedId]?.best ?? '—'}%</span></div>`
       : `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : selectedId === 'local' ? 'THREE LAPS · TWO LOCAL DRIVERS' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span>${
           selectedId === 'local'
-            ? `<label class="player-two-car" for="player-two-car">PLAYER 2 CAR <select id="player-two-car">${Object.values(
-                VEHICLES,
-              )
-                .map(
-                  (car) =>
-                    `<option value="${car.id}" ${car.id === state.pendingPlayerTwoCar ? 'selected' : ''}>${car.name}</option>`,
-                )
-                .join('')}</select></label>`
+            ? `<span class="player-two-summary">PLAYER 2 / <b>${VEHICLES[state.pendingPlayerTwoCar].name} · ${PAINTS[state.pendingPlayerTwoPaint].name}</b></span>`
             : ''
         }</div>`
     : tracks
@@ -386,18 +416,18 @@ export function renderPicker() {
       </div>
     </div>
     <div class="choice-rail" aria-label="${modes ? 'Game modes' : tracks ? 'Circuits' : 'Cars'}" style="--choice-count:${choices.length}">
-      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? modeIcon(item.id) : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? (clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R') : item.id === 'local' ? '2 players / split screen' : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? renderUiIcon('check', { size: 15 }) : ''}</span></button>`).join('')}
+      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? modeIcon(item.id) : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? (clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R') : item.id === 'local' ? '2 players / split screen' : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? renderUiIcon('check', { size: 15 }) : ''}</span></button>`).join('')}
 
     </div>
     ${
       tracks || modes
         ? ''
-        : `<div class="paint-row"><span>PAINT / <b>${PAINTS[state.pendingPaint].name}</b></span><div class="swatches">${Object.entries(
+        : `<div class="paint-row"><span>${playerTwo ? 'PLAYER 2 PAINT' : 'PAINT'} / <b>${PAINTS[pendingPaint].name}</b></span><div class="swatches">${Object.entries(
             PAINTS,
           )
             .map(
               ([id, color]) =>
-                `<button class="swatch ${id === state.pendingPaint ? 'selected' : ''}" data-paint="${id}" aria-label="Paint ${color.name}" aria-pressed="${id === state.pendingPaint}" style="--paint:${color.hex}">${id === state.pendingPaint ? renderUiIcon('check', { size: 14 }) : ''}</button>`,
+                `<button class="swatch ${id === pendingPaint ? 'selected' : ''}" data-paint="${id}" aria-label="Paint ${color.name}" aria-pressed="${id === pendingPaint}" style="--paint:${color.hex}">${id === pendingPaint ? renderUiIcon('check', { size: 14 }) : ''}</button>`,
             )
             .join('')}</div></div>`
     }`;
@@ -414,24 +444,19 @@ export function renderPicker() {
   }
   for (const button of document.querySelectorAll('[data-paint]')) {
     button.onclick = () => {
-      state.pendingPaint = button.dataset.paint;
+      state[paintKey] = button.dataset.paint;
       renderPicker();
-      document.querySelector(`[data-paint="${state.pendingPaint}"]`).focus();
+      document.querySelector(`[data-paint="${state[paintKey]}"]`).focus();
     };
   }
-  const playerTwoCar = $('player-two-car');
-  if (playerTwoCar)
-    playerTwoCar.onchange = () => {
-      state.pendingPlayerTwoCar = playerTwoCar.value;
-      renderPicker();
-    };
 }
 
 export function applyPicker() {
   const startingSession = state.selectingSession;
   const selectedSkill = startingSession ? state.pendingGameMode : null;
-  if (state.selectingSession && state.pickerMode !== 'modes') {
-    state.pickerMode = state.pickerMode === 'garage' ? 'tracks' : 'modes';
+  const steps = wizardSteps();
+  if (state.selectingSession && state.pickerMode !== steps.at(-1)) {
+    state.pickerMode = steps[steps.indexOf(state.pickerMode) + 1];
     renderPicker();
     $('picker-apply').focus();
     return;
@@ -451,7 +476,19 @@ export function applyPicker() {
     syncCarHUD();
   }
   state.localMultiplayer = state.pendingGameMode === 'local';
-  if (state.localMultiplayer) state.playerTwoCar = state.pendingPlayerTwoCar;
+  if (state.localMultiplayer) {
+    state.playerTwoCar = state.pendingPlayerTwoCar;
+    state.playerTwoPaint = state.pendingPlayerTwoPaint;
+    try {
+      localStorage.setItem(
+        'apex-player-two',
+        JSON.stringify({
+          car: state.playerTwoCar,
+          paint: state.playerTwoPaint,
+        }),
+      );
+    } catch (_) {}
+  }
   if (
     state.selectingSession ||
     (state.pickerMode === 'tracks' && state.pendingTrack !== state.activeMap.id)

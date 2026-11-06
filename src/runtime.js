@@ -2,7 +2,7 @@ import { initModalKeyboard } from './accessibility.js';
 import { toggleOpponentRace } from './opponents.js';
 import { toggleSound } from './audio.js';
 import { configureCar, loadCarArt, readBest } from './cars.js';
-import { MAPS, VEHICLES } from './config.js';
+import { MAPS, PAINTS, VEHICLES } from './config.js';
 import { drawMinimap } from './minimap.js';
 import {
   beginLap,
@@ -34,6 +34,7 @@ import {
   notify,
   openSessionSetup,
   setPaused,
+  syncControlHints,
   syncTrackChoiceButton,
   updateHUD,
 } from './ui.js';
@@ -49,8 +50,10 @@ export function changeTrack(id, announce = true) {
         state.activeCar,
         VEHICLES[state.playerTwoCar],
         state.paint,
+        state.playerTwoPaint,
       )
     : null;
+  syncControlHints();
   prepareRewindSession(id, state.activeCar.id);
   keys.clear();
   skidmarks.length = 0;
@@ -155,6 +158,12 @@ export function setup() {
   try {
     const saved = JSON.parse(localStorage.getItem('apex-garage'));
     if (saved) configureCar(saved.car, saved.paint);
+  } catch (_) {}
+  try {
+    const second = JSON.parse(localStorage.getItem('apex-player-two'));
+    if (Object.hasOwn(VEHICLES, second?.car)) state.playerTwoCar = second.car;
+    if (Object.hasOwn(PAINTS, second?.paint))
+      state.playerTwoPaint = second.paint;
   } catch (_) {}
   loadCarArt();
   noLoop();

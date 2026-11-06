@@ -11,10 +11,12 @@ export const state = {
   pendingTrack: 'juniper',
   pendingCar: 'clubsport',
   pendingPlayerTwoCar: 'clubsport',
+  pendingPlayerTwoPaint: 'blue',
   pendingPaint: 'red',
   pendingGameMode: 'trial',
   localMultiplayer: false,
   playerTwoCar: 'clubsport',
+  playerTwoPaint: 'blue',
   playerTwo: null,
   localRace: null,
   settings: {

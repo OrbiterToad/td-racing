@@ -1,7 +1,11 @@
 import { applyDrivingAssists } from './assists.js';
 import { GamepadInput } from './gamepad.js';
 import { VEHICLES } from './config.js';
-import { driveVehicle } from './vehicle-physics.js';
+import {
+  driveVehicle,
+  resolveVehicleBarrier,
+  resolveVehicleCollision,
+} from './vehicle-physics.js';
 import { nearestDriving } from './tracks.js';
 import { startingGrid, state } from './state.js';
 
@@ -26,6 +30,7 @@ export function createLocalRace(
   playerOneCar = state.activeCar,
   playerTwoCar = VEHICLES[state.playerTwoCar],
   playerOnePaint = state.paint,
+  playerTwoPaint = state.playerTwoPaint,
 ) {
   const first = blankCar(startingGrid[0]);
   const second = blankCar(startingGrid[1]);
@@ -37,7 +42,7 @@ export function createLocalRace(
     order: [],
     laps: 3,
     carSpecs: [playerOneCar, playerTwoCar],
-    paints: [playerOnePaint, 'blue'],
+    paints: [playerOnePaint, playerTwoPaint],
   };
 }
 
@@ -77,9 +82,8 @@ export function updateLocalRace(race, dt, controls, primary) {
     }
   }
   const index = 1;
-  {
+  if (race.players[index].finishedAt === null) {
     const player = race.players[index];
-    if (player.finishedAt !== null) return;
     const n = nearestDriving(player.x, player.y);
     let delta = n.progress - player.progress;
     if (delta > 0.5) delta -= 1;
@@ -101,31 +105,19 @@ export function updateLocalRace(race, dt, controls, primary) {
       }
     }
   }
+  if (primary) resolveLocalCollision(race, primary);
 }
 
-export function localViewport(player, worldBounds, viewW, viewH) {
-  const zoom = Math.min(viewW / 760, viewH / 540, 0.85);
-  const sourceW = viewW / zoom,
-    sourceH = viewH / zoom;
-  return {
-    zoom,
-    sourceW,
-    sourceH,
-    sx: Math.max(
-      0,
-      Math.min(
-        player.x - sourceW / 2 - worldBounds.x,
-        worldBounds.width - sourceW,
-      ),
-    ),
-    sy: Math.max(
-      0,
-      Math.min(
-        player.y - sourceH / 2 - worldBounds.y,
-        worldBounds.height - sourceH,
-      ),
-    ),
-  };
+// Player cars use the same contact model as the car vs. AI opponents.
+export function resolveLocalCollision(race, primary) {
+  const second = race.players[1],
+    [specA, specB] = race.carSpecs;
+  const overlap = resolveVehicleCollision(primary, second, specA, specB);
+  if (overlap > 0) {
+    resolveVehicleBarrier(primary, specA);
+    resolveVehicleBarrier(second, specB);
+  }
+  return overlap;
 }
 
 export function localRaceResults(race) {
@@ -135,14 +127,25 @@ export function localRaceResults(race) {
   });
 }
 
+// In split screen the left car owns WASD and the right car owns the arrows.
+export function localPlayerOneKeys(keys, split) {
+  const arrows = !split;
+  return {
+    up: keys.has('KeyW') || (arrows && keys.has('ArrowUp')),
+    down: keys.has('KeyS') || (arrows && keys.has('ArrowDown')),
+    left: keys.has('KeyA') || (arrows && keys.has('ArrowLeft')),
+    right: keys.has('KeyD') || (arrows && keys.has('ArrowRight')),
+  };
+}
+
 export function localPlayerTwoControls(keys, gamepad = {}) {
   return {
     steer:
-      (keys.has('KeyL') ? 1 : 0) -
-      (keys.has('KeyJ') ? 1 : 0) +
+      (keys.has('ArrowRight') ? 1 : 0) -
+      (keys.has('ArrowLeft') ? 1 : 0) +
       (gamepad.steer || 0),
-    throttle: keys.has('KeyI') ? 1 : gamepad.throttle || 0,
-    brake: keys.has('KeyK') ? 1 : gamepad.brake || 0,
+    throttle: keys.has('ArrowUp') ? 1 : gamepad.throttle || 0,
+    brake: keys.has('ArrowDown') ? 1 : gamepad.brake || 0,
     handbrake: keys.has('ShiftRight') || (gamepad.handbrake || 0) > 0 ? 1 : 0,
   };
 }
