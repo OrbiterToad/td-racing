@@ -138,19 +138,23 @@ for (const viewport of [
         'data-mode',
         step,
       );
-      // The last choice is the one most likely to fall below the fold.
-      const last = page.locator('[data-choice]').last();
-      if (await last.isEnabled()) await last.click();
-      const layout = await measureSelectionLayout(page);
-      expect(layout.pageScrolls).toBe(false);
-      expect(layout.scrolling).toEqual([]);
-      expect(layout.outside).toEqual([]);
-      const { settings, feature, primary, content } = layout.rightEdges;
-      // Settings, the detail panel and the primary action share the grid edge.
-      expect(Math.abs(settings - content)).toBeLessThanOrEqual(1);
-      expect(Math.abs(primary - content)).toBeLessThanOrEqual(1);
-      if (viewport.width > 650)
-        expect(Math.abs(feature - content)).toBeLessThanOrEqual(1);
+      // The last choice is the one most likely to fall below the fold, and
+      // split screen has the tallest detail (its Player 2 car select).
+      const checked = [page.locator('[data-choice]').last()];
+      if (step === 'modes') checked.push(page.locator('[data-choice="local"]'));
+      for (const choice of checked) {
+        await choice.click();
+        const layout = await measureSelectionLayout(page);
+        expect(layout.pageScrolls).toBe(false);
+        expect(layout.scrolling).toEqual([]);
+        expect(layout.outside).toEqual([]);
+        const { settings, feature, primary, content } = layout.rightEdges;
+        // Settings, the detail panel and the primary action share the grid edge.
+        expect(Math.abs(settings - content)).toBeLessThanOrEqual(1);
+        expect(Math.abs(primary - content)).toBeLessThanOrEqual(1);
+        if (viewport.width > 650)
+          expect(Math.abs(feature - content)).toBeLessThanOrEqual(1);
+      }
       // One back and one forward action; the header Back stays hidden in setup.
       await expect(page.locator('#picker-close')).toBeHidden();
       await expect(page.locator('#wizard-back')).toBeVisible();
