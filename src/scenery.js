@@ -476,6 +476,7 @@ export function buildSceneryDetails() {
         'rock',
         'tool-trolley',
         'spectator-stand',
+        'cabin',
       ],
       coast: [
         'umbrella',
@@ -629,7 +630,7 @@ export function buildSceneryAccess() {
       next = track[(n.i + 1) % track.length],
       s = start.s + n.t * Math.hypot(next.x - start.x, next.y - start.y);
     let connected = false;
-    for (const offset of [0, 70, -70, 140, -140]) {
+    for (const offset of [0, 70, -70, 140, -140, 210, -210, 280, -280]) {
       if (connected) break;
       const p = pointOnTrack(s + offset),
         distance = widthAt('wall', p.progress) + half + 10,

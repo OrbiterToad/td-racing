@@ -246,9 +246,11 @@ export function buildPitLane() {
   const entry = pointOnTrack(-650),
     exit = pointOnTrack(700),
     side = state.paddock.side;
-  pitLane.wall = state.activeMap.variant === 'forward' ? 52 : 5;
-  const a = paddockPoint(-200, side === 1 ? -145 : 180),
-    b = paddockPoint(220, side === 1 ? -145 : 180),
+  pitLane.wall = state.activeMap.variant === 'forward' ? 52 : 0;
+  const paddockLaneOffset = state.activeMap.variant === 'forward' ? 0 : 100,
+    laneY = side === 1 ? -145 - paddockLaneOffset : 180 + paddockLaneOffset,
+    a = paddockPoint(-200, laneY),
+    b = paddockPoint(220, laneY),
     points = [];
   const gridDx = b.x - a.x,
     gridDy = b.y - a.y,
@@ -409,7 +411,7 @@ export function nearestPit(x, y) {
   best.pit = true;
   best.road = pitLane.road;
   best.runoff = pitLane.runoff;
-  best.wall = state.activeMap.variant === 'forward' ? pitLane.wall : 40;
+  best.wall = state.activeMap.variant === 'forward' ? pitLane.wall : 80;
   return best;
 }
 
@@ -423,13 +425,15 @@ export function nearestDriving(x, y) {
     main.distance -
     main.wall +
     (state.activeMap.variant === 'forward' ? pitLane.wall : 40);
+  const pit = nearestPit(x, y);
+  if (state.activeMap.variant !== 'forward' && pit && pit.distance < 1)
+    return pit;
   if (
     margin <= 0 ||
     boundsDistanceSquared(pitLane.corridorBounds, x, y) >= margin * margin
   )
     return main;
-  const pit = nearestPit(x, y);
-  return pit && pit.distance - pit.wall < main.distance - main.wall
+  return pit && pit.distance - pitLane.wall < main.distance - main.wall
     ? pit
     : main;
 }
