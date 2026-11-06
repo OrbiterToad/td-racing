@@ -1292,7 +1292,7 @@
           gap: 8px;
         }
         .feature-copy {
-          padding: 8px 16px;
+          padding: 14px 24px;
         }
         .feature-record {
           padding-top: 6px;
@@ -1306,7 +1306,7 @@
           gap: 2px;
         }
         .medal-target {
-          padding: 2px 3px;
+          padding: 3px 4px;
           gap: 2px;
         }
         .medal-target b {
@@ -1389,6 +1389,10 @@
         .choice-tag {
           display: none;
         }
+        #selection-dialog[data-mode='tracks'][data-track='drift']
+          .medal-progress {
+          display: none;
+        }
         .mode-summary {
           gap: 6px;
           padding-top: 8px;
@@ -1439,7 +1443,7 @@
         .feature-copy {
           border-left: 0;
           border-top: 1px solid #ffffff0c;
-          padding: 12px 16px;
+          padding: 18px;
         }
         .feature-copy h3 {
           font-size: 36px;
@@ -1757,45 +1761,6 @@
         color: #9eb0a4;
         margin: 6px 0 0;
       }
-      /* Keep compact selection copy readable at every supported viewport. */
-      #selection-dialog {
-        --compact-label-size: 11px;
-      }
-
-      #selection-dialog .picker-steps,
-      #selection-dialog .picker-step,
-      #selection-dialog .choice-tag,
-      #selection-dialog .tile-number,
-      #selection-dialog .paint-row,
-      #selection-dialog .navigation-hint,
-      #selection-dialog .picker-bottom p,
-      #selection-dialog .mode-summary,
-      #selection-dialog .mode-note,
-      #selection-dialog .car-stats,
-      #selection-dialog .feature-record,
-      #selection-dialog .medal-earned,
-      #selection-dialog .medal-target b,
-      #selection-dialog .medal-target time {
-        font-size: var(--compact-label-size);
-        line-height: 1.35;
-      }
-
-      #selection-dialog .medal-target {
-        flex-wrap: wrap;
-      }
-
-      #selection-dialog .car-stats {
-        gap: 4px;
-      }
-
-      #selection-dialog .medal-target time {
-        margin-left: auto;
-      }
-
-      #selection-dialog .picker-bottom p {
-        max-width: 42ch;
-      }
-
       #race-mode[aria-pressed='true'] {
         color: var(--lime);
       }

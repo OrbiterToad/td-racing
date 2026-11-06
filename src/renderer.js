@@ -317,7 +317,9 @@ export function draw() {
             ? '#288f9c'
             : state.activeMap.id === 'city'
               ? '#929b98'
-              : '#8ba274');
+              : state.activeMap.id === 'drift'
+                ? '#152e3a'
+                : '#8ba274');
   state.ctx.fillRect(0, 0, width, height);
   state.ctx.translate(width / 2, height * 0.54);
   state.ctx.scale(camera.zoom, camera.zoom);

@@ -22,6 +22,7 @@ import {
   paintCanyonMesas,
   paintCityGround,
   paintCityRoadMarkings,
+  paintDriftGround,
   paintRallyRoad,
   paintSurfacePatches,
 } from './terrain.js';
@@ -37,6 +38,7 @@ export function buildWorld() {
     amazon = state.activeMap.id === 'amazonas',
     seaside = state.activeMap.id === 'coast',
     urban = state.activeMap.id === 'city',
+    drift = state.activeMap.id === 'drift',
     summit = state.activeMap.id === 'summit',
     c = state.worldCtx,
     rand = seededRandom(
@@ -50,9 +52,11 @@ export function buildWorld() {
               ? 6845
               : urban
                 ? 4209
-                : summit
-                  ? 9431
-                  : 879,
+                : drift
+                  ? 7744
+                  : summit
+                    ? 9431
+                    : 879,
     ),
     w = state.worldBounds.width,
     h = state.worldBounds.height;
@@ -62,9 +66,11 @@ export function buildWorld() {
       ? '#dbe6e3'
       : amazon
         ? '#28523b'
-        : summit
-          ? state.activeMap.groundColor
-          : '#8ba274';
+        : drift
+          ? '#152e3a'
+          : summit
+            ? state.activeMap.groundColor
+            : '#8ba274';
   c.fillRect(0, 0, w, h);
   c.translate(-state.worldBounds.x, -state.worldBounds.y);
   // All scenery is orthographic: tree crowns, roof planes, and flat ground markings.
@@ -81,9 +87,13 @@ export function buildWorld() {
           ? i % 2
             ? '#315e40'
             : '#204832'
-          : i % 2
-            ? '#91a97c'
-            : '#849d6e';
+          : drift
+            ? i % 2
+              ? '#1b4654'
+              : '#123542'
+            : i % 2
+              ? '#91a97c'
+              : '#849d6e';
     c.beginPath();
     c.ellipse(
       rand() * w + state.worldBounds.x,
@@ -116,6 +126,8 @@ export function buildWorld() {
   if (urban) paintCityGround(c, state.worldBounds);
   if (amazon) paintAmazonRiver(c);
   if (desert) paintCanyonMesas(c, rand, w, h);
+  if (alpine) paintAlpineRidges(c, rand, w, h);
+  if (drift) paintDriftGround(c, state.worldBounds, rand);
   if (alpine || summit) paintAlpineRidges(c, rand, w, h);
   paintSceneryGround(c);
   if (urban) {
@@ -162,7 +174,7 @@ export function buildWorld() {
       Math.floor(from * track.length),
       Math.ceil(to * track.length),
     );
-    if (!desert && !alpine && !seaside && !urban) {
+    if (!desert && !alpine && !seaside && !urban && !drift) {
       c.beginPath();
       section.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
       c.strokeStyle = '#cbb88f';

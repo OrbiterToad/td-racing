@@ -199,6 +199,7 @@ export function renderPicker() {
   const selected = pickerChoices()[selectedId];
   const vehicle = VEHICLES[state.pendingCar];
   $('selection-dialog').dataset.mode = state.pickerMode;
+  $('selection-dialog').dataset.track = tracks ? selectedId : '';
   $('picker-title').textContent = modes
     ? 'Choose your mode.'
     : tracks
@@ -441,7 +442,9 @@ function paintTrackPreview(canvas, map) {
               ? '#52686e'
               : map.id === 'rallycross'
                 ? '#5b5b3e'
-                : '#354b3d');
+                : map.id === 'drift'
+                  ? '#1b4654'
+                  : '#354b3d');
   c.fillRect(0, 0, canvas.width, canvas.height);
   c.save();
   c.translate(offsetX, offsetY);
@@ -451,9 +454,11 @@ function paintTrackPreview(canvas, map) {
       ? 513
       : map.id === 'alpine'
         ? 719
-        : map.id === 'summit'
-          ? 941
-          : 318,
+        : map.id === 'drift'
+          ? 774
+          : map.id === 'summit'
+            ? 941
+            : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =

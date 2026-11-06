@@ -40,6 +40,21 @@ export const juniperPoints = [
   [-1050, 800],
 ];
 
+export const neonHarborDriftParkPoints = [
+  [-2200, 0],
+  [-1500, 1000],
+  [-500, 1150],
+  [0, 150],
+  [500, -1150],
+  [1500, -1000],
+  [2200, 0],
+  [1500, 1000],
+  [500, 1150],
+  [0, -150],
+  [-500, -1150],
+  [-1500, -1000],
+];
+
 // Summit GP pairs a full-throttle start straight with two fast direction
 // changes, a slow 180-degree braking corner, and a compact infield chicane.
 export const summitPoints = [
@@ -427,6 +442,22 @@ export const MAPS = {
       [-1300, -250],
       [-1050, 300],
     ].map((p) => p.map((v) => v * 0.9)),
+  },
+  drift: {
+    id: 'drift',
+    name: 'Neon Harbor Drift Park',
+    label: 'HARBOR / FIGURE EIGHT',
+    subtitle: 'Wide links, a central crossover, and open runoff.',
+    description: 'Linked corners, a hairpin, and open runoff for slides.',
+    temperature: '18°C',
+    gripLabel: 'DRY / OPEN RUNOFF',
+    bestKey: 'apex-neon-harbor-drift-v1',
+    accent: '#e78cff',
+    road: 112,
+    runoff: 188,
+    wall: 244,
+    patches: [],
+    points: neonHarborDriftParkPoints,
   },
   summit: {
     id: 'summit',
