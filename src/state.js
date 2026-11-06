@@ -19,6 +19,7 @@ export const state = {
     autoAccelerate: false,
     reducedMotion: false,
     reducedMotionSaved: false,
+    colorblindCues: false,
     showLapCoaching: true,
   },
   audioMasterGain: undefined,

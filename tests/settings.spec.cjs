@@ -275,6 +275,30 @@ test('fresh preferences keep sound on, activate on a gesture, and save mute and 
   );
 });
 
+test('colorblind-friendly track cues persist and are opt-in', async ({
+  page,
+}) => {
+  await installAudio(page);
+  await openSetup(page);
+  await page.locator('#settings-setup').click();
+  const toggle = page.locator('#settings-colorblind');
+  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('apex-settings-v1')),
+    ),
+  ).toMatchObject({ colorblindCues: true });
+  await page.reload();
+  await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await page.locator('#settings-setup').click();
+  await expect(page.locator('#settings-colorblind')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+});
+
 test('steering sensitivity changes player input while AI pacing and race progress stay intact', async ({
   page,
 }) => {

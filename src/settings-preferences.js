@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   steeringAssist: false,
   autoAccelerate: false,
   reducedMotion: false,
+  colorblindCues: false,
   showLapCoaching: true,
 });
 
@@ -72,6 +73,7 @@ export function loadSettings(storage, prefersReducedMotion) {
     reducedMotion: reducedMotionSaved
       ? saved.reducedMotion
       : matchReducedMotion(prefersReducedMotion),
+    colorblindCues: saved?.colorblindCues === true,
     reducedMotionSaved,
     showLapCoaching:
       typeof saved?.showLapCoaching === 'boolean'
@@ -89,6 +91,7 @@ export function saveSettings(settings, storage) {
     steeringSensitivity: settings.steeringSensitivity,
     steeringAssist: Boolean(settings.steeringAssist),
     autoAccelerate: Boolean(settings.autoAccelerate),
+    colorblindCues: Boolean(settings.colorblindCues),
     showLapCoaching: settings.showLapCoaching !== false,
   };
   if (settings.reducedMotionSaved)
