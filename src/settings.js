@@ -57,10 +57,49 @@ function updateSettingsUI() {
   $('settings-motion-value').textContent = state.settings.reducedMotion
     ? 'Reduced motion on'
     : 'Reduced motion off';
+  $('settings-colorblind').setAttribute(
+    'aria-checked',
+    String(state.settings.colorblindCues),
+  );
+  $('settings-colorblind').textContent = state.settings.colorblindCues
+    ? 'ON'
+    : 'OFF';
+  $('settings-colorblind-value').textContent = state.settings.colorblindCues
+    ? 'Additional cues on'
+    : 'Additional cues off';
   $('settings-motion-description').textContent = state.settings
     .reducedMotionSaved
     ? 'Uses your saved preference instead of the device setting.'
     : 'Follows your device preference until you choose a setting.';
+  for (const [id, key, on, off] of [
+    [
+      'settings-steering-assist',
+      'steeringAssist',
+      'Steering assist on',
+      'Steering assist off',
+    ],
+    [
+      'settings-auto-accelerate',
+      'autoAccelerate',
+      'Auto-accelerate on',
+      'Auto-accelerate off',
+    ],
+  ]) {
+    const enabled = Boolean(state.settings[key]);
+    $(id).setAttribute('aria-checked', String(enabled));
+    $(id).textContent = enabled ? 'ON' : 'OFF';
+    $(id + '-value').textContent = enabled ? on : off;
+  }
+  $('settings-lap-coaching').setAttribute(
+    'aria-checked',
+    String(state.settings.showLapCoaching),
+  );
+  $('settings-lap-coaching').textContent = state.settings.showLapCoaching
+    ? 'ON'
+    : 'OFF';
+  $('settings-lap-coaching-value').textContent = state.settings.showLapCoaching
+    ? 'Lap coaching shown'
+    : 'Lap coaching hidden';
   syncSoundButtons();
 }
 
@@ -208,8 +247,12 @@ export function initSettings() {
   Object.assign(state.settings, {
     volume: preferences.volume,
     steeringSensitivity: preferences.steeringSensitivity,
+    steeringAssist: preferences.steeringAssist,
+    autoAccelerate: preferences.autoAccelerate,
     reducedMotion: preferences.reducedMotion,
     reducedMotionSaved: preferences.reducedMotionSaved,
+    colorblindCues: preferences.colorblindCues,
+    showLapCoaching: preferences.showLapCoaching,
   });
   state.soundEnabled = preferences.soundEnabled;
   try {
@@ -298,6 +341,15 @@ export function initSettings() {
       Math.round(state.settings.steeringSensitivity * 100) + '%';
     persistSettings();
   });
+  for (const [id, key] of [
+    ['settings-steering-assist', 'steeringAssist'],
+    ['settings-auto-accelerate', 'autoAccelerate'],
+  ])
+    $(id).addEventListener('click', () => {
+      state.settings[key] = !state.settings[key];
+      persistSettings();
+      updateSettingsUI();
+    });
   $('settings-motion').addEventListener('click', () => {
     state.settings.reducedMotionSaved = true;
     applyMotionPreference(!state.settings.reducedMotion);
@@ -314,6 +366,27 @@ export function initSettings() {
     $('settings-motion-description').textContent =
       'Uses your saved preference instead of the device setting.';
     persistSettings();
+  });
+  $('settings-colorblind').addEventListener('click', () => {
+    state.settings.colorblindCues = !state.settings.colorblindCues;
+    updateSettingsUI();
+    persistSettings();
+  });
+  $('settings-lap-coaching').addEventListener('click', () => {
+    state.settings.showLapCoaching = !state.settings.showLapCoaching;
+    $('settings-lap-coaching').setAttribute(
+      'aria-checked',
+      String(state.settings.showLapCoaching),
+    );
+    $('settings-lap-coaching').textContent = state.settings.showLapCoaching
+      ? 'ON'
+      : 'OFF';
+    $('settings-lap-coaching-value').textContent = state.settings
+      .showLapCoaching
+      ? 'Lap coaching shown'
+      : 'Lap coaching hidden';
+    persistSettings();
+    updateHUD();
   });
   motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
   const onMotionChange = (event) => {

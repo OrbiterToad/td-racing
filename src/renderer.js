@@ -25,6 +25,11 @@ import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
 import { rewind } from './rewind.js';
+import {
+  localRaceResults,
+  localViewport,
+  pollSecondPlayer,
+} from './local-race.js';
 import { handleGamepadAction } from './tutorial.js';
 import { drawSkillTrialMarkers } from './skill-trials.js';
 import {
@@ -306,7 +311,8 @@ export function draw() {
   state.ctx.save();
   state.ctx.setTransform(pixelDensity(), 0, 0, pixelDensity(), 0, 0);
   state.ctx.fillStyle =
-    state.activeMap.id === 'canyon'
+    state.activeMap.groundColor ||
+    (state.activeMap.id === 'canyon'
       ? '#d5a36d'
       : state.activeMap.id === 'alpine'
         ? '#dbe6e3'
@@ -316,7 +322,9 @@ export function draw() {
             ? '#288f9c'
             : state.activeMap.id === 'city'
               ? '#929b98'
-              : '#8ba274';
+              : state.activeMap.id === 'drift'
+                ? '#152e3a'
+                : '#8ba274');
   state.ctx.fillRect(0, 0, width, height);
   state.ctx.translate(width / 2, height * 0.54);
   state.ctx.scale(camera.zoom, camera.zoom);
@@ -352,6 +360,7 @@ export function draw() {
   drawLapGhost(state.ctx);
   drawJungle(state.ctx);
   state.ctx.restore();
+  if (state.localRace) drawLocalSplitScreen(state.ctx, elapsed);
   if (!state.settings.reducedMotion && feedback.impact > 0.03) {
     state.ctx.save();
     state.ctx.fillStyle = 'rgba(247,130,92,' + feedback.impact * 0.065 + ')';
@@ -368,6 +377,89 @@ export function draw() {
     state.lastHUD = millis();
   }
   updateAudio();
+}
+
+function drawLocalSplitScreen(c) {
+  const race = state.localRace;
+  if (!race || !state.worldCanvas || !state.worldBounds) return;
+  const viewW = Math.floor(width / 2),
+    viewH = height;
+  for (let index = 0; index < 2; index++) {
+    const player = index === 0 ? car : race.players[1];
+    const x = index * viewW;
+    const { zoom, sourceW, sourceH, sx, sy } = localViewport(
+      player,
+      state.worldBounds,
+      viewW,
+      viewH,
+    );
+    c.save();
+    c.beginPath();
+    c.rect(x, 0, viewW, viewH);
+    c.clip();
+    c.fillStyle = '#778b69';
+    c.fillRect(x, 0, viewW, viewH);
+    c.drawImage(
+      state.worldCanvas,
+      sx,
+      sy,
+      Math.min(sourceW, state.worldCanvas.width - sx),
+      Math.min(sourceH, state.worldCanvas.height - sy),
+      x,
+      0,
+      viewW,
+      viewH,
+    );
+    const px = x + (player.x - state.worldBounds.x - sx) * zoom;
+    const py = (player.y - state.worldBounds.y - sy) * zoom;
+    c.translate(px, py);
+    c.rotate(player.angle);
+    const spec = race.carSpecs[index];
+    c.fillStyle = PAINTS[race.paints[index]].hex;
+    c.fillRect(
+      (-spec.length * zoom) / 2,
+      (-spec.width * zoom) / 2,
+      spec.length * zoom,
+      spec.width * zoom,
+    );
+    c.restore();
+    c.fillStyle = '#10201b';
+    c.fillRect(x, 0, viewW, 42);
+    c.fillStyle = '#f4f1e8';
+    c.font = 'bold 15px Arial';
+    c.fillText(`PLAYER ${index + 1} · ${spec.name.toUpperCase()}`, x + 14, 19);
+    c.font = '12px Arial';
+    c.fillText(
+      `${index === 0 ? 'WASD / PAD 1' : 'IJKL / PAD 2'}   LAP ${index === 0 ? race.players[0].lap : player.lap}/${race.laps}   ${Math.round(Math.hypot(player.vx, player.vy) * 0.46)} km/h`,
+      x + 14,
+      35,
+    );
+    if (x === 0) c.fillRect(viewW - 1, 0, 2, height);
+  }
+  if (race.countdown > 0) {
+    c.fillStyle = '#08120ddd';
+    c.fillRect(0, height / 2 - 42, width, 84);
+    c.fillStyle = '#f4f1e8';
+    c.font = 'bold 48px Arial';
+    c.textAlign = 'center';
+    c.fillText(String(Math.ceil(race.countdown)), width / 2, height / 2 + 16);
+    c.textAlign = 'start';
+  }
+  if (race.finished) {
+    c.fillStyle = '#08120dee';
+    c.fillRect(width / 2 - 170, height / 2 - 54, 340, 108);
+    c.fillStyle = '#f4f1e8';
+    c.font = 'bold 20px Arial';
+    c.textAlign = 'center';
+    c.fillText('RACE RESULTS', width / 2, height / 2 - 14);
+    c.font = '15px Arial';
+    c.fillText(
+      localRaceResults(race).join('     '),
+      width / 2,
+      height / 2 + 20,
+    );
+    c.textAlign = 'start';
+  }
 }
 
 let gamepadPolling = false;
@@ -388,6 +480,12 @@ function pollGamepad() {
   const now = performance.now();
   if (input.padIndex === null && now < input.nextScan) return;
   const frame = input.update(navigator.getGamepads(), now);
+  if (state.localRace)
+    state.playerTwo = pollSecondPlayer(
+      state.localRace,
+      navigator.getGamepads(),
+      now,
+    );
   $('gamepad-status').textContent = frame.connected
     ? 'Controller connected'
     : 'No controller detected';
@@ -568,6 +666,19 @@ export function drawPatchHighlights(c, time) {
       c.moveTo(x, y - 3);
       c.lineTo(x, y + 3);
       c.stroke();
+    }
+    if (state.settings.colorblindCues) {
+      c.globalAlpha = 0.72;
+      c.strokeStyle = '#edf0e8';
+      c.lineWidth = 2;
+      c.setLineDash(patch.type === 'ICE' ? [7, 5] : [2, 5]);
+      c.strokeRect(
+        -patch.length * 0.5,
+        -patch.width * 0.5,
+        patch.length,
+        patch.width,
+      );
+      c.setLineDash([]);
     }
     c.restore();
   }
