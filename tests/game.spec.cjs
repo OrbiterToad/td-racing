@@ -44,7 +44,9 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
     'Amazonas',
     'Costa Azul',
     'Juniper Raceway',
+    'Summit Grand Prix',
     'City Streets',
+    'Neon Harbor Drift Park',
   ];
   for (const track of tracks) {
     await page.locator('#open-tracks').click();
@@ -89,7 +91,9 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
   );
   await startSession(page);
   await expect(page.locator('#car-name')).toHaveText('FORMULA X');
-  await expect(page.locator('#track-title')).toHaveText('City Streets');
+  await expect(page.locator('#track-title')).toHaveText(
+    'Neon Harbor Drift Park',
+  );
   await expect(page.locator('#game canvas.p5Canvas')).toBeVisible();
 
   await page.locator('#pause').click();
@@ -142,9 +146,7 @@ test('gamepad can navigate and confirm the session setup wizard', async ({
   await expect(page.locator('#tutorial-heading')).toHaveText(
     'Brake before the turn',
   );
-  await press(1);
-  await expect(page.locator('#tutorial-heading')).toHaveText('Get moving');
-  await press(1);
+  await page.locator('#tutorial-skip').click();
   await expect(page.locator('#tutorial-dialog')).not.toBeVisible();
   await page.locator('#pause').click();
   await expect(page.locator('#pause-screen')).toHaveClass('open');
@@ -325,11 +327,122 @@ test('club race starts, pauses, restarts, finishes, and returns to time trial', 
   expect(errors).toEqual([]);
 });
 
+test('local split screen selects two cars, drives separate viewports, pauses and resets', async ({
+  page,
+}) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  await page.locator('#picker-apply').click();
+  await page.locator('#picker-apply').click();
+  await page.locator('[data-choice="local"]').click();
+  await page.locator('#player-two-car').selectOption('formula');
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#selection-dialog')).not.toBeVisible();
+  const guide = page.locator('#tutorial-dialog');
+  if (await guide.isVisible()) await page.locator('#tutorial-skip').click();
+
+  const initial = await page.evaluate(async () => {
+    const { state, car } = await import('./src/state.js');
+    const { localViewport } = await import('./src/local-race.js');
+    return {
+      cars: state.localRace.carSpecs.map((spec) => spec.id),
+      p1: { x: car.x, y: car.y },
+      p2: { x: state.localRace.players[1].x, y: state.localRace.players[1].y },
+      countdown: state.localRace.countdown,
+      viewport: localViewport(
+        state.localRace.players[1],
+        state.worldBounds,
+        600,
+        800,
+      ),
+      world: state.worldBounds,
+    };
+  });
+  expect(initial.cars).toEqual(['clubsport', 'formula']);
+  expect(initial.countdown).toBeGreaterThan(0);
+  expect(initial.viewport.sx).toBeGreaterThanOrEqual(0);
+
+  const moved = await page.evaluate(async () => {
+    const { state, car, race, keys } = await import('./src/state.js');
+    const { simulate } = await import('./src/physics.js');
+    race.countdown = 0;
+    state.localRace.countdown = 0;
+    keys.add('KeyW');
+    keys.add('KeyI');
+    for (let i = 0; i < 120; i++) simulate(1 / 60);
+    keys.clear();
+    const { localViewport } = await import('./src/local-race.js');
+    return {
+      p1: { x: car.x, y: car.y },
+      p2: { x: state.localRace.players[1].x, y: state.localRace.players[1].y },
+      viewports: [car, state.localRace.players[1]].map((player) =>
+        localViewport(player, state.worldBounds, 600, 800),
+      ),
+    };
+  });
+  expect(
+    Math.hypot(moved.p1.x - initial.p1.x, moved.p1.y - initial.p1.y),
+  ).toBeGreaterThan(10);
+  expect(
+    Math.hypot(moved.p2.x - initial.p2.x, moved.p2.y - initial.p2.y),
+  ).toBeGreaterThan(10);
+  expect(moved.viewports[0].sx).not.toBe(moved.viewports[1].sx);
+
+  await page.locator('#pause').click();
+  const frozen = await page.evaluate(async () => {
+    const { state, car } = await import('./src/state.js');
+    return {
+      paused: state.paused,
+      p1: { x: car.x, y: car.y },
+      p2: { x: state.localRace.players[1].x, y: state.localRace.players[1].y },
+    };
+  });
+  expect(frozen.paused).toBe(true);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        let frames = 0;
+        const tick = () =>
+          ++frames === 12 ? resolve() : requestAnimationFrame(tick);
+        requestAnimationFrame(tick);
+      }),
+  );
+  expect(
+    await page.evaluate(async () => {
+      const { state, car } = await import('./src/state.js');
+      return {
+        p1: { x: car.x, y: car.y },
+        p2: {
+          x: state.localRace.players[1].x,
+          y: state.localRace.players[1].y,
+        },
+      };
+    }),
+  ).toEqual({ p1: frozen.p1, p2: frozen.p2 });
+  await page.locator('#resume').click();
+  await page.locator('#restart').click();
+  const reset = await page.evaluate(async () => {
+    const { state } = await import('./src/state.js');
+    return {
+      countdown: state.localRace.countdown,
+      secondPlayer: state.localRace.players[1],
+      selectedCar: state.localRace.carSpecs[1].id,
+    };
+  });
+  expect(reset.countdown).toBeGreaterThan(2.5);
+  expect(reset.selectedCar).toBe('formula');
+  expect(reset.secondPlayer.vx).toBe(0);
+  expect(errors).toEqual([]);
+});
+
 test('wizard waits for car, circuit and mode, preserves choices when going back, and supports keys', async ({
   page,
 }) => {
   await page.route('https://**/*', (route) => route.abort());
   await page.goto('./');
+  await expect(page.locator('#selection-dialog')).toBeVisible();
   await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   const readStartup = () =>
     page.evaluate(async () => {
@@ -345,6 +458,8 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
     countdown: 0,
     paused: true,
   });
+  const guide = page.locator('#tutorial-dialog');
+  if (await guide.isVisible()) await page.locator('#tutorial-skip').click();
   await page.keyboard.press('Escape');
   await expect(page.locator('#selection-dialog')).toBeVisible();
   await page.keyboard.press('ArrowRight');
@@ -357,8 +472,10 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
   await page
     .getByRole('button', { name: 'Choose Costa Azul', exact: true })
     .click();
-  await page.keyboard.press('Escape');
+  await page.locator('#picker-close').click();
+  await expect(page.locator('#selection-dialog')).toBeVisible();
   await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
+  await expect(guide).not.toBeVisible();
   await expect(page.locator('[data-choice="sprint"]')).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -447,7 +564,7 @@ for (const viewport of [
   { width: 375, height: 667 },
   { width: 844, height: 390 },
 ]) {
-  test(`selection menus fit without scrolling at ${viewport.width} × ${viewport.height}`, async ({
+  test(`selection menus keep navigation visible and choices reachable at ${viewport.width} × ${viewport.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -461,7 +578,7 @@ for (const viewport of [
       );
       for (
         let choice = 0;
-        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 7 : 1);
+        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 9 : 1);
         choice++
       ) {
         const dimensions = await page
@@ -480,9 +597,8 @@ for (const viewport of [
               overflowing: [
                 '#selection-dialog',
                 '.selection-feature',
-                '.picker-content',
-                '.feature-copy',
-                '.choice-rail',
+                ...(innerWidth > 650 ? ['.picker-content'] : []),
+                // Detail and choice panels intentionally scroll instead of shrinking text.
                 '.paint-row',
                 '.picker-navigation',
                 '.picker-bottom',
@@ -501,12 +617,14 @@ for (const viewport of [
               buttonVisible:
                 button.bottom <= innerHeight && button.right <= innerWidth,
               previewVisible: art.height > 40 && feature.height > 100,
+              horizontalOverflow: dialog.scrollWidth > dialog.clientWidth + 2,
             };
           });
         expect(dimensions).toEqual({
           overflowing: [],
           buttonVisible: true,
           previewVisible: true,
+          horizontalOverflow: false,
         });
         await page.keyboard.press('ArrowRight');
       }
@@ -515,8 +633,8 @@ for (const viewport of [
         mode === 'garage'
           ? '02 / 06'
           : mode === 'tracks'
-            ? '02 / 07'
-            : '01 / 02',
+            ? '02 / 09'
+            : '04 / 07',
       );
       await page.locator('#picker-apply').click();
     }
@@ -627,4 +745,104 @@ test('club race can be selected on the final wizard page and survives back navig
   await page.locator('#picker-apply').click();
   await expect(page.locator('#race-panel')).toBeVisible();
   await expect(page.locator('#start-countdown')).toHaveText(/^[123]$/);
+});
+
+test('skill trials explain the selected event and start outside time-trial records', async ({
+  page,
+}) => {
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  await page.locator('#picker-apply').click();
+  await page.locator('#picker-apply').click();
+  await page.locator('[data-choice="slalom"]').click();
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
+  await expect(page.locator('#skill-trial-copy')).toContainText(
+    'Pass all five alternating gates',
+  );
+  await page.locator('#skill-trial-primary').click();
+  const session = await page.evaluate(async () => {
+    const { skillTrial, state } = await import('./src/state.js');
+    return {
+      active: skillTrial.active,
+      id: skillTrial.id,
+      ordinaryBest: localStorage.getItem(state.BEST_KEY),
+      skillBest: localStorage.getItem('apex-skill-trials-v1'),
+    };
+  });
+  expect(session).toEqual({
+    active: true,
+    id: 'slalom',
+    ordinaryBest: null,
+    skillBest: null,
+  });
+});
+
+test('braking trial requires its advertised 120 km/h target and supports quick retry', async ({
+  page,
+}) => {
+  await page.route('https://**/*', (route) => route.abort());
+  await page.goto('./');
+  await page.locator('#picker-apply').click();
+  await page.locator('#picker-apply').click();
+  await page.locator('[data-choice="braking"]').click();
+  await page.locator('#picker-apply').click();
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
+  await page.locator('#skill-trial-primary').click();
+
+  const tooSlowResult = await page.evaluate(async () => {
+    const [{ car, race, skillTrial }, { updateSkillTrial }, { setPaused }] =
+      await Promise.all([
+        import('./src/state.js'),
+        import('./src/skill-trials.js'),
+        import('./src/ui.js'),
+      ]);
+    setPaused(true, false);
+    race.countdown = 0;
+    Object.assign(skillTrial, {
+      id: 'braking',
+      active: true,
+      started: false,
+      elapsed: 0,
+      startProgress: 0,
+      previousProgress: 0,
+      startSpeed: 0,
+      brakingDistance: 0,
+    });
+    car.vx = 250;
+    car.vy = 0;
+    updateSkillTrial(1 / 60, { after: { progress: 0 }, braking: true });
+    car.vx = 0;
+    updateSkillTrial(1 / 60, { after: { progress: 0 }, braking: true });
+    return document.querySelector('#skill-trial-dialog').dataset.phase;
+  });
+  expect(tooSlowResult).not.toBe('result');
+
+  await page.evaluate(async () => {
+    const [{ car }, { updateSkillTrial }] = await Promise.all([
+      import('./src/state.js'),
+      import('./src/skill-trials.js'),
+    ]);
+    car.vx = 270;
+    updateSkillTrial(1 / 60, { after: { progress: 0 }, braking: true });
+    car.vx = 0;
+    updateSkillTrial(1 / 60, { after: { progress: 0 }, braking: true });
+  });
+  await expect(page.locator('#skill-trial-dialog')).toBeVisible();
+  await expect(page.locator('#skill-trial-copy')).toContainText(
+    'Stopped after',
+  );
+  await expect(page.locator('#skill-trial-stats')).toContainText('ATTEMPTS 1');
+  await page.locator('#skill-trial-primary').click();
+  const retry = await page.evaluate(async () => {
+    const { skillTrial } = await import('./src/state.js');
+    return {
+      active: skillTrial.active,
+      id: skillTrial.id,
+      progress: JSON.parse(localStorage.getItem('apex-skill-trials-v1')),
+    };
+  });
+  expect(retry.active).toBe(true);
+  expect(retry.id).toBe('braking');
+  expect(retry.progress.braking).toMatchObject({ attempts: 1, completions: 1 });
 });

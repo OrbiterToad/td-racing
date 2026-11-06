@@ -24,7 +24,7 @@
   display: flex;
   min-height: 0;
   flex-direction: column;
-  gap: clamp(14px, 2.5vh, 22px);
+  gap: clamp(12px, 2vh, 18px);
 }
 
 .settings-heading {
@@ -91,12 +91,98 @@
 
 .setting-row {
   display: grid;
-  min-height: 108px;
+  min-height: 78px;
   grid-template-columns: minmax(0, 1fr) minmax(210px, 300px);
   align-items: center;
   gap: 24px;
-  padding: 16px 4px;
+  padding: 8px 4px;
   border-bottom: 1px solid #ffffff16;
+}
+
+.setting-row-compact {
+  min-height: 78px;
+}
+
+.ghost-transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#ghost-transfer-panel {
+  min-height: 200px;
+  padding: 12px 4px;
+}
+
+.ghost-transfer-heading {
+  padding-bottom: 12px;
+}
+
+.ghost-transfer-heading h3 {
+  margin: 6px 0;
+  font:
+    800 34px/1 'Barlow Condensed',
+    Impact,
+    sans-serif;
+  text-transform: uppercase;
+}
+
+#ghost-transfer-status {
+  min-height: 3em;
+  margin: 18px 0;
+  color: #9fb1a8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ghost-transfer-actions {
+  justify-content: flex-start;
+}
+
+.ghost-transfer-actions label {
+  flex-basis: 100%;
+  color: #edf0e8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ghost-transfer-actions select,
+.ghost-transfer-actions button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #ffffff30;
+  border-radius: 4px;
+  background: #ffffff08;
+  color: #dce5da;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ghost-transfer-actions select {
+  min-width: 150px;
+  color-scheme: dark;
+}
+
+.ghost-transfer-actions button:hover:not(:disabled),
+.ghost-transfer-actions select:focus-visible {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
+.ghost-transfer-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+#ghost-transfer-pairing {
+  color: var(--lime);
+  font-weight: 600;
+}
+
+#ghost-transfer-status {
+  min-height: 1.4em;
 }
 
 .setting-copy label,
@@ -178,6 +264,7 @@
 
 .settings-sound,
 .settings-done,
+.settings-ghost-tools,
 .secondary-settings {
   min-height: 52px;
   padding: 0 20px;
@@ -187,6 +274,12 @@
   background: #ffffff08;
   font-size: 12px;
   font-weight: 800;
+}
+
+.settings-ghost-tools {
+  border-color: #ffffff30;
+  color: #dce5da;
+  background: #ffffff08;
 }
 
 .settings-sound[aria-pressed='true'] {
@@ -239,8 +332,16 @@
   }
 
   .setting-row {
-    min-height: 92px;
-    padding: 10px 0;
+    min-height: 60px;
+    padding: 4px 0;
+  }
+
+  .setting-copy p {
+    display: none;
+  }
+
+  .setting-row-compact {
+    min-height: 72px;
   }
 
   .settings-footer {
@@ -302,10 +403,10 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .setting-row {
-    min-height: 95px;
+    min-height: 84px;
     grid-template-columns: minmax(0, 1fr) minmax(115px, 145px);
     gap: 8px;
-    padding: 10px 0;
+    padding: 8px 0;
   }
 
   .setting-copy label,
@@ -351,10 +452,11 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .settings-sound,
-  .settings-done {
+  .settings-done,
+  .settings-ghost-tools {
     min-height: 46px;
-    padding: 0 10px;
-    font-size: 10px;
+    padding: 0 8px;
+    font-size: 9px;
   }
 
   .secondary-settings {
@@ -377,12 +479,12 @@ html[data-reduced-motion='true'] *::after {
 @media (max-height: 520px) {
   #settings-dialog {
     max-height: calc(100dvh - 16px);
-    padding-top: 12px;
-    padding-bottom: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
 
   .settings-panel {
-    gap: 6px;
+    gap: 4px;
   }
 
   .settings-heading {
@@ -398,12 +500,82 @@ html[data-reduced-motion='true'] *::after {
     display: none;
   }
 
+  .setting-copy p {
+    display: none;
+  }
+
   .setting-row {
-    min-height: 72px;
-    padding: 6px 0;
+    min-height: 50px;
+    padding: 2px 0;
+  }
+
+  .setting-row-compact {
+    min-height: 50px;
+  }
+
+  .motion-switch {
+    min-height: 36px;
   }
 
   .settings-footer {
-    padding-top: 6px;
+    padding-top: 2px;
+  }
+
+  .settings-sound,
+  .settings-done,
+  .settings-ghost-tools,
+  .settings-close {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 650px) and (max-height: 760px) {
+  .setting-row,
+  .setting-row-compact {
+    min-height: 60px;
+    padding: 4px 0;
+  }
+
+  .setting-copy p {
+    display: none;
+  }
+}
+
+@media (max-height: 680px) and (min-width: 651px) {
+  .settings-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 20px;
+  }
+
+  .setting-row,
+  .setting-row-compact {
+    min-height: 52px;
+    grid-template-columns: minmax(0, 1fr) minmax(110px, 150px);
+    gap: 8px;
+  }
+
+  .setting-copy label,
+  .setting-label {
+    font-size: 15px;
+  }
+
+  .slider-control {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .slider-control output {
+    font-size: 16px;
+  }
+
+  .slider-control input[type='range'] {
+    min-width: 105px;
+    width: 100%;
+  }
+
+  .motion-control > span {
+    display: none;
   }
 }

@@ -78,6 +78,8 @@ export function paddockAssetLayout() {
       coast: 'coastal',
       city: 'city',
       rallycross: 'industrial',
+      drift: 'industrial',
+      summit: 'industrial',
     }[state.activeMap.id],
     front = state.paddock.side === 1 ? -1 : 1,
     y = front < 0 ? 18 : -5,
@@ -179,6 +181,8 @@ export function paintPaddock(c) {
     coast: '#d0c09b',
     city: '#a8b1a5',
     rallycross: '#b4ad8e',
+    drift: '#5e7b82',
+    summit: '#aaa88f',
   }[state.activeMap.id];
   c.save();
   c.translate(state.paddock.x, state.paddock.y);
@@ -474,6 +478,28 @@ export function buildSceneryDetails() {
         'tool-trolley',
         'spectator-stand',
       ],
+      drift: [
+        'tires',
+        'canopy',
+        'service-transporter',
+        'tool-trolley',
+        'spectator-stand',
+        'rock',
+        'cafe-terrace',
+        'shed-garden',
+      ],
+      summit: [
+        'rock',
+        'pine',
+        'spectator-stand',
+        'cabin',
+        'shed-garden',
+        'greenhouse',
+        'canopy',
+        'service-transporter',
+        'tires',
+        'drygrass',
+      ],
       coast: [
         'umbrella',
         'flowers',
@@ -737,6 +763,8 @@ export function buildSceneryTrees() {
       coast: ['tree-palm', 'tree-fan-palm'],
       city: ['tree-birch', 'tree-elm', 'tree-willow'],
       rallycross: ['tree-oak', 'tree-birch', 'tree-pine'],
+      drift: ['tree-oak', 'tree-willow', 'tree-palm'],
+      summit: ['tree-pine', 'tree-pine', 'tree-oak', 'tree-birch'],
     }[id];
   for (
     let i = 0;
@@ -749,6 +777,7 @@ export function buildSceneryTrees() {
       key = keys[Math.floor(rand() * keys.length)],
       angle = rand() * Math.PI * 2;
     if (id === 'city' && y < -100) continue;
+    if (id === 'drift' && y < -1700) continue;
     if (id === 'amazonas' && Math.abs(x + 500) < 180 && Math.abs(y + 220) < 110)
       continue;
     reserveScenery(

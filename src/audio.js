@@ -8,25 +8,30 @@ export function playImpact(strength) {
   if (!state.soundEnabled || !state.audioCtx || !state.audioLayers) return;
   const source = state.audioCtx.createBufferSource(),
     gain = state.audioCtx.createGain(),
+    highpass = state.audioCtx.createBiquadFilter(),
     filter = state.audioCtx.createBiquadFilter();
   source.buffer = state.audioLayers.buffer;
+  highpass.type = 'highpass';
+  highpass.frequency.value = 90;
   filter.type = 'lowpass';
-  filter.frequency.value = 600;
+  filter.frequency.value = 1200;
   gain.gain.setValueAtTime(
-    Math.min(0.12, strength * 0.1),
+    Math.min(0.105, strength * 0.085),
     state.audioCtx.currentTime,
   );
   gain.gain.exponentialRampToValueAtTime(
     0.001,
     state.audioCtx.currentTime + 0.13,
   );
-  source.connect(filter);
+  source.connect(highpass);
+  highpass.connect(filter);
   filter.connect(gain);
   gain.connect(state.audioMasterGain);
   source.start();
   source.stop(state.audioCtx.currentTime + 0.14);
   source.onended = () => {
     source.disconnect();
+    highpass.disconnect();
     filter.disconnect();
     gain.disconnect();
   };
@@ -56,9 +61,10 @@ export function ensureAudio() {
     state.engine.type = 'sawtooth';
     const filter = state.audioCtx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 300;
+    filter.frequency.value = 360;
+    state.engineFilter = filter;
     state.engineGain = state.audioCtx.createGain();
-    state.engineGain.gain.value = 0.025;
+    state.engineGain.gain.value = 0.018;
     state.engine.connect(filter);
     filter.connect(state.engineGain);
     state.engineGain.connect(state.audioMasterGain);
@@ -73,6 +79,7 @@ export function ensureAudio() {
     state.audioMasterGain = undefined;
     state.engine = undefined;
     state.engineGain = undefined;
+    state.engineFilter = undefined;
     state.audioLayers = null;
     state.soundEnabled = false;
     syncSoundButtons();
@@ -125,8 +132,8 @@ export function createFeedbackAudio() {
     samples = buffer.getChannelData(0);
   let previous = 0;
   for (let i = 0; i < samples.length; i++) {
-    previous = (previous + (Math.random() * 2 - 1) * 0.11) / 1.04;
-    samples[i] = previous * 3;
+    previous = (previous + (Math.random() * 2 - 1) * 0.18) / 1.08;
+    samples[i] = previous * 2.3;
   }
   const source = state.audioCtx.createBufferSource();
   source.buffer = buffer;
@@ -138,10 +145,10 @@ export function createFeedbackAudio() {
     rumbleGain = state.audioCtx.createGain(),
     rumble = state.audioCtx.createOscillator();
   tireFilter.type = 'bandpass';
-  tireFilter.frequency.value = 1600;
-  tireFilter.Q.value = 0.7;
+  tireFilter.frequency.value = 1900;
+  tireFilter.Q.value = 1.1;
   looseFilter.type = 'lowpass';
-  looseFilter.frequency.value = 550;
+  looseFilter.frequency.value = 720;
   for (const gain of [tireGain, looseGain, rumbleGain]) {
     gain.gain.value = 0;
     gain.connect(state.audioMasterGain);
@@ -151,7 +158,7 @@ export function createFeedbackAudio() {
   tireFilter.connect(tireGain);
   looseFilter.connect(looseGain);
   rumble.type = 'triangle';
-  rumble.frequency.value = 65;
+  rumble.frequency.value = 58;
   rumble.connect(rumbleGain);
   source.start();
   rumble.start();
@@ -175,8 +182,13 @@ export function updateAudio() {
     t,
     0.08,
   );
+  state.engineFilter?.frequency.setTargetAtTime(
+    280 + speed * 2.2 + car.throttle * 260,
+    t,
+    0.1,
+  );
   state.engineGain.gain.setTargetAtTime(
-    enabled ? 0.018 + car.throttle * 0.014 : 0,
+    enabled ? 0.014 + car.throttle * 0.018 : 0,
     t,
     0.08,
   );
@@ -193,17 +205,17 @@ export function updateAudio() {
     velocity = clamp(speed / 230, 0, 1),
     slide = clamp((car.slip - 17) / 95, 0, 1);
   state.audioLayers.tireGain.gain.setTargetAtTime(
-    enabled && !loose ? slide * velocity * 0.065 : 0,
+    enabled && !loose ? slide * velocity * 0.052 : 0,
     t,
     0.07,
   );
   state.audioLayers.looseGain.gain.setTargetAtTime(
-    enabled && loose ? velocity * (car.surface === 'ICE' ? 0.018 : 0.055) : 0,
+    enabled && loose ? velocity * (car.surface === 'ICE' ? 0.014 : 0.044) : 0,
     t,
     0.07,
   );
   state.audioLayers.rumbleGain.gain.setTargetAtTime(
-    enabled ? feedback.rumble * 0.025 : 0,
+    enabled ? feedback.rumble * 0.018 : 0,
     t,
     0.04,
   );
