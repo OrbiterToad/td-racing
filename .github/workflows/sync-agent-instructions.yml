@@ -1,0 +1,87 @@
+# Reference workflow for consuming projects: keep the shared agent and
+# coordinator instructions in sync with the template repository.
+#
+# Copy this file to .github/workflows/sync-agent-instructions.yml in the
+# consuming project, together with sync/sync-agent-instructions.mjs (as
+# tools/sync-agent-instructions.mjs) and a .agent-template.json manifest.
+#
+# Required repository secret: AGENT_TEMPLATE_TOKEN — a token that can read the
+# template repository and open pull requests in this one (the default
+# GITHUB_TOKEN cannot read another private repository). Do not commit tokens.
+name: Sync agent instructions
+
+on:
+  schedule:
+    # Mondays, 05:17 UTC.
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-agent-instructions
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync from template
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Fail fast without a template token
+        env:
+          TEMPLATE_TOKEN: ${{ secrets.AGENT_TEMPLATE_TOKEN }}
+        run: |
+          if [ -z "$TEMPLATE_TOKEN" ]; then
+            echo "::error::Secret AGENT_TEMPLATE_TOKEN is not configured; cannot read the template repository."
+            exit 1
+          fi
+
+      - name: Check for drift
+        id: drift
+        env:
+          GITHUB_TOKEN: ${{ secrets.AGENT_TEMPLATE_TOKEN }}
+        run: |
+          if node tools/sync-agent-instructions.mjs --check; then
+            echo "drifted=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "drifted=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Apply template files
+        if: steps.drift.outputs.drifted == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.AGENT_TEMPLATE_TOKEN }}
+        run: node tools/sync-agent-instructions.mjs
+
+      - name: Open or update the sync pull request
+        if: steps.drift.outputs.drifted == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_TEMPLATE_TOKEN }}
+          BRANCH: ai/sync-agent-instructions
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B "$BRANCH"
+          git add --all
+          git commit -m 'chore(agents): sync instructions from the template'
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            gh pr create \
+              --head "$BRANCH" \
+              --title 'chore(agents): sync instructions from the template' \
+              --body 'Automated sync of the shared agent and coordinator instructions from the template repository. Project-specific rules stay in their own files and are untouched.'
+          fi
