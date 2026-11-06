@@ -82,7 +82,7 @@ export function changeTrack(id, announce = true) {
   $('open-tracks').textContent = state.activeMap.name + ' ▾';
   $('track-label').textContent = state.activeMap.label;
   $('track-title').textContent = state.activeMap.name;
-  $('track-subtitle').textContent = state.activeMap.subtitle;
+  $('track-subtitle').textContent = state.activeMap.description;
   $('temperature').textContent = state.activeMap.temperature;
   $('grip-label').textContent = state.activeMap.gripLabel;
   document.documentElement.style.setProperty('--lime', state.activeMap.accent);
@@ -116,7 +116,7 @@ export function changeTrack(id, announce = true) {
                 ? 'W to drive · Dirt needs a slide. Asphalt needs a clean exit.'
                 : state.activeMap.id === 'drift'
                   ? 'W to drive · Use the wide runoff to link controlled slides.'
-                  : 'W to drive · Find your apex. Avoid the dark oil slicks.';
+                  : 'W to drive · Avoid the dark oil slicks.';
   try {
     localStorage.setItem('apex-selected-track', id);
   } catch (_) {}

@@ -146,6 +146,10 @@
         color: #c8d1bf;
         letter-spacing: 0.4px;
       }
+      .circuit-label .sub {
+        max-width: 300px;
+        line-height: 1.4;
+      }
       .circuit-label {
         background: #182123e8;
         padding: 18px 21px;
@@ -526,6 +530,7 @@
         h1 {
           font-size: 27px;
         }
+        .circuit-label .sub,
         .conditions {
           display: none;
         }
@@ -994,7 +999,7 @@
       <div class="identity">
         <div class="brand">APEX<em> /</em></div>
         <span class="divider"></span>
-        <div class="edition">THE DRIVING CLUB<br />TOP DOWN. FLAT OUT.</div>
+        <div class="edition">THE DRIVING CLUB<br />TOP-DOWN CIRCUIT RACER</div>
       </div>
       <div class="header-actions">
         <button class="header-choice" id="open-tracks" aria-haspopup="dialog">
@@ -1018,7 +1023,10 @@
       <div class="overlay top-left circuit-label">
         <div class="eyebrow" id="track-label">FLOW CIRCUIT / 04</div>
         <h1 id="track-title">Juniper Raceway</h1>
-        <div class="sub" id="track-subtitle">Commit to the esses.</div>
+        <div class="sub" id="track-subtitle">
+          Deep esses, green woodland, and three oil slicks before demanding
+          corners.
+        </div>
         <div class="conditions">
           <span>☀ <b id="temperature">24°C</b></span
           ><span>TRACK <b>DRY</b></span
@@ -1161,7 +1169,7 @@
       ></div>
       <div class="overlay" id="toast" role="status"></div>
       <div class="overlay hint" id="hint">
-        <b>W</b> to get rolling. Brake before the bend. Find your apex.
+        <b>W</b> to get rolling. Brake before the bend.
       </div>
       <div id="pause-screen" role="region" aria-labelledby="pause-title">
         <div class="pause-box">
@@ -1202,7 +1210,7 @@
     <dialog id="selection-dialog" aria-labelledby="picker-title">
       <div class="picker-head">
         <div class="eyebrow" id="picker-eyebrow">THE CIRCUIT COLLECTION</div>
-        <h2 id="picker-title">Find your next apex.</h2>
+        <h2 id="picker-title">Choose your ride.</h2>
         <p id="picker-description"></p>
         <nav class="picker-steps" aria-label="Session setup">
           <button
