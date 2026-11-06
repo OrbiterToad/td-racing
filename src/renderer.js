@@ -1,6 +1,7 @@
 import { drawOpponents } from './opponents.js';
 import { updateAudio } from './audio.js';
 import { drawCoastWaves } from './coast.js';
+import { carImagePath } from './cars.js';
 import { CFG, PAINTS } from './config.js';
 import { visibleGhostPose } from './ghost.js';
 import { drawJungle, drawRiverCurrent } from './jungle.js';
@@ -25,11 +26,7 @@ import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
 import { rewind } from './rewind.js';
-import {
-  localRaceResults,
-  localViewport,
-  pollSecondPlayer,
-} from './local-race.js';
+import { localRaceResults, pollSecondPlayer } from './local-race.js';
 import { handleGamepadAction } from './tutorial.js';
 import { drawSkillTrialMarkers } from './skill-trials.js';
 import {
@@ -219,14 +216,17 @@ export function drawLapGhost(c) {
   c.restore();
 }
 
+// The area the world pass draws into; split screen narrows it to one half.
+const view = { width: 0, height: 0, anchor: 0.54 };
+
 export function desiredZoom() {
   return clamp(Math.min(width / 1050, height / 760), 0.55, 1.12);
 }
 
 export function drawSkidmarks(c) {
   for (const batch of skidBatches) batch.length = 0;
-  const halfW = width / (camera.zoom * 2) + 100,
-    halfH = height / (camera.zoom * 2) + 100;
+  const halfW = view.width / (camera.zoom * 2) + 100,
+    halfH = view.height / (camera.zoom * 2) + 100;
   for (const s of skidmarks) {
     if (Math.abs(s.x - camera.x) > halfW || Math.abs(s.y - camera.y) > halfH)
       continue;
@@ -255,25 +255,25 @@ export function drawSkidmarks(c) {
 export function inWorldView(x, y, radius = 0) {
   const zoom = camera.zoom;
   return (
-    Math.abs(x - camera.x) <= width / (2 * zoom) + radius &&
-    y >= camera.y - (height * 0.54) / zoom - radius &&
-    y <= camera.y + (height * 0.46) / zoom + radius
+    Math.abs(x - camera.x) <= view.width / (2 * zoom) + radius &&
+    y >= camera.y - (view.height * view.anchor) / zoom - radius &&
+    y <= camera.y + (view.height * (1 - view.anchor)) / zoom + radius
   );
 }
 
 export function drawWorldViewport(c) {
   const zoom = camera.zoom,
-    left = camera.x - width / (2 * zoom) - state.worldBounds.x,
-    top = camera.y - (height * 0.54) / zoom - state.worldBounds.y,
+    left = camera.x - view.width / (2 * zoom) - state.worldBounds.x,
+    top = camera.y - (view.height * view.anchor) / zoom - state.worldBounds.y,
     x = Math.max(0, Math.floor(left) - 2),
     y = Math.max(0, Math.floor(top) - 2),
     right = Math.min(
       state.worldCanvas.width,
-      Math.ceil(left + width / zoom) + 2,
+      Math.ceil(left + view.width / zoom) + 2,
     ),
     bottom = Math.min(
       state.worldCanvas.height,
-      Math.ceil(top + height / zoom) + 2,
+      Math.ceil(top + view.height / zoom) + 2,
     );
   if (right > x && bottom > y)
     c.drawImage(
@@ -308,9 +308,12 @@ export function draw() {
   camera.zoom = state.settings.reducedMotion
     ? targetZoom
     : lerpTo(camera.zoom, targetZoom, smoothing);
+  view.width = width;
+  view.height = height;
+  view.anchor = 0.54;
   state.ctx.save();
   state.ctx.setTransform(pixelDensity(), 0, 0, pixelDensity(), 0, 0);
-  state.ctx.fillStyle =
+  const ground =
     state.activeMap.groundColor ||
     (state.activeMap.id === 'canyon'
       ? '#d5a36d'
@@ -325,42 +328,17 @@ export function draw() {
               : state.activeMap.id === 'drift'
                 ? '#152e3a'
                 : '#8ba274');
+  state.ctx.fillStyle = ground;
   state.ctx.fillRect(0, 0, width, height);
-  state.ctx.translate(width / 2, height * 0.54);
-  state.ctx.scale(camera.zoom, camera.zoom);
-  state.ctx.translate(-camera.x, -camera.y);
-  drawWorldViewport(state.ctx);
-  if (!state.settings.reducedMotion) {
-    drawCoastWaves(state.ctx);
-    drawRiverCurrent(state.ctx);
+  if (state.localRace) drawLocalViews(state.ctx, elapsed);
+  else {
+    state.ctx.translate(width / 2, height * 0.54);
+    state.ctx.scale(camera.zoom, camera.zoom);
+    state.ctx.translate(-camera.x, -camera.y);
+    drawWorldPass(state.ctx);
   }
-  drawSkidmarks(state.ctx);
-  drawStartingGridSelection(state.ctx);
-  drawSkillTrialMarkers(state.ctx);
-  for (const p of particles) {
-    state.ctx.globalAlpha = (p.life / p.max) * 0.35;
-    state.ctx.fillStyle =
-      p.type === 'water'
-        ? '#b7f3ee'
-        : p.type === 'dust'
-          ? '#dfca9b'
-          : p.type === 'spark'
-            ? '#ffdf85'
-            : '#f0e9da';
-    state.ctx.beginPath();
-    state.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    state.ctx.fill();
-  }
-  state.ctx.globalAlpha = 1;
-  if (!state.settings.reducedMotion)
-    drawPatchHighlights(state.ctx, millis() / 1000);
-  drawCityTraffic(state.ctx);
-  drawOpponents(state.ctx);
-  drawCar(state.ctx);
-  drawLapGhost(state.ctx);
-  drawJungle(state.ctx);
   state.ctx.restore();
-  if (state.localRace) drawLocalSplitScreen(state.ctx, elapsed);
+  if (state.localRace) drawLocalSplitScreen(state.ctx);
   if (!state.settings.reducedMotion && feedback.impact > 0.03) {
     state.ctx.save();
     state.ctx.fillStyle = 'rgba(247,130,92,' + feedback.impact * 0.065 + ')';
@@ -379,78 +357,158 @@ export function draw() {
   updateAudio();
 }
 
-function drawLocalSplitScreen(c) {
+// Everything drawn in world coordinates, for whichever camera is active.
+function drawWorldPass(c) {
+  drawWorldViewport(c);
+  if (!state.settings.reducedMotion) {
+    drawCoastWaves(c);
+    drawRiverCurrent(c);
+  }
+  drawSkidmarks(c);
+  drawStartingGridSelection(c);
+  drawSkillTrialMarkers(c);
+  for (const p of particles) {
+    c.globalAlpha = (p.life / p.max) * 0.35;
+    c.fillStyle =
+      p.type === 'water'
+        ? '#b7f3ee'
+        : p.type === 'dust'
+          ? '#dfca9b'
+          : p.type === 'spark'
+            ? '#ffdf85'
+            : '#f0e9da';
+    c.beginPath();
+    c.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    c.fill();
+  }
+  c.globalAlpha = 1;
+  if (!state.settings.reducedMotion) drawPatchHighlights(c, millis() / 1000);
+  drawCityTraffic(c);
+  drawOpponents(c);
+  drawCar(c);
+  drawLocalRival(c);
+  drawLapGhost(c);
+  drawJungle(c);
+}
+
+const localArt = new Map();
+
+function localCarArt(spec, paint) {
+  const src = carImagePath(spec.id, paint);
+  if (!localArt.has(src) && typeof Image !== 'undefined') {
+    const image = new Image();
+    image.src = src;
+    localArt.set(src, image);
+  }
+  return localArt.get(src);
+}
+
+// Player 2 also appears in Player 1's view (and Player 1 in Player 2's).
+function drawLocalRival(c) {
   const race = state.localRace;
-  if (!race || !state.worldCanvas || !state.worldBounds) return;
-  const viewW = Math.floor(width / 2),
-    viewH = height;
+  if (!race) return;
+  const spec = race.carSpecs[1],
+    paint = race.paints[1];
+  drawVehicle(c, race.players[1], spec, localCarArt(spec, paint), paint);
+}
+
+export function localViewZoom(viewW, viewH, speed = 0) {
+  const base = clamp(Math.min(viewW / 820, viewH / 760), 0.55, 1.12);
+  return state.settings.reducedMotion
+    ? base
+    : base * (1 - clamp(speed / 1700, 0, 0.19));
+}
+
+// Left half follows Player 1, right half follows Player 2, edge to edge.
+function drawLocalViews(c, elapsed) {
+  const race = state.localRace;
+  const viewW = width / 2,
+    smoothing = 1 - Math.exp(-4.5 * elapsed),
+    saved = { x: camera.x, y: camera.y, zoom: camera.zoom };
+  race.cameras ??= [null, null];
   for (let index = 0; index < 2; index++) {
-    const player = index === 0 ? car : race.players[1];
-    const x = index * viewW;
-    const { zoom, sourceW, sourceH, sx, sy } = localViewport(
-      player,
-      state.worldBounds,
-      viewW,
-      viewH,
-    );
+    const player = index === 0 ? car : race.players[1],
+      speed = Math.hypot(player.vx, player.vy),
+      targetZoom = localViewZoom(viewW, height, speed),
+      targetX = player.x + player.vx * 0.3,
+      targetY = player.y + player.vy * 0.3;
+    const target = (race.cameras[index] ??= {
+      x: targetX,
+      y: targetY,
+      zoom: targetZoom,
+    });
+    target.x = lerpTo(target.x, targetX, smoothing);
+    target.y = lerpTo(target.y, targetY, smoothing);
+    target.zoom = state.settings.reducedMotion
+      ? targetZoom
+      : lerpTo(target.zoom, targetZoom, smoothing);
+    Object.assign(camera, target);
+    view.width = viewW;
+    view.height = height;
+    view.anchor = 0.5;
     c.save();
     c.beginPath();
-    c.rect(x, 0, viewW, viewH);
+    c.rect(index * viewW, 0, viewW, height);
     c.clip();
-    c.fillStyle = '#778b69';
-    c.fillRect(x, 0, viewW, viewH);
-    c.drawImage(
-      state.worldCanvas,
-      sx,
-      sy,
-      Math.min(sourceW, state.worldCanvas.width - sx),
-      Math.min(sourceH, state.worldCanvas.height - sy),
-      x,
-      0,
-      viewW,
-      viewH,
-    );
-    const px = x + (player.x - state.worldBounds.x - sx) * zoom;
-    const py = (player.y - state.worldBounds.y - sy) * zoom;
-    c.translate(px, py);
-    c.rotate(player.angle);
-    const spec = race.carSpecs[index];
-    c.fillStyle = PAINTS[race.paints[index]].hex;
-    c.fillRect(
-      (-spec.length * zoom) / 2,
-      (-spec.width * zoom) / 2,
-      spec.length * zoom,
-      spec.width * zoom,
-    );
+    c.translate(index * viewW + viewW / 2, height / 2);
+    c.scale(camera.zoom, camera.zoom);
+    c.translate(-camera.x, -camera.y);
+    drawWorldPass(c);
     c.restore();
-    c.fillStyle = '#10201b';
-    c.fillRect(x, 0, viewW, 42);
-    c.fillStyle = '#f4f1e8';
-    c.font = 'bold 15px Arial';
-    c.fillText(`PLAYER ${index + 1} · ${spec.name.toUpperCase()}`, x + 14, 19);
+  }
+  Object.assign(camera, saved);
+  view.width = width;
+  view.height = height;
+  view.anchor = 0.54;
+}
+
+// Labels, divider, countdown and results drawn over both halves.
+function drawLocalSplitScreen(c) {
+  const race = state.localRace;
+  if (!race) return;
+  const viewW = width / 2;
+  c.save();
+  c.fillStyle = '#10201b';
+  c.fillRect(viewW - 1, 0, 2, height);
+  for (let index = 0; index < 2; index++) {
+    const player = index === 0 ? car : race.players[1],
+      lap = Math.min(race.players[index].lap, race.laps),
+      spec = race.carSpecs[index],
+      title = `PLAYER ${index + 1} · ${spec.name.toUpperCase()}`,
+      detail = `${index === 0 ? 'WASD / PAD 1' : 'ARROWS / PAD 2'}   LAP ${lap}/${race.laps}   ${Math.round(Math.hypot(player.vx, player.vy) * 0.46)} km/h`;
+    c.font = 'bold 14px Arial';
+    const titleW = c.measureText(title).width;
     c.font = '12px Arial';
-    c.fillText(
-      `${index === 0 ? 'WASD / PAD 1' : 'IJKL / PAD 2'}   LAP ${index === 0 ? race.players[0].lap : player.lap}/${race.laps}   ${Math.round(Math.hypot(player.vx, player.vy) * 0.46)} km/h`,
-      x + 14,
-      35,
-    );
-    if (x === 0) c.fillRect(viewW - 1, 0, 2, height);
-  }
-  if (race.countdown > 0) {
-    c.fillStyle = '#08120ddd';
-    c.fillRect(0, height / 2 - 42, width, 84);
+    const boxW = Math.max(titleW, c.measureText(detail).width) + 34,
+      // Labels sit at the top, against the divider, clear of the HUD panels.
+      x = index === 0 ? viewW - 12 - boxW : viewW + 12;
+    c.fillStyle = '#10201bcc';
+    roundedRect(c, x, 10, boxW, 46, 4);
+    c.fill();
+    c.fillStyle = PAINTS[race.paints[index]].hex;
+    c.fillRect(x + 10, 20, 4, 26);
     c.fillStyle = '#f4f1e8';
-    c.font = 'bold 48px Arial';
-    c.textAlign = 'center';
-    c.fillText(String(Math.ceil(race.countdown)), width / 2, height / 2 + 16);
-    c.textAlign = 'start';
+    c.font = 'bold 14px Arial';
+    c.fillText(title, x + 22, 30);
+    c.font = '12px Arial';
+    c.fillText(detail, x + 22, 48);
   }
+  c.textAlign = 'center';
+  if (race.countdown > 0)
+    for (let index = 0; index < 2; index++) {
+      const cx = index * viewW + viewW / 2;
+      c.fillStyle = '#08120ddd';
+      roundedRect(c, cx - 42, height / 2 - 42, 84, 84, 6);
+      c.fill();
+      c.fillStyle = '#f4f1e8';
+      c.font = 'bold 48px Arial';
+      c.fillText(String(Math.ceil(race.countdown)), cx, height / 2 + 16);
+    }
   if (race.finished) {
     c.fillStyle = '#08120dee';
     c.fillRect(width / 2 - 170, height / 2 - 54, 340, 108);
     c.fillStyle = '#f4f1e8';
     c.font = 'bold 20px Arial';
-    c.textAlign = 'center';
     c.fillText('RACE RESULTS', width / 2, height / 2 - 14);
     c.font = '15px Arial';
     c.fillText(
@@ -458,8 +516,8 @@ function drawLocalSplitScreen(c) {
       width / 2,
       height / 2 + 20,
     );
-    c.textAlign = 'start';
   }
+  c.restore();
 }
 
 let gamepadPolling = false;
@@ -524,16 +582,20 @@ function pollGamepad() {
 }
 
 export function drawCar(c) {
+  drawVehicle(c, car, state.activeCar, state.carArt, state.paint);
+}
+
+export function drawVehicle(c, vehicle, spec, art, paint) {
   c.save();
-  c.translate(car.x, car.y);
-  c.rotate(car.angle);
+  c.translate(vehicle.x, vehicle.y);
+  c.rotate(vehicle.angle);
   c.fillStyle = '#10201b40';
   roundedRect(
     c,
-    -state.activeCar.length / 2 + 3,
-    -state.activeCar.width / 2 + 4,
-    state.activeCar.length,
-    state.activeCar.width,
+    -spec.length / 2 + 3,
+    -spec.width / 2 + 4,
+    spec.length,
+    spec.width,
     5,
   );
   c.fill();
@@ -541,32 +603,32 @@ export function drawCar(c) {
   for (const side of [-1, 1]) {
     c.save();
     c.translate(12, side * 11);
-    c.rotate(car.steer * 0.35);
+    c.rotate(vehicle.steer * 0.35);
     c.fillStyle = '#182124';
     c.fillRect(-5, -3, 10, 6);
     c.restore();
     c.fillStyle = '#182124';
     c.fillRect(-17, side * 11 - 3, 10, 6);
   }
-  if (state.carArt.complete && state.carArt.naturalWidth) {
+  if (art?.complete && art.naturalWidth) {
     c.save();
     c.rotate(Math.PI / 2);
     c.drawImage(
-      state.carArt,
-      -state.activeCar.width / 2,
-      -state.activeCar.length / 2,
-      state.activeCar.width,
-      state.activeCar.length,
+      art,
+      -spec.width / 2,
+      -spec.length / 2,
+      spec.width,
+      spec.length,
     );
     c.restore();
   } else {
-    c.fillStyle = PAINTS[state.paint].hex;
+    c.fillStyle = PAINTS[paint].hex;
     roundedRect(
       c,
-      -state.activeCar.length / 2,
-      -state.activeCar.width / 2,
-      state.activeCar.length,
-      state.activeCar.width,
+      -spec.length / 2,
+      -spec.width / 2,
+      spec.length,
+      spec.width,
       5,
     );
     c.fill();
@@ -575,15 +637,15 @@ export function drawCar(c) {
     c.fillStyle = '#293c3f';
     c.fillRect(-9, -8, 6, 16);
   }
-  if (state.activeCar.id === 'formula') {
+  if (spec.id === 'formula') {
     for (const [x, steers] of [
-      [state.activeCar.length * 0.22, true],
-      [-state.activeCar.length * 0.28, false],
+      [spec.length * 0.22, true],
+      [-spec.length * 0.28, false],
     ])
       for (const side of [-1, 1]) {
         c.save();
-        c.translate(x, side * state.activeCar.width * 0.38);
-        if (steers) c.rotate(car.steer * 0.35);
+        c.translate(x, side * spec.width * 0.38);
+        if (steers) c.rotate(vehicle.steer * 0.35);
         c.fillStyle = '#25312d';
         roundedRect(c, -5, -3.2, 10, 6.4, 1.2);
         c.fill();
@@ -591,13 +653,13 @@ export function drawCar(c) {
       }
   }
   c.save();
-  if (car.brake) {
+  if (vehicle.brake) {
     c.shadowColor = '#ff4b35';
     c.shadowBlur = 7;
   }
-  c.fillStyle = car.brake ? '#ff6a4f' : '#942d27';
-  c.fillRect(-state.activeCar.length / 2, -9, 2, 5);
-  c.fillRect(-state.activeCar.length / 2, 4, 2, 5);
+  c.fillStyle = vehicle.brake ? '#ff6a4f' : '#942d27';
+  c.fillRect(-spec.length / 2, -9, 2, 5);
+  c.fillRect(-spec.length / 2, 4, 2, 5);
   c.restore();
   c.restore();
 }
@@ -647,8 +709,8 @@ export function drawPatchHighlights(c, time) {
     if (patch.type !== 'ICE' && patch.type !== 'OIL') continue;
     const p = patchFrame(patch);
     if (
-      Math.abs(p.x - camera.x) > width / camera.zoom ||
-      Math.abs(p.y - camera.y) > height / camera.zoom
+      Math.abs(p.x - camera.x) > view.width / camera.zoom ||
+      Math.abs(p.y - camera.y) > view.height / camera.zoom
     )
       continue;
     c.save();

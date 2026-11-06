@@ -24,7 +24,11 @@ import { driveVehicle } from './vehicle-physics.js';
 import { resolveCityTraffic, updateCityTraffic } from './traffic.js';
 import { recordRewindFrame } from './rewind.js';
 import { $ } from './ui.js';
-import { localPlayerTwoControls, updateLocalRace } from './local-race.js';
+import {
+  localPlayerOneKeys,
+  localPlayerTwoControls,
+  updateLocalRace,
+} from './local-race.js';
 import { updateSkillTrial } from './skill-trials.js';
 
 export function routeKeepingSteering(
@@ -49,6 +53,7 @@ export function simulate(dt) {
   if (opponentRace.enabled && opponentRace.finished) return;
   if (state.localRace?.finished) return;
   lapGhost.previous = [car.x, car.y, car.angle];
+  const held = localPlayerOneKeys(keys, !!state.localRace);
   updateJungle(dt);
   if (state.activeMap.id === 'coast') coast.time += dt;
   if (race.countdown > 0) {
@@ -56,10 +61,7 @@ export function simulate(dt) {
     car.vx = 0;
     car.vy = 0;
     car.yaw = 0;
-    car.throttle =
-      keys.has('KeyW') || keys.has('ArrowUp')
-        ? 1
-        : state.gamepadControls.throttle;
+    car.throttle = held.up ? 1 : state.gamepadControls.throttle;
     if (race.countdown === 0) race.goTime = 0.8;
     if (state.localRace)
       updateLocalRace(
@@ -77,20 +79,12 @@ export function simulate(dt) {
   feedback.impactCooldown = Math.max(0, feedback.impactCooldown - dt);
   timing.flashTime = Math.max(0, timing.flashTime - dt);
   const gamepad = state.gamepadControls,
-    gas =
-      state.settings.autoAccelerate || keys.has('KeyW') || keys.has('ArrowUp')
-        ? 1
-        : gamepad.throttle,
-    braking = keys.has('KeyS') || keys.has('ArrowDown') ? 1 : gamepad.brake,
+    gas = state.settings.autoAccelerate || held.up ? 1 : gamepad.throttle,
+    braking = held.down ? 1 : gamepad.brake,
     hand = keys.has('Space') || gamepad.handbrake > 0,
     manualSteering = Math.max(
       -1,
-      Math.min(
-        1,
-        (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) -
-          (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) +
-          gamepad.steer,
-      ),
+      Math.min(1, (held.right ? 1 : 0) - (held.left ? 1 : 0) + gamepad.steer),
     ),
     steering = state.settings.steeringAssist
       ? clamp(manualSteering + routeKeepingSteering(car) * 0.65, -1, 1)

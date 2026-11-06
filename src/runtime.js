@@ -48,6 +48,7 @@ export function changeTrack(id, announce = true) {
         state.activeCar,
         VEHICLES[state.playerTwoCar],
         state.paint,
+        state.playerTwoPaint,
       )
     : null;
   prepareRewindSession(id, state.activeCar.id);
