@@ -428,7 +428,8 @@ function paintTrackPreview(canvas, map) {
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.fillStyle =
-    map.id === 'city'
+    map.previewColor ||
+    (map.id === 'city'
       ? '#687d75'
       : map.id === 'coast'
         ? '#287f92'
@@ -440,13 +441,19 @@ function paintTrackPreview(canvas, map) {
               ? '#52686e'
               : map.id === 'rallycross'
                 ? '#5b5b3e'
-                : '#354b3d';
+                : '#354b3d');
   c.fillRect(0, 0, canvas.width, canvas.height);
   c.save();
   c.translate(offsetX, offsetY);
   c.scale(scaleToFit, scaleToFit);
   const rand = seededRandom(
-    map.id === 'canyon' ? 513 : map.id === 'alpine' ? 719 : 318,
+    map.id === 'canyon'
+      ? 513
+      : map.id === 'alpine'
+        ? 719
+        : map.id === 'summit'
+          ? 941
+          : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =
@@ -454,7 +461,9 @@ function paintTrackPreview(canvas, map) {
         ? '#bf80572b'
         : map.id === 'alpine'
           ? '#d6ebe324'
-          : '#a5c78516';
+          : map.id === 'summit'
+            ? '#f4d4a21b'
+            : '#a5c78516';
     c.beginPath();
     c.ellipse(
       rand() * 480,

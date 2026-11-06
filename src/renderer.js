@@ -306,7 +306,8 @@ export function draw() {
   state.ctx.save();
   state.ctx.setTransform(pixelDensity(), 0, 0, pixelDensity(), 0, 0);
   state.ctx.fillStyle =
-    state.activeMap.id === 'canyon'
+    state.activeMap.groundColor ||
+    (state.activeMap.id === 'canyon'
       ? '#d5a36d'
       : state.activeMap.id === 'alpine'
         ? '#dbe6e3'
@@ -316,7 +317,7 @@ export function draw() {
             ? '#288f9c'
             : state.activeMap.id === 'city'
               ? '#929b98'
-              : '#8ba274';
+              : '#8ba274');
   state.ctx.fillRect(0, 0, width, height);
   state.ctx.translate(width / 2, height * 0.54);
   state.ctx.scale(camera.zoom, camera.zoom);
