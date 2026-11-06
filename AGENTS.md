@@ -52,29 +52,98 @@ checks pass.
   requirements, unavailable dependencies, or failing checks that you cannot
   resolve, and state the next useful step you can take.
 
+When implementation is complete but a PR remains in the merge queue, the
+coordinator renames this task chat `Waiting for PR · <short task>` without an
+agent number and reuse the numbered slot for a new assignment. A blocked task
+may similarly become `Paused · <short task>`. Keep this chat, branch and PR
+open for review, checks and follow-up until the assignment is complete; a
+released slot does not mean the PR merged.
+
+## Communication standard
+
+Use these two-line structures for every direct coordination message:
+
+```text
+[Agent <number>] [#<issue> <short task>] [<state>]
+Further info: <outcome or request; relevant evidence; next action and owner>
+```
+
+```text
+[Coordinator] [#<issue> <short task>] [<state>]
+Further info: <decision or instruction; relevant evidence; next action and owner>
+```
+
+Use the assigned agent number and tracked issue, with a short, stable task
+name. If the coordinator releases the number and keeps the task chat open as
+`Waiting for PR` or `Paused`, use the former number in that task's handoffs;
+the issue field distinguishes it from a new assignment using that slot.
+Choose a state from `assignment`, `preflight complete`, `progress`,
+`blocked`, `merge request`, `decision`, `changes requested`, `merged`, or
+`ready for new task`. State meanings and copyable lifecycle templates are in
+[the coordinator guide](docs/COORDINATOR_GUIDE.md#communication-standard).
+
+Lead with the result, request, or decision. Use neutral, direct sentences and
+name who acts next when action is needed. Report progress only when a
+milestone, evidence, risk, or next action changes; avoid repeated status,
+filler, invented percentages, or unsupported claims. Include only relevant
+fields. Use `pending` for work awaiting completion and `unknown` for facts
+not yet verified, with the next verification step. Distinguish local results
+from CI results, and implementation readiness from merge completion.
+
+The format does not grant messaging or merge authority. Send required
+handoffs directly to `Cordinator` using the chat messaging tool, within user
+authorization. The coordinator owns the merge queue and merges unless it
+explicitly delegates a specific merge. Keep the assignment open until its
+PR is merged and required follow-up is complete.
+
 ## Coordinator handoffs
 
 Send concise progress and handoff messages in the coordinator chat at these
 points:
 
+- Start every agent-to-coordinator message with
+  `[Agent <number>] [#<issue> <short task>] [<current state>]`. Start every
+  coordinator-to-agent message with
+  `[Coordinator] [#<issue> <short task>] [<current state>]`. Use the current
+  issue/task and a concise state such as `preflight complete`, `progress`,
+  `blocked`, `merge request`, `merged`, or `ready for new task`.
+- Put details on the next line, beginning exactly with `Further info:`. Keep
+  any following lines as supporting detail for that same message.
+
 - A message in your own task chat, a final answer, or an updated chat title is
   not a coordinator handoff. Use the chat messaging tool to send the message
   directly to the coordinator chat titled `Cordinator`.
 
+- Report meaningful progress with evidence and the next action.
 - After task preflight, report the issue, scope, base SHA, ownership/conflict
   scan, and required checks.
 - Report blockers or ambiguity promptly, state what is blocked, and wait for
   coordinator direction before taking dependent action.
-- When implementation is ready for merge review, say “I want to merge PR #X”
-  and include its link, tested head SHA, current base SHA, required check and
+- When implementation is ready for merge review, use the `merge request`
+  state and say “I want to merge PR #<number>” in the `Further info:` line.
+  Include its link, tested head SHA, current base SHA, required check and
   review state, and any freshness or conflict blocker. This is a request for
   the coordinator's merge decision; do not merge on your own unless explicitly
-  delegated.
+  delegated. For example:
+
+  ```text
+  [Agent <number>] [#<issue> <short task>] [merge request]
+  Further info: I want to merge PR #<number>. Head `<sha>`, base `<sha>`; checks: <results>; review: <state>; mergeability: <state>.
+  ```
+
 - If you cannot open or update a PR because GitHub access is unavailable, send
   the coordinator the pushed branch, exact head and base SHAs, local check
   results, and the access blocker. Do not rely on the coordinator finding the
   details in your task chat; the coordinator can open the PR if appropriate.
-- After an explicitly authorized merge, say “I have merged PR #X” and include
+- After performing an explicitly authorized merge, say “I have merged PR #X” and include
   the resulting `master` SHA.
 - After the task is complete, report completion and that you are ready for a
   new task. Keep the task open while its PR or required follow-up is pending.
+
+Coordinator replies use the same two-line structure, with `[Coordinator]` in
+the first field. For example:
+
+```text
+[Coordinator] [#<issue> <short task>] [progress]
+Further info: PR #<number> merged; current default-branch SHA is `<sha>`. Resume the queued work from that base.
+```

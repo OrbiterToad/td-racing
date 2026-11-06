@@ -1,7 +1,7 @@
 # APEX · The Circuit Collection
 
 Pick a car, choose a circuit, and race. APEX is a top-down circuit racer with
-seven tracks, six cars, time trials, lap ghosts, and a three-lap race against AI.
+eight tracks, six cars, time trials, lap ghosts, and a three-lap race against AI.
 
 ## The gallery
 
