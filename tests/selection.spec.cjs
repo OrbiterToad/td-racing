@@ -58,7 +58,7 @@ for (const viewport of [
     const glyphs = await page
       .locator('.mode-icon')
       .evaluateAll((icons) => icons.map((icon) => icon.innerHTML));
-    expect(new Set(glyphs).size).toBe(6);
+    expect(new Set(glyphs).size).toBe(7);
   });
 }
 

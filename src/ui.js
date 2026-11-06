@@ -37,9 +37,9 @@ const GAME_MODES = {
   trial: {
     id: 'trial',
     name: 'Time trial',
-    tag: 'SOLO / CHASE YOUR PERSONAL BEST',
+    tag: 'SOLO / PERSONAL BEST',
     description:
-      'An open track. Unlimited laps. Find your rhythm, set a clean lap and chase your best-lap ghost.',
+      'An open track with unlimited laps, personal-best timing, and a lap ghost.',
   },
   race: {
     id: 'race',
@@ -47,6 +47,13 @@ const GAME_MODES = {
     tag: '4 DRIVERS / 3 LAPS',
     description:
       'Line up against Alex, Blair and Casey. Three laps, fixed opponent pace, and full vehicle contact.',
+  },
+  local: {
+    id: 'local',
+    name: 'Local split screen',
+    tag: 'TWO DRIVERS / THREE LAPS',
+    description:
+      'Two players on one circuit and one screen, three laps. Player 1 uses WASD; Player 2 uses IJKL or a second gamepad.',
   },
   ...SKILL_TRIALS,
 };
@@ -56,6 +63,8 @@ const MODE_ICON_PATHS = {
   trial:
     '<circle cx="16" cy="17" r="10"/><path d="M16 11v6l4 3M12 3h8M16 3v4"/>',
   race: '<path d="M7 29V4m0 1h18v13H7m6-13v13m6-13v13M7 11h18"/>',
+  local:
+    '<rect x="3" y="6" width="26" height="20" rx="2"/><path d="M16 6v20M8 19l2-6 2 6m8 0 2-6 2 6"/>',
   braking: '<path d="M8 5h16l5 11-5 11H8L3 16zM12 10v12m8-12v12"/>',
   slalom: '<path d="M6 5v6m20 2v6M6 23v6M13 4c15 4-9 9 2 14s6 7 4 11"/>',
   handbrake: '<path d="M7 26V15a9 9 0 0 1 18 0v4m-5-5 5 5 5-5M4 26h6"/>',
@@ -149,7 +158,11 @@ export function syncCarHUD() {
 // Shared entry point for startup and returning to setup after a session.
 export function openSessionSetup() {
   state.selectingSession = true;
-  state.pendingGameMode = opponentRace.enabled ? 'race' : 'trial';
+  state.pendingGameMode = state.localMultiplayer
+    ? 'local'
+    : opponentRace.enabled
+      ? 'race'
+      : 'trial';
   document.body.classList.add('starting');
   openPicker('garage');
 }
@@ -159,6 +172,8 @@ export function openPicker(mode) {
   state.pickerMode = mode;
   state.pendingTrack = state.activeMap.id;
   state.pendingCar = state.activeCar.id;
+  state.pendingPaint = state.paint;
+  state.pendingPlayerTwoCar = state.playerTwoCar;
   state.pendingPaint = state.paint;
   state.pickerWasPaused = state.paused;
   setPaused(true, false);
@@ -223,13 +238,10 @@ export function renderPicker() {
       : 'Choose your ride.';
   $('picker-eyebrow').textContent = 'APEX / THE DRIVING CLUB';
   $('picker-description').textContent = modes
-    ? 'One last choice. How do you want to drive?'
+    ? 'Choose a driving mode.'
     : tracks
-      ? vehicle.name +
-        ' · ' +
-        PAINTS[state.pendingPaint].name +
-        ' / Find your next apex.'
-      : 'Six machines. Five colors. Make the grid your own.';
+      ? vehicle.name + ' · ' + PAINTS[state.pendingPaint].name
+      : 'Choose a car and paint.';
   document.querySelector('.picker-steps').hidden = !state.selectingSession;
   document.querySelector('.wizard-nav-actions').hidden =
     !state.selectingSession;
@@ -279,7 +291,7 @@ export function renderPicker() {
         vehicle.name.toUpperCase() +
         ' / ' +
         selected.name.toUpperCase()
-      : 'YOUR RIDE / ' +
+      : 'SELECTED CAR / ' +
         selected.name.toUpperCase() +
         ' / ' +
         PAINTS[state.pendingPaint].name.toUpperCase();
@@ -306,14 +318,25 @@ export function renderPicker() {
     medalDetails = `<div class="medal-progress" aria-label="Medal progress for ${selected.name} and ${vehicle.name}"><span class="medal-earned">EARNED / <b>${earned ? earned.toUpperCase() : 'NONE'}</b></span><div class="medal-targets" aria-label="Medal target times">${['bronze', 'silver', 'gold'].map((medal) => `<span class="medal-target ${medal}" data-medal="${medal}"><b>${medal.toUpperCase()}</b><time>${formatTime(targets[medal])}</time></span>`).join('')}</div></div>`;
   }
   const art = modes
-    ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : SKILL_TRIALS[selectedId] ? 'SHORT DRIVING CHALLENGE' : 'YOUR TRACK. YOUR PACE.'}</span>`
+    ? `<canvas id="selected-preview" width="480" height="270" aria-label="${MAPS[state.pendingTrack].name} track layout"></canvas><span class="mode-banner">${selectedId === 'race' ? '4 DRIVERS / 3 LAPS' : selectedId === 'local' ? '2 DRIVERS / SPLIT SCREEN' : SKILL_TRIALS[selectedId] ? 'SHORT DRIVING CHALLENGE' : 'TIME TRIAL'}</span>`
     : tracks
       ? `<canvas id="selected-preview" width="480" height="270" aria-label="${selected.name} track layout"></canvas>`
       : `<img src="${carImagePath(selectedId, state.pendingPaint)}" alt="${selected.name} in ${PAINTS[state.pendingPaint].name} paint">`;
   const details = modes
     ? SKILL_TRIALS[selectedId]
       ? `<div class="mode-summary"><span>${vehicle.name} / ${MAPS[state.pendingTrack].name}</span><span>LOCAL SKILL PROGRESS / ${readSkillProgress()[selectedId]?.completions || 0} COMPLETED · BEST ${readSkillProgress()[selectedId]?.best ?? '—'}%</span></div>`
-      : `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span></div>`
+      : `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : selectedId === 'local' ? 'THREE LAPS · TWO LOCAL DRIVERS' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span>${
+          selectedId === 'local'
+            ? `<label class="player-two-car" for="player-two-car">PLAYER 2 CAR <select id="player-two-car">${Object.values(
+                VEHICLES,
+              )
+                .map(
+                  (car) =>
+                    `<option value="${car.id}" ${car.id === state.pendingPlayerTwoCar ? 'selected' : ''}>${car.name}</option>`,
+                )
+                .join('')}</select></label>`
+            : ''
+        }</div>`
     : tracks
       ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div>${medalDetails}<span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
       : `<div class="car-stats">${['PACE', 'HANDLING', 'OFF ROAD'].map((label, i) => `<span>${label}<i><b style="width:${selected.bars[i] * 100}%"></b></i></span>`).join('')}</div>`;
@@ -327,7 +350,7 @@ export function renderPicker() {
       </div>
     </div>
     <div class="choice-rail" aria-label="${modes ? 'Game modes' : tracks ? 'Circuits' : 'Cars'}" style="--choice-count:${choices.length}">
-      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? modeIcon(item.id) : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? (clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R') : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
+      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? modeIcon(item.id) : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? (clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R') : item.id === 'local' ? '2 players / split screen' : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
 
     </div>
     ${
@@ -360,6 +383,12 @@ export function renderPicker() {
       document.querySelector(`[data-paint="${state.pendingPaint}"]`).focus();
     };
   }
+  const playerTwoCar = $('player-two-car');
+  if (playerTwoCar)
+    playerTwoCar.onchange = () => {
+      state.pendingPlayerTwoCar = playerTwoCar.value;
+      renderPicker();
+    };
 }
 
 export function applyPicker() {
@@ -385,6 +414,8 @@ export function applyPicker() {
       changeTrack(state.activeMap.id, false);
     syncCarHUD();
   }
+  state.localMultiplayer = state.pendingGameMode === 'local';
+  if (state.localMultiplayer) state.playerTwoCar = state.pendingPlayerTwoCar;
   if (
     state.selectingSession ||
     (state.pickerMode === 'tracks' && state.pendingTrack !== state.activeMap.id)
@@ -392,6 +423,8 @@ export function applyPicker() {
     if (state.selectingSession)
       opponentRace.enabled =
         state.pendingGameMode === 'race' && clubRaceAvailable();
+    if (state.selectingSession)
+      state.localMultiplayer = state.pendingGameMode === 'local';
     changeTrack(state.pendingTrack, false);
   }
   if (startingSession && SKILL_TRIALS[state.pendingGameMode])

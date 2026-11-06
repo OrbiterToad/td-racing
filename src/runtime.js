@@ -2,7 +2,7 @@ import { initModalKeyboard } from './accessibility.js';
 import { toggleOpponentRace } from './opponents.js';
 import { toggleSound } from './audio.js';
 import { configureCar, loadCarArt, readBest } from './cars.js';
-import { MAPS } from './config.js';
+import { MAPS, VEHICLES } from './config.js';
 import { drawMinimap } from './minimap.js';
 import {
   beginLap,
@@ -39,9 +39,17 @@ import {
 import { buildWorld } from './world.js';
 import { initTouchControls } from './touch-controls.js';
 import { prepareRewindSession, rewind } from './rewind.js';
+import { createLocalRace } from './local-race.js';
 
 export function changeTrack(id, announce = true) {
   if (!configureTrack(id)) return;
+  state.localRace = state.localMultiplayer
+    ? createLocalRace(
+        state.activeCar,
+        VEHICLES[state.playerTwoCar],
+        state.paint,
+      )
+    : null;
   prepareRewindSession(id, state.activeCar.id);
   keys.clear();
   skidmarks.length = 0;
@@ -82,7 +90,7 @@ export function changeTrack(id, announce = true) {
   $('open-tracks').textContent = state.activeMap.name + ' ▾';
   $('track-label').textContent = state.activeMap.label;
   $('track-title').textContent = state.activeMap.name;
-  $('track-subtitle').textContent = state.activeMap.subtitle;
+  $('track-subtitle').textContent = state.activeMap.description;
   $('temperature').textContent = state.activeMap.temperature;
   $('grip-label').textContent = state.activeMap.gripLabel;
   document.documentElement.style.setProperty('--lime', state.activeMap.accent);
@@ -116,7 +124,7 @@ export function changeTrack(id, announce = true) {
                 ? 'W to drive · Dirt needs a slide. Asphalt needs a clean exit.'
                 : state.activeMap.id === 'drift'
                   ? 'W to drive · Use the wide runoff to link controlled slides.'
-                  : 'W to drive · Find your apex. Avoid the dark oil slicks.';
+                  : 'W to drive · Avoid the dark oil slicks.';
   try {
     localStorage.setItem('apex-selected-track', id);
   } catch (_) {}
