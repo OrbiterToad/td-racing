@@ -37,6 +37,8 @@ export function buildWorld() {
     amazon = mapBaseId(state.activeMap) === 'amazonas',
     seaside = mapBaseId(state.activeMap) === 'coast',
     urban = mapBaseId(state.activeMap) === 'city',
+    drift = mapBaseId(state.activeMap) === 'drift',
+    summit = mapBaseId(state.activeMap) === 'summit',
     c = state.worldCtx,
     rand = seededRandom(
       desert
@@ -49,7 +51,11 @@ export function buildWorld() {
               ? 6845
               : urban
                 ? 4209
-                : 879,
+                : drift
+                  ? 7744
+                  : summit
+                    ? 9431
+                    : 879,
     ),
     w = state.worldBounds.width,
     h = state.worldBounds.height;
@@ -59,7 +65,11 @@ export function buildWorld() {
       ? '#dbe6e3'
       : amazon
         ? '#28523b'
-        : '#8ba274';
+        : drift
+          ? '#152e3a'
+          : summit
+            ? state.activeMap.groundColor
+            : '#8ba274';
   c.fillRect(0, 0, w, h);
   c.translate(-state.worldBounds.x, -state.worldBounds.y);
   // All scenery is orthographic: tree crowns, roof planes, and flat ground markings.

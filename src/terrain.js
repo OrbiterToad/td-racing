@@ -373,6 +373,36 @@ export function paintRallyRoad(c, rand) {
   }
 }
 
+export function paintDriftGround(c, bounds, rand) {
+  const { x, y, width, height } = bounds;
+  c.fillStyle = '#123542';
+  c.fillRect(x, y, width, height);
+  c.fillStyle = '#1b4654';
+  for (let i = 0; i < 34; i++) {
+    const px = x + rand() * width,
+      py = y + rand() * height;
+    c.beginPath();
+    c.ellipse(
+      px,
+      py,
+      90 + rand() * 220,
+      40 + rand() * 120,
+      rand() * 6.28,
+      0,
+      6.28,
+    );
+    c.fill();
+  }
+  c.strokeStyle = '#48a8b833';
+  c.lineWidth = 3;
+  for (let px = x - height; px < x + width; px += 120) {
+    c.beginPath();
+    c.moveTo(px, y);
+    c.lineTo(px + height, y + height);
+    c.stroke();
+  }
+}
+
 export function paintSurfacePatches(c) {
   c.save();
   c.beginPath();
@@ -571,6 +601,7 @@ export function paintPatch(c, patch, index = 0) {
 }
 
 export function paintAlpineRidges(c, rand, w, h) {
+  const summit = state.activeMap.id === 'summit';
   for (let i = 0; i < 100; i++) {
     const x = state.worldBounds.x + rand() * w,
       y = state.worldBounds.y + rand() * h,
@@ -579,12 +610,19 @@ export function paintAlpineRidges(c, rand, w, h) {
     c.save();
     c.translate(x, y);
     c.rotate(rand() * 6.28);
-    for (const [scale, color] of [
-      [1, '#a4b6b8'],
-      [0.88, '#c1cfcf'],
-      [0.67, '#edf3ed'],
-      [0.43, '#d5e2df'],
-    ]) {
+    for (const [scale, color] of summit
+      ? [
+          [1, '#536b67'],
+          [0.88, '#718477'],
+          [0.67, '#87917b'],
+          [0.43, '#a39d7f'],
+        ]
+      : [
+          [1, '#a4b6b8'],
+          [0.88, '#c1cfcf'],
+          [0.67, '#edf3ed'],
+          [0.43, '#d5e2df'],
+        ]) {
       c.fillStyle = color;
       c.beginPath();
       for (let j = 0; j < 8; j++) {

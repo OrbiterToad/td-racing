@@ -78,6 +78,8 @@ export function paddockAssetLayout() {
       coast: 'coastal',
       city: 'city',
       rallycross: 'industrial',
+      drift: 'industrial',
+      summit: 'industrial',
     }[mapBaseId(state.activeMap)],
     front = state.paddock.side === 1 ? -1 : 1,
     y = front < 0 ? 18 : -5,
@@ -182,6 +184,8 @@ export function paintPaddock(c) {
     coast: '#d0c09b',
     city: '#a8b1a5',
     rallycross: '#b4ad8e',
+    drift: '#5e7b82',
+    summit: '#aaa88f',
   }[mapBaseId(state.activeMap)];
   c.save();
   c.translate(state.paddock.x, state.paddock.y);
@@ -478,6 +482,24 @@ export function buildSceneryDetails() {
         'spectator-stand',
         'cabin',
       ],
+      drift: [
+        'tires',
+        'canopy',
+        'service-transporter',
+        'rock',
+        'tool-trolley',
+        'spectator-stand',
+        'cafe-terrace',
+        'shed-garden',
+      ],
+      summit: [
+        'rock',
+        'pine',
+        'snowdrift',
+        'cabin',
+        'shed-garden',
+        'spectator-stand',
+      ],
       coast: [
         'umbrella',
         'flowers',
@@ -741,6 +763,8 @@ export function buildSceneryTrees() {
       coast: ['tree-palm', 'tree-fan-palm'],
       city: ['tree-birch', 'tree-elm', 'tree-willow'],
       rallycross: ['tree-oak', 'tree-birch', 'tree-pine'],
+      drift: ['tree-oak', 'tree-willow', 'tree-palm'],
+      summit: ['tree-pine', 'tree-pine', 'tree-oak', 'tree-birch'],
     }[id];
   for (
     let i = 0;

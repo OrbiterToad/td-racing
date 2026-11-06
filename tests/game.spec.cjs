@@ -44,7 +44,9 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
     'Amazonas',
     'Costa Azul',
     'Juniper Raceway',
+    'Summit Grand Prix',
     'City Streets',
+    'Neon Harbor Drift Park',
   ];
   for (const track of tracks) {
     await page.locator('#open-tracks').click();
@@ -89,7 +91,9 @@ test('packaged game loads, changes tracks and cars, and remembers selections', a
   );
   await startSession(page);
   await expect(page.locator('#car-name')).toHaveText('FORMULA X');
-  await expect(page.locator('#track-title')).toHaveText('City Streets');
+  await expect(page.locator('#track-title')).toHaveText(
+    'Neon Harbor Drift Park',
+  );
   await expect(page.locator('#game canvas.p5Canvas')).toBeVisible();
 
   await page.locator('#pause').click();
@@ -358,7 +362,7 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
   await page
     .getByRole('button', { name: 'Choose Costa Azul', exact: true })
     .click();
-  await page.keyboard.press('Escape');
+  await page.locator('#picker-close').click();
   await expect(page.locator('#selection-dialog')).toBeVisible();
   await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   await expect(guide).not.toBeVisible();
@@ -464,7 +468,7 @@ for (const viewport of [
       );
       for (
         let choice = 0;
-        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 7 : 1);
+        choice < (mode === 'garage' ? 6 : mode === 'tracks' ? 9 : 1);
         choice++
       ) {
         const dimensions = await page
@@ -518,7 +522,7 @@ for (const viewport of [
         mode === 'garage'
           ? '02 / 06'
           : mode === 'tracks'
-            ? '02 / 07'
+            ? '02 / 09'
             : '04 / 06',
       );
       await page.locator('#picker-apply').click();

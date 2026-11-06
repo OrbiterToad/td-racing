@@ -125,7 +125,13 @@ export function changeTrack(id, announce = true) {
     notify(
       state.activeMap.name.toUpperCase() +
         ' · ' +
-        (baseId === 'canyon' ? 'EXPERT CIRCUIT' : 'FLOW CIRCUIT'),
+        (baseId === 'canyon'
+          ? 'EXPERT CIRCUIT'
+          : baseId === 'drift'
+            ? 'DRIFT PARK'
+            : baseId === 'summit'
+              ? 'SUMMIT CIRCUIT'
+              : 'FLOW CIRCUIT'),
     );
 }
 

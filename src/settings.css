@@ -328,8 +328,12 @@
   }
 
   .setting-row {
-    min-height: 92px;
-    padding: 10px 0;
+    min-height: 72px;
+    padding: 8px 0;
+  }
+
+  .setting-copy p {
+    display: none;
   }
 
   .settings-footer {
@@ -472,7 +476,7 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .settings-panel {
-    gap: 6px;
+    gap: 4px;
   }
 
   .settings-heading {
@@ -489,11 +493,15 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .setting-row {
-    min-height: 72px;
-    padding: 6px 0;
+    min-height: 56px;
+    padding: 2px 0;
+  }
+
+  .setting-copy p {
+    display: none;
   }
 
   .settings-footer {
-    padding-top: 6px;
+    padding-top: 4px;
   }
 }

@@ -246,7 +246,12 @@ export function buildPitLane() {
   const entry = pointOnTrack(-650),
     exit = pointOnTrack(700),
     side = state.paddock.side;
-  pitLane.wall = state.activeMap.variant === 'forward' ? 52 : 0;
+  pitLane.wall =
+    state.activeMap.variant === 'forward'
+      ? mapBaseId(state.activeMap) === 'drift'
+        ? 48
+        : 52
+      : 0;
   const paddockLaneOffset = state.activeMap.variant === 'forward' ? 0 : 100,
     laneY = side === 1 ? -145 - paddockLaneOffset : 180 + paddockLaneOffset,
     a = paddockPoint(-200, laneY),
@@ -426,7 +431,11 @@ export function nearestDriving(x, y) {
     main.wall +
     (state.activeMap.variant === 'forward' ? pitLane.wall : 40);
   const pit = nearestPit(x, y);
-  if (state.activeMap.variant !== 'forward' && pit && pit.distance < 1)
+  if (
+    state.activeMap.variant !== 'forward' &&
+    pit &&
+    pit.distance < (mapBaseId(state.activeMap) === 'canyon' ? 0.01 : 0.5)
+  )
     return pit;
   if (
     margin <= 0 ||
