@@ -26,7 +26,7 @@ async function startTrial(page) {
   await expect(page.locator('#game')).toBeFocused();
 }
 
-test('setup supports keyboard selection, paint, Back, disabled modes and contained visible focus', async ({
+test('setup supports keyboard selection, paint, Back, race modes and contained visible focus', async ({
   page,
 }) => {
   await openSetup(page);
@@ -91,10 +91,12 @@ test('setup supports keyboard selection, paint, Back, disabled modes and contain
     name: 'Choose Club race',
     exact: true,
   });
-  await expect(race).toBeDisabled();
+  await expect(race).toBeEnabled();
   await expect(race).toHaveAccessibleDescription(
-    'Requires Juniper + Clubsport R',
+    'Alex, Blair & Casey / 3 laps',
   );
+  await page.keyboard.press('ArrowRight');
+  await expect(race).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('[data-choice="braking"]')).toBeFocused();
   await page.keyboard.press('Enter');

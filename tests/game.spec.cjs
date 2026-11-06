@@ -383,7 +383,7 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
   await expect(page.locator('#picker-title')).toHaveText('Choose your mode.');
   await expect(
     page.getByRole('button', { name: 'Choose Club race', exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   expect((await readStartup()).worldBuilt).toBe(false);
   await page
     .getByRole('button', { name: 'Back to circuit selection', exact: true })
@@ -523,7 +523,7 @@ for (const viewport of [
           ? '02 / 06'
           : mode === 'tracks'
             ? '02 / 09'
-            : '04 / 06',
+            : '03 / 06',
       );
       await page.locator('#picker-apply').click();
     }

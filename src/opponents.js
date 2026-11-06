@@ -1,5 +1,6 @@
-import { carImagePath, configureCar, loadCarArt } from './cars.js';
-import { CFG, PAINTS } from './config.js';
+import { aiDifficulty, chooseRaceLine } from './ai-racecraft.js';
+import { carImagePath } from './cars.js';
+import { CFG, PAINTS, VEHICLES } from './config.js';
 import { clamp } from './math.js';
 import { inWorldView, roundedRect } from './renderer.js';
 import { syncRaceResults } from './results.js';
@@ -18,7 +19,7 @@ import {
   resolveVehicleBarrier,
   resolveVehicleCollision,
 } from './vehicle-physics.js';
-import { $, formatTime, notify, syncCarHUD } from './ui.js';
+import { $, formatTime, notify } from './ui.js';
 
 export { opponentRace };
 export const opponentArt = {};
@@ -26,10 +27,7 @@ export const opponentArt = {};
 export function toggleOpponentRace() {
   opponentRace.enabled = !opponentRace.enabled;
   if (opponentRace.enabled) {
-    configureCar('clubsport', state.paint);
-    loadCarArt();
-    syncCarHUD();
-    changeTrack('juniper', false);
+    changeTrack(state.activeMap.id, false);
     notify('CLUB RACE · Three laps · Full contact');
   } else {
     changeTrack(state.activeMap.id, false);
@@ -70,7 +68,7 @@ export function resetOpponentRace() {
       Math.min(
         335,
         Math.sqrt(40 / Math.max(turn / 80, 0.0001)),
-        oily ? 155 : Infinity,
+        oily ? 125 : Infinity,
       ),
     );
   }
@@ -92,12 +90,21 @@ export function resetOpponentRace() {
   for (let i = 0; i < 3; i++) {
     const slot = slots[i],
       color = colors[i];
-    if (!opponentArt[color] && typeof Image !== 'undefined') {
+    const vehicleIds = Object.keys(VEHICLES),
+      vehicleId =
+        vehicleIds[
+          (vehicleIds.indexOf(state.activeCar.id) +
+            (opponentRace.grid === 'mixed' ? i : 0)) %
+            vehicleIds.length
+        ],
+      artKey = vehicleId + '-' + color;
+    if (!opponentArt[artKey] && typeof Image !== 'undefined') {
       const art = new Image();
-      art.src = carImagePath('clubsport', color);
-      opponentArt[color] = art;
+      art.src = carImagePath(vehicleId, color);
+      opponentArt[artKey] = art;
     }
     const rival = {
+      vehicleId,
       name: ['Alex', 'Blair', 'Casey'][i],
       paint: color,
       s: -90 - slot * 80,
@@ -135,14 +142,23 @@ export function updateOpponents(dt) {
   opponentRace.elapsed += dt;
   const length = track.totalLength,
     finish = length * opponentRace.laps,
-    vehicle = state.activeCar;
+    tuning = aiDifficulty(opponentRace.difficulty);
   for (const rival of opponentRace.cars) {
     if (rival.finish !== null) continue;
+    const vehicle = VEHICLES[rival.vehicleId] || state.activeCar;
     const current = nearestDriving(rival.x, rival.y),
       currentS = current.progress * length,
       s = ((rival.s % length) + length) % length,
       index = Math.floor(s / opponentRace.spacing),
-      target = opponentRace.profile[index] * rival.pace * 0.7,
+      target =
+        opponentRace.profile[index] *
+        rival.pace *
+        0.7 *
+        tuning.pace *
+        Math.min(1, Math.sqrt(vehicle.grip)) *
+        (vehicle.id === 'sprint' || vehicle.id === 'clubsport' ? 0.85 : 1) *
+        (vehicle.yawResponse ? 0.45 : 1) *
+        (state.activeMap.id === 'city' ? (vehicle.yawResponse ? 0.9 : 0.6) : 1),
       lookAhead = clamp(70 + rival.speed * 0.12, 70, 130),
       ahead = pointOnTrack(currentS + lookAhead),
       currentAngle = Math.atan2(current.ty, current.tx),
@@ -151,7 +167,42 @@ export function updateOpponents(dt) {
         Math.sin(aheadAngle - currentAngle),
         Math.cos(aheadAngle - currentAngle),
       ),
-      headingError = Math.atan2(
+      traffic = [car, ...opponentRace.cars]
+        .filter(
+          (other) =>
+            other !== rival &&
+            other.finish == null &&
+            Math.hypot(other.x - rival.x, other.y - rival.y) < 350,
+        )
+        .map((other) => {
+          const p = nearestDriving(other.x, other.y);
+          let gap = p.progress * length - currentS;
+          if (gap > length / 2) gap -= length;
+          if (gap < -length / 2) gap += length;
+          return {
+            gap,
+            lane: p.side * p.distance,
+            width: (VEHICLES[other.vehicleId] || state.activeCar).width,
+            closing: rival.speed - Math.hypot(other.vx, other.vy),
+          };
+        }),
+      decision = chooseRaceLine({
+        lane: rival.offset ?? 0,
+        halfRoad: Math.min(current.road || CFG.road, CFG.road - 16),
+        width: vehicle.width,
+        curvature:
+          rival.slickTime > 0 || target < 140 || current.distance > 20
+            ? 1
+            : turnAhead,
+        traffic,
+      });
+    rival.action = decision.action;
+    rival.lane += clamp(
+      decision.lane - rival.lane,
+      -tuning.lineRate * dt,
+      tuning.lineRate * dt,
+    );
+    const headingError = Math.atan2(
         Math.sin(currentAngle - rival.angle),
         Math.cos(currentAngle - rival.angle),
       ),
@@ -161,9 +212,16 @@ export function updateOpponents(dt) {
       desiredAngle =
         Math.atan((vehicle.wheelbase * turnAhead) / lookAhead) +
         headingError -
-        Math.atan2(4 * lateralError, rival.speed + 15),
+        Math.atan2(
+          (vehicle.yawResponse ? 1.5 : 4) * lateralError,
+          rival.speed + 15,
+        ),
       steer = clamp(desiredAngle / steeringRange, -1, 1);
-    rival.brake = rival.speed > target + 5;
+    rival.brake =
+      rival.speed > target + tuning.brakeMargin ||
+      (!vehicle.yawResponse &&
+        (Math.abs(turnAhead) > 0.04 || rival.slickTime > 0) &&
+        rival.speed > Math.max(15, target - 3));
     driveVehicle(
       rival,
       { steer, throttle: rival.speed < target - 4, brake: rival.brake },
@@ -194,7 +252,10 @@ export function resolveOpponentCollisions() {
   if (!opponentRace.enabled) return;
   const vehicles = [
     { vehicle: car, spec: state.activeCar },
-    ...opponentRace.cars.map((vehicle) => ({ vehicle, spec: state.activeCar })),
+    ...opponentRace.cars.map((vehicle) => ({
+      vehicle,
+      spec: VEHICLES[vehicle.vehicleId] || state.activeCar,
+    })),
   ];
   for (let i = 0; i < vehicles.length; i++)
     for (let j = i + 1; j < vehicles.length; j++)
@@ -237,7 +298,7 @@ export function opponentStandings() {
 
 export function updateOpponentHUD() {
   const enabled = opponentRace.enabled;
-  $('race-mode').textContent = enabled ? 'Time trial' : 'Race AI · Juniper';
+  $('race-mode').textContent = enabled ? 'Time trial' : 'Race AI';
   $('race-mode').setAttribute('aria-pressed', String(enabled));
   $('race-panel').hidden = !enabled;
   $('session-mode').textContent = enabled ? 'CLUB RACE' : 'FREE PRACTICE';
@@ -280,25 +341,39 @@ export function updateOpponentHUD() {
 export function drawOpponents(c) {
   for (const rival of opponentRace.cars) {
     if (!inWorldView(rival.x, rival.y, 80)) continue;
+    const spec = VEHICLES[rival.vehicleId] || state.activeCar;
     c.save();
     c.translate(rival.x, rival.y);
     c.rotate(rival.angle);
     c.globalAlpha = 0.8;
-    const art = opponentArt[rival.paint];
+    const art = opponentArt[rival.vehicleId + '-' + rival.paint];
     if (art && art.complete && art.naturalWidth) {
       c.save();
       c.rotate(Math.PI / 2);
-      c.drawImage(art, -12, -22, 24, 44);
+      c.drawImage(
+        art,
+        -spec.width / 2,
+        -spec.length / 2,
+        spec.width,
+        spec.length,
+      );
       c.restore();
     } else {
       c.fillStyle = PAINTS[rival.paint].hex;
-      roundedRect(c, -22, -12, 44, 24, 4);
+      roundedRect(
+        c,
+        -spec.length / 2,
+        -spec.width / 2,
+        spec.length,
+        spec.width,
+        4,
+      );
       c.fill();
     }
     if (rival.brake) {
       c.fillStyle = '#ff6a4f';
-      c.fillRect(-22, -10, 3, 5);
-      c.fillRect(-22, 5, 3, 5);
+      c.fillRect(-spec.length / 2, -spec.width / 2 + 2, 3, 5);
+      c.fillRect(-spec.length / 2, spec.width / 2 - 7, 3, 5);
     }
     c.restore();
     c.save();
