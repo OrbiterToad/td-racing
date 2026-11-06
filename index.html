@@ -814,6 +814,8 @@
       .picker-content {
         flex: 1;
         min-height: 0;
+        min-width: 0;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -1053,6 +1055,8 @@
       }
       .choice-rail {
         display: grid;
+        min-width: 0;
+        overflow: hidden;
         grid-template-columns: repeat(var(--choice-count), minmax(0, 1fr));
         gap: 10px;
         flex: none;
@@ -1082,6 +1086,10 @@
         color: var(--lime);
       }
       .choice-tile strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font:
           700 clamp(14px, 1.4vw, 22px)/1.1 'Barlow Condensed',
           Impact,
