@@ -51,6 +51,10 @@ module.exports = [
     languageOptions: { globals: globals.browser },
   },
   {
+    files: ['tools/**/*.mjs'],
+    languageOptions: { sourceType: 'module', globals: globals.node },
+  },
+  {
     files: ['verify.mjs'],
     languageOptions: { globals: globals.node },
     // Keep existing simulation assertions intact while adding lint coverage.

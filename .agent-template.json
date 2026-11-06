@@ -1,0 +1,8 @@
+{
+  "repository": "OrbiterToad/agent-coordinator-template",
+  "ref": "main",
+  "files": {
+    "AGENTS.md": "AGENTS.md",
+    "CORDINATOR_AGENT.md": "CORDINATOR_AGENT.md"
+  }
+}
