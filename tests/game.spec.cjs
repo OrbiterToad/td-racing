@@ -472,7 +472,7 @@ test('wizard waits for car, circuit and mode, preserves choices when going back,
   await page
     .getByRole('button', { name: 'Choose Costa Azul', exact: true })
     .click();
-  await page.locator('#picker-close').click();
+  await page.locator('#wizard-back').click();
   await expect(page.locator('#selection-dialog')).toBeVisible();
   await expect(page.locator('#picker-title')).toHaveText('Choose your ride.');
   await expect(guide).not.toBeVisible();
@@ -655,7 +655,7 @@ test('wizard step buttons and Back/Next navigate directly while preserving choic
   await page.getByRole('button', { name: 'Paint Ocean', exact: true }).click();
   await page.locator('#step-mode').click();
   await expect(page.locator('#picker-title')).toHaveText('Choose your mode.');
-  await expect(page.locator('#wizard-forward')).toBeDisabled();
+  await expect(page.locator('#picker-apply')).toHaveText('START DRIVING →');
   await expect(page.locator('#step-mode')).toHaveAttribute(
     'aria-current',
     'step',
@@ -674,7 +674,7 @@ test('wizard step buttons and Back/Next navigate directly while preserving choic
   await expect(
     page.getByRole('button', { name: 'Paint Ocean', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('#wizard-forward').click();
+  await page.locator('#picker-apply').click();
   await expect(page.locator('[data-choice="juniper"]')).toHaveAttribute(
     'aria-pressed',
     'true',
