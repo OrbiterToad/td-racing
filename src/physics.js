@@ -14,6 +14,7 @@ import {
   race,
   opponentRace,
   skidmarks,
+  skillTrial,
   state,
   timing,
   track,
@@ -23,6 +24,7 @@ import { driveVehicle } from './vehicle-physics.js';
 import { resolveCityTraffic, updateCityTraffic } from './traffic.js';
 import { recordRewindFrame } from './rewind.js';
 import { $ } from './ui.js';
+import { updateSkillTrial } from './skill-trials.js';
 
 export function simulate(dt) {
   if (opponentRace.enabled && opponentRace.finished) return;
@@ -151,7 +153,8 @@ export function simulate(dt) {
     race.previous = after.progress;
     beginLap();
   }
-  if (race.started) updateRace(dt, after);
+  if (skillTrial.active) updateSkillTrial(dt, { ...drive, after });
+  else if (race.started) updateRace(dt, after);
   recordGhostFrame();
   if (offroad && speed < 7 && gas) {
     race.stuck += dt;

@@ -55,6 +55,7 @@ export function configureTrack(id) {
   opponentRace.cars.length = 0;
   state.BEST_KEY = bestKeyFor();
   for (const key of ['road', 'runoff', 'wall']) CFG[key] = state.activeMap[key];
+  pitLane.wall = id === 'drift' ? 48 : 52;
   resetCityTraffic();
   race.crossedStart = false;
   race.countdown = 0;
@@ -243,6 +244,7 @@ export function buildPitLane() {
   const entry = pointOnTrack(-650),
     exit = pointOnTrack(700),
     side = state.paddock.side;
+  const control = 180;
   const a = paddockPoint(-200, side === 1 ? -145 : 180),
     b = paddockPoint(220, side === 1 ? -145 : 180),
     points = [];
@@ -266,16 +268,22 @@ export function buildPitLane() {
   }
   curve(
     entry,
-    { x: entry.x + entry.tx * 180, y: entry.y + entry.ty * 180 },
-    { x: a.x - state.paddock.tx * 180, y: a.y - state.paddock.ty * 180 },
+    { x: entry.x + entry.tx * control, y: entry.y + entry.ty * control },
+    {
+      x: a.x - state.paddock.tx * control,
+      y: a.y - state.paddock.ty * control,
+    },
     a,
   );
   for (let i = 0; i < 60; i++)
     points.push({ x: lerpTo(a.x, b.x, i / 60), y: lerpTo(a.y, b.y, i / 60) });
   curve(
     b,
-    { x: b.x + state.paddock.tx * 180, y: b.y + state.paddock.ty * 180 },
-    { x: exit.x - exit.tx * 180, y: exit.y - exit.ty * 180 },
+    {
+      x: b.x + state.paddock.tx * control,
+      y: b.y + state.paddock.ty * control,
+    },
+    { x: exit.x - exit.tx * control, y: exit.y - exit.ty * control },
     exit,
   );
   points.push({ x: exit.x, y: exit.y });

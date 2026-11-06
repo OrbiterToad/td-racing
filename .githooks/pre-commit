@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -eu
+
+staged_files() {
+  git diff --cached --name-only --diff-filter=ACMR -z
+}
+
+if [ -x node_modules/.bin/prettier ]; then
+  if staged_files | xargs -0 -r node_modules/.bin/prettier --write --ignore-unknown; then
+    staged_files | xargs -0 -r git add --
+  else
+    echo "Prettier failed; commit aborted." >&2
+    exit 1
+  fi
+else
+  if staged_files | xargs -0 -r npx --no-install prettier --write --ignore-unknown; then
+    staged_files | xargs -0 -r git add --
+  else
+    echo "Prettier failed; commit aborted." >&2
+    exit 1
+  fi
+fi
