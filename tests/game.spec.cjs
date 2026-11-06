@@ -454,7 +454,7 @@ for (const viewport of [
   { width: 375, height: 667 },
   { width: 844, height: 390 },
 ]) {
-  test(`selection menus fit without scrolling at ${viewport.width} × ${viewport.height}`, async ({
+  test(`selection menus keep navigation visible and choices reachable at ${viewport.width} × ${viewport.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -487,9 +487,8 @@ for (const viewport of [
               overflowing: [
                 '#selection-dialog',
                 '.selection-feature',
-                '.picker-content',
-                '.feature-copy',
-                '.choice-rail',
+                ...(innerWidth > 650 ? ['.picker-content'] : []),
+                // Detail and choice panels intentionally scroll instead of shrinking text.
                 '.paint-row',
                 '.picker-navigation',
                 '.picker-bottom',
@@ -508,12 +507,14 @@ for (const viewport of [
               buttonVisible:
                 button.bottom <= innerHeight && button.right <= innerWidth,
               previewVisible: art.height > 40 && feature.height > 100,
+              horizontalOverflow: dialog.scrollWidth > dialog.clientWidth + 2,
             };
           });
         expect(dimensions).toEqual({
           overflowing: [],
           buttonVisible: true,
           previewVisible: true,
+          horizontalOverflow: false,
         });
         await page.keyboard.press('ArrowRight');
       }

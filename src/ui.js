@@ -51,6 +51,22 @@ const GAME_MODES = {
   ...SKILL_TRIALS,
 };
 
+// Small, decorative mode glyphs keep the text label as the accessible name.
+const MODE_ICON_PATHS = {
+  trial:
+    '<circle cx="16" cy="17" r="10"/><path d="M16 11v6l4 3M12 3h8M16 3v4"/>',
+  race: '<path d="M7 29V4m0 1h18v13H7m6-13v13m6-13v13M7 11h18"/>',
+  braking: '<path d="M8 5h16l5 11-5 11H8L3 16zM12 10v12m8-12v12"/>',
+  slalom: '<path d="M6 5v6m20 2v6M6 23v6M13 4c15 4-9 9 2 14s6 7 4 11"/>',
+  handbrake: '<path d="M7 26V15a9 9 0 0 1 18 0v4m-5-5 5 5 5-5M4 26h6"/>',
+  cornering:
+    '<path d="M5 28V16A11 11 0 0 1 16 5h12M12 28V16a4 4 0 0 1 4-4h12M19 19l7-7-7-7"/>',
+};
+
+function modeIcon(id) {
+  return `<svg class="mode-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${MODE_ICON_PATHS[id]}</svg>`;
+}
+
 function clubRaceAvailable() {
   return state.pendingTrack === 'juniper' && state.pendingCar === 'clubsport';
 }
@@ -311,7 +327,7 @@ export function renderPicker() {
       </div>
     </div>
     <div class="choice-rail" aria-label="${modes ? 'Game modes' : tracks ? 'Circuits' : 'Cars'}" style="--choice-count:${choices.length}">
-      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? '' : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? (clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R') : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
+      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? modeIcon(item.id) : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, state.pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? (clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R') : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? '✓' : ''}</span></button>`).join('')}
 
     </div>
     ${
