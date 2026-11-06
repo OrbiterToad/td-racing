@@ -15,8 +15,11 @@ export const state = {
   settings: {
     volume: 0.7,
     steeringSensitivity: 1,
+    steeringAssist: false,
+    autoAccelerate: false,
     reducedMotion: false,
     reducedMotionSaved: false,
+    colorblindCues: false,
     showLapCoaching: true,
   },
   audioMasterGain: undefined,
