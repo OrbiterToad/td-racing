@@ -133,13 +133,15 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await page.route('https://**/*', (route) => route.abort());
     await page.goto('./');
-    for (const step of ['garage', 'tracks', 'modes']) {
+    // Split screen is clicked last on the mode step, which adds the Player 2
+    // car and paint step.
+    for (const step of ['garage', 'tracks', 'modes', 'playerTwo']) {
       await expect(page.locator('#selection-dialog')).toHaveAttribute(
         'data-mode',
         step,
       );
       // The last choice is the one most likely to fall below the fold, and
-      // split screen has the tallest detail (its Player 2 car select).
+      // split screen has the tallest mode detail.
       const checked = [page.locator('[data-choice]').last()];
       if (step === 'modes') checked.push(page.locator('[data-choice="local"]'));
       for (const choice of checked) {
@@ -164,7 +166,11 @@ for (const viewport of [
       if (viewport.width > 650)
         for (const id of ['#picker-prev', '#picker-next'])
           await expect(page.locator(id)).toBeVisible();
-      if (step !== 'modes') await page.locator('#picker-apply').click();
+      if (step === 'playerTwo') {
+        await expect(page.locator('.paint-row')).toBeInViewport();
+        await expect(page.locator('#step-player-two')).toBeVisible();
+      }
+      if (step !== 'playerTwo') await page.locator('#picker-apply').click();
     }
   });
 }

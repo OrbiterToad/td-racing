@@ -120,31 +120,6 @@ export function resolveLocalCollision(race, primary) {
   return overlap;
 }
 
-export function localViewport(player, worldBounds, viewW, viewH) {
-  const zoom = Math.min(viewW / 760, viewH / 540, 0.85);
-  const sourceW = viewW / zoom,
-    sourceH = viewH / zoom;
-  return {
-    zoom,
-    sourceW,
-    sourceH,
-    sx: Math.max(
-      0,
-      Math.min(
-        player.x - sourceW / 2 - worldBounds.x,
-        worldBounds.width - sourceW,
-      ),
-    ),
-    sy: Math.max(
-      0,
-      Math.min(
-        player.y - sourceH / 2 - worldBounds.y,
-        worldBounds.height - sourceH,
-      ),
-    ),
-  };
-}
-
 export function localRaceResults(race) {
   return race.order.map((player, place) => {
     const time = race.players[player].finishedAt;

@@ -7,18 +7,20 @@ import { GamepadInput } from '../src/gamepad.js';
 import {
   createLocalRace,
   localRaceResults,
+  localPlayerOneKeys,
   localPlayerTwoControls,
-  localViewport,
   pollSecondPlayer,
+  resolveLocalCollision,
   updateLocalRace,
 } from '../src/local-race.js';
+import { resolveVehicleCollision } from '../src/vehicle-physics.js';
 
 test('local race gives Player 2 independent keyboard and gamepad controls', () => {
   configureTrack('juniper');
   const race = createLocalRace();
   race.countdown = 0;
   const p1 = { ...race.players[0] };
-  const keys = new Set(['KeyI', 'KeyL']);
+  const keys = new Set(['ArrowUp', 'ArrowRight']);
   const keyboard = localPlayerTwoControls(keys);
   assert.deepEqual(keyboard, {
     steer: 1,
@@ -46,7 +48,7 @@ test('local race gives Player 2 independent keyboard and gamepad controls', () =
   assert.equal(race.players[0].y, p1.y);
 });
 
-test('second controller is reserved for Player 2 and viewports track each car', () => {
+test('second controller is reserved for Player 2', () => {
   state.gamepadInput = new GamepadInput();
   state.gamepadInput.padIndex = 0;
   const race = createLocalRace();
@@ -61,12 +63,6 @@ test('second controller is reserved for Player 2 and viewports track each car', 
   assert.equal(race.pad.padIndex, 1);
   assert.ok(controls.steer < -0.5);
   assert.equal(controls.throttle, 1);
-
-  const bounds = { x: 0, y: 0, width: 4000, height: 3000 };
-  const view1 = localViewport({ x: 700, y: 800 }, bounds, 600, 800);
-  const view2 = localViewport({ x: 2500, y: 1700 }, bounds, 600, 800);
-  assert.notEqual(view1.sx, view2.sx);
-  assert.notEqual(view1.sy, view2.sy);
 });
 
 test('three-lap finish order records both finish times and reset creates a fresh grid', () => {
@@ -152,4 +148,107 @@ test('Player 2 shares the Player 1 driving assists and loses them when off', () 
   } finally {
     Object.assign(state.settings, saved);
   }
+});
+
+test('split screen gives WASD to Player 1 and the arrow keys to Player 2 only', () => {
+  const arrows = new Set(['ArrowUp', 'ArrowLeft', 'ArrowDown']);
+  const wasd = new Set(['KeyW', 'KeyA', 'KeyS']);
+  assert.deepEqual(localPlayerOneKeys(arrows, true), {
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+  });
+  assert.deepEqual(localPlayerOneKeys(wasd, true), {
+    up: true,
+    down: true,
+    left: true,
+    right: false,
+  });
+  // Single-player keeps both key sets.
+  assert.deepEqual(localPlayerOneKeys(arrows, false), {
+    up: true,
+    down: true,
+    left: true,
+    right: false,
+  });
+  assert.deepEqual(localPlayerTwoControls(wasd), {
+    steer: 0,
+    throttle: 0,
+    brake: 0,
+    handbrake: 0,
+  });
+  assert.deepEqual(localPlayerTwoControls(new Set(['KeyI', 'KeyJ', 'KeyK'])), {
+    steer: 0,
+    throttle: 0,
+    brake: 0,
+    handbrake: 0,
+  });
+  assert.deepEqual(localPlayerTwoControls(arrows), {
+    steer: -1,
+    throttle: 1,
+    brake: 1,
+    handbrake: 0,
+  });
+});
+
+test('Player 2 can use any car and paint', () => {
+  const race = createLocalRace(
+    state.activeCar,
+    { ...state.activeCar, id: 'formula' },
+    'red',
+    'yellow',
+  );
+  assert.equal(race.carSpecs[1].id, 'formula');
+  assert.deepEqual(race.paints, ['red', 'yellow']);
+});
+
+test('the two player cars collide instead of driving through each other', () => {
+  configureTrack('juniper');
+  const race = createLocalRace();
+  race.countdown = 0;
+  const p2 = race.players[1];
+  const frame = nearestDriving(p2.x, p2.y);
+  const heading = Math.atan2(frame.ty, frame.tx);
+  // Player 1 sits stationary a few metres ahead of Player 2 in the same lane.
+  const primary = {
+    ...race.players[0],
+    x: p2.x + Math.cos(heading) * 60,
+    y: p2.y + Math.sin(heading) * 60,
+    angle: heading,
+    vx: 0,
+    vy: 0,
+  };
+  Object.assign(p2, { angle: heading, vx: 0, vy: 0 });
+  const full = { steer: 0, throttle: 1, brake: 0, handbrake: 0 };
+  let contact = false;
+  for (let i = 0; i < 180; i++) {
+    updateLocalRace(race, 1 / 60, [null, full], primary);
+    // After each step the shared resolver leaves no overlap behind.
+    assert.equal(
+      resolveVehicleCollision(
+        { ...primary },
+        { ...p2 },
+        race.carSpecs[0],
+        race.carSpecs[1],
+      ) < 0.5,
+      true,
+    );
+    if (Math.hypot(primary.vx, primary.vy) > 1) contact = true;
+  }
+  // Player 2 pushed Player 1 forward rather than passing through it.
+  assert.ok(contact);
+  const along = (car) =>
+    (car.x - p2.x) * Math.cos(heading) + (car.y - p2.y) * Math.sin(heading);
+  assert.ok(along(primary) > 0);
+
+  // The resolver separates two cars placed on top of each other.
+  const a = { ...primary, vx: 0, vy: 0 };
+  const b = { ...primary, x: primary.x + 5, vx: -50, vy: 0 };
+  const overlap = resolveLocalCollision(
+    { players: [null, b], carSpecs: race.carSpecs },
+    a,
+  );
+  assert.ok(overlap > 0);
+  assert.ok(Math.hypot(b.x - a.x, b.y - a.y) > 5);
 });
