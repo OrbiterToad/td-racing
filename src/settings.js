@@ -80,6 +80,16 @@ function updateSettingsUI() {
     $(id).textContent = enabled ? 'ON' : 'OFF';
     $(id + '-value').textContent = enabled ? on : off;
   }
+  $('settings-lap-coaching').setAttribute(
+    'aria-checked',
+    String(state.settings.showLapCoaching),
+  );
+  $('settings-lap-coaching').textContent = state.settings.showLapCoaching
+    ? 'ON'
+    : 'OFF';
+  $('settings-lap-coaching-value').textContent = state.settings.showLapCoaching
+    ? 'Lap coaching shown'
+    : 'Lap coaching hidden';
   syncSoundButtons();
 }
 
@@ -231,6 +241,7 @@ export function initSettings() {
     autoAccelerate: preferences.autoAccelerate,
     reducedMotion: preferences.reducedMotion,
     reducedMotionSaved: preferences.reducedMotionSaved,
+    showLapCoaching: preferences.showLapCoaching,
   });
   state.soundEnabled = preferences.soundEnabled;
   try {
@@ -344,6 +355,22 @@ export function initSettings() {
     $('settings-motion-description').textContent =
       'Uses your saved preference instead of the device setting.';
     persistSettings();
+  });
+  $('settings-lap-coaching').addEventListener('click', () => {
+    state.settings.showLapCoaching = !state.settings.showLapCoaching;
+    $('settings-lap-coaching').setAttribute(
+      'aria-checked',
+      String(state.settings.showLapCoaching),
+    );
+    $('settings-lap-coaching').textContent = state.settings.showLapCoaching
+      ? 'ON'
+      : 'OFF';
+    $('settings-lap-coaching-value').textContent = state.settings
+      .showLapCoaching
+      ? 'Lap coaching shown'
+      : 'Lap coaching hidden';
+    persistSettings();
+    updateHUD();
   });
   motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
   const onMotionChange = (event) => {

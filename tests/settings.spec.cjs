@@ -370,6 +370,47 @@ test('settings suppress nonessential effects and remember an explicit motion cho
   );
 });
 
+test('lap coaching visibility persists without changing lap timing or validity', async ({
+  page,
+}) => {
+  await openSetup(page);
+  await page.evaluate(async () => {
+    const { race } = await import('./src/state.js');
+    race.time = 42.5;
+    race.invalid = true;
+  });
+  await page.locator('#settings-setup').click();
+  await expect(page.locator('#settings-lap-coaching')).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await page.locator('#settings-lap-coaching').click();
+  await expect(page.locator('#settings-lap-coaching')).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+  await page.locator('#settings-done').click();
+  expect(
+    await page.evaluate(async () => {
+      const { race, state } = await import('./src/state.js');
+      return {
+        time: race.time,
+        invalid: race.invalid,
+        preference: state.settings.showLapCoaching,
+        saved: JSON.parse(localStorage.getItem('apex-settings-v1'))
+          .showLapCoaching,
+      };
+    }),
+  ).toEqual({ time: 42.5, invalid: true, preference: false, saved: false });
+  await page.reload();
+  await expect(page.locator('#settings-setup')).toBeVisible();
+  await page.locator('#settings-setup').click();
+  await expect(page.locator('#settings-lap-coaching')).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+});
+
 test('settings open from play and pause preserve the in-progress lap', async ({
   page,
 }) => {

@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   steeringAssist: false,
   autoAccelerate: false,
   reducedMotion: false,
+  showLapCoaching: true,
 });
 
 function matchReducedMotion(media) {
@@ -72,6 +73,10 @@ export function loadSettings(storage, prefersReducedMotion) {
       ? saved.reducedMotion
       : matchReducedMotion(prefersReducedMotion),
     reducedMotionSaved,
+    showLapCoaching:
+      typeof saved?.showLapCoaching === 'boolean'
+        ? saved.showLapCoaching
+        : DEFAULT_SETTINGS.showLapCoaching,
   };
 }
 
@@ -84,6 +89,7 @@ export function saveSettings(settings, storage) {
     steeringSensitivity: settings.steeringSensitivity,
     steeringAssist: Boolean(settings.steeringAssist),
     autoAccelerate: Boolean(settings.autoAccelerate),
+    showLapCoaching: settings.showLapCoaching !== false,
   };
   if (settings.reducedMotionSaved)
     value.reducedMotion = Boolean(settings.reducedMotion);

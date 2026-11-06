@@ -14,6 +14,8 @@ const TRACK_BRONZE = {
   coast: 76,
   city: 72,
   rallycross: 74,
+  drift: 92,
+  summit: 70,
 };
 
 const CAR_PACE = {

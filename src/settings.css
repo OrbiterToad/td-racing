@@ -332,6 +332,10 @@
     padding: 7px 0;
   }
 
+  .setting-copy p {
+    display: none;
+  }
+
   .settings-footer {
     padding-top: 8px;
   }
@@ -472,7 +476,7 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .settings-panel {
-    gap: 6px;
+    gap: 4px;
   }
 
   .settings-heading {
@@ -498,6 +502,6 @@ html[data-reduced-motion='true'] *::after {
   }
 
   .settings-footer {
-    padding-top: 6px;
+    padding-top: 4px;
   }
 }
