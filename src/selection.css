@@ -799,6 +799,10 @@
   #selection-dialog[data-mode='modes'] .choice-rail {
     --rail-columns: 2;
   }
+  /* Mode tiles carry a note, so the mode step gives the grid more room. */
+  #selection-dialog[data-mode='modes'] .picker-content {
+    grid-template-rows: minmax(0, 1.8fr) minmax(0, 1fr) auto;
+  }
   .choice-tile,
   .choice-tile.selected {
     flex-direction: column;
@@ -1058,6 +1062,8 @@
   }
 }
 @media (min-width: 651px) and (max-height: 500px) {
+  /* The selected mode's detail panel repeats this note on short screens. */
+  .mode-note,
   .feature-copy p,
   .medal-earned,
   .mode-banner {
