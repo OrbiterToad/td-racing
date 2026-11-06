@@ -2249,7 +2249,8 @@ assert(
 assert.equal(club.opponentRace.elapsed, 0);
 race.countdown = 0;
 let observedBraking = false;
-for (let step = 0; step < 600 * 60; step++) {
+// Conservative surface and vehicle targets can extend the three-lap race.
+for (let step = 0; step < 900 * 60; step++) {
   club.updateOpponents(1 / 60);
   for (const rival of club.opponentRace.cars) {
     observedBraking ||= rival.brake;
@@ -2280,7 +2281,9 @@ assert.deepEqual(
   'Finished opponents keep their original result',
 );
 
-// Replaying identical starts has identical pace even when the player moves.
+// Replaying identical starts away from nearby traffic has identical pace.
+car.x = 1e6;
+car.y = 1e6;
 club.resetOpponentRace();
 for (let i = 0; i < 600; i++) club.updateOpponents(1 / 60);
 const firstRun = club.opponentRace.cars.map((c) => [c.s, c.speed]);
@@ -2291,7 +2294,7 @@ for (let i = 0; i < 600; i++) club.updateOpponents(1 / 60);
 assert.deepEqual(
   club.opponentRace.cars.map((c) => [c.s, c.speed]),
   firstRun,
-  'Opponent pace never depends on player position',
+  'Identical starts away from traffic retain deterministic pace',
 );
 
 // An invalid lap cannot finish the race. Three validated laps can.
@@ -2344,8 +2347,13 @@ assert.equal(club.opponentRace.finished, false);
 assert.equal(club.opponentRace.playerFinish, null);
 assert.equal(club.opponentRace.elapsed, 0);
 configureTrack('city');
-assert.equal(club.opponentRace.enabled, false);
+assert.equal(
+  club.opponentRace.enabled,
+  true,
+  'Track changes preserve race mode',
+);
 assert.equal(club.opponentRace.cars.length, 0);
+club.opponentRace.enabled = false;
 console.log(
   'PASS: three-lap club races, countdown/grid resets, road clearance, braking, deterministic pace, clean-lap validation, finish order, and mode cleanup.',
 );

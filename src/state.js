@@ -164,6 +164,8 @@ export const sceneryAccess = [];
 export const opponentRace = {
   enabled: false,
   laps: 3,
+  difficulty: 'normal',
+  grid: 'matched',
   elapsed: 0,
   finished: false,
   playerFinish: null,

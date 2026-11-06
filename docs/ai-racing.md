@@ -13,8 +13,9 @@ steering, grip, power and brakes, including during vehicle contact.
 | Normal     | 1.00                   | 5                            | 18                             |
 | Hard       | 1.12                   | 8                            | 24                             |
 
-Targets retain the original curvature and slippery-patch preview with backward
-braking propagation. Lower-grip cars get lower targets; slow-yaw cars and the
+Targets retain curvature and slippery-patch preview with backward braking
+propagation. Slippery-patch targets are capped at 125 (previously 155) to keep
+different grid slots and car footprints on the road. Lower-grip cars get lower targets; Clubsport and Sprint use a 0.85 safety factor; slow-yaw cars and the
 city circuit receive extra conservative speed margins. These are controller
 choices; all cars still use the shared vehicle physics and collision solver.
 
