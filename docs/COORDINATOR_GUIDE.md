@@ -63,6 +63,46 @@ This preference is strictly about ordering work within the existing
 eight-agent limit. It never justifies starting a ninth agent or otherwise
 exceeding the cap to get a Mini issue moving sooner.
 
+## Standing authorization and decision boundaries
+
+The user's standing authorization allows the coordinator to assign any open,
+actionable issue for implementation. Once assigned, the agent may carry the
+issue through its stated scope: inspect the repository, make and validate the
+changes, commit and push them, and open a linked pull request. Creating or
+discussing an issue alone does not authorize implementation in a draft chat;
+the coordinator must make an assignment. The user can narrow, pause, or cancel
+that authorization at any time.
+
+The coordinator owns the merge queue. An assigned pull request may be merged
+only after its acceptance criteria are met, every required check passes,
+required reviews and approvals are satisfied, and branch protection allows the
+merge. Agents do not merge or enable auto-merge unless the coordinator
+explicitly delegates a specific pull request and head revision. No assignment
+or standing authorization permits bypassing protection.
+
+Agents make routine technical choices needed to satisfy a clear issue, using
+existing project patterns and preserving its acceptance criteria. The
+coordinator makes routine assignment, scheduling, and merge-order decisions.
+Either should escalate when a requirement is missing or ambiguous, the proposed
+choice changes scope or adds behavior the issue does not request, acceptance
+criteria conflict, or a required dependency or permission is unavailable.
+Agents report these blockers to the coordinator; the coordinator obtains user
+direction when a product decision is needed. Preserve the issue's scope while
+awaiting a decision; do not infer approval from silence.
+
+The authority for resolving conflicts between behavioral instructions remains
+an open decision. This guide does not assign that authority to the coordinator
+or an agent. Keep a concrete behavioral conflict unresolved until that
+question is decided; do not use this section to choose between the conflicting
+instructions.
+
+If a required tool or model is unavailable, report what is unavailable and
+which step it blocks. Continue independent work and use another tool or model
+only when it is already authorized and preserves the required result. Do not
+skip a required check, change an acceptance criterion, or claim verification
+that did not happen. If there is no authorized equivalent, pause the dependent
+step and ask the coordinator for a decision.
+
 ## Status reports
 
 Agent status reports pair every percentage with a color marker and a ten-cell
@@ -73,10 +113,26 @@ Percentages follow concrete milestones (implementation, local checks, PR
 opened, required checks and review, merge); an open PR or passing local tests
 alone is not 100%.
 
-Repository work, including resolving a queued PR's conflicts, is always
-delegated to an agent in its own branch or worktree. The coordinator owning
-conflict resolution means it gets the conflicts resolved and verifies the
-result, not that it edits agent branches itself.
+## Coordinator integration-edit exception
+
+Project implementation is assigned to agents. A narrow integration exception
+allows the coordinator to edit a queued PR branch or a dedicated integration
+branch solely to resolve conflicts required to combine approved changes. The
+coordinator preserves each change's intent, tells the affected owner what was
+changed and gives them the resulting commit, then reruns the required checks
+and refreshes reviews and mergeability. This exception does not cover feature
+implementation, unrelated cleanup, changing acceptance criteria, or deciding
+new product behavior. If conflict resolution requires a behavioral choice,
+leave that choice unresolved until it receives an explicit decision; this
+guide does not say who has authority to resolve conflicting behavioral
+instructions. Branch protection and the normal merge gate still apply.
+
+For example, an agent assigned an open issue may implement it and open a linked
+PR; an issue mentioned in a draft chat alone is not an assignment. If that PR
+later conflicts with another queued PR, the coordinator may make the minimal
+integration edit described above and report the commit to the agent. If
+combining the changes requires choosing between behaviors, pause that choice
+instead of deciding it as part of integration.
 
 ## Status updates stay consistent with labels
 
