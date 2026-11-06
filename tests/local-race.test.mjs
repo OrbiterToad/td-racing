@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { configureTrack } from '../src/tracks.js';
+import { applyDrivingAssists } from '../src/assists.js';
+import { configureTrack, nearestDriving } from '../src/tracks.js';
 import { track, state } from '../src/state.js';
 import { GamepadInput } from '../src/gamepad.js';
 import {
@@ -102,4 +103,53 @@ test('three-lap finish order records both finish times and reset creates a fresh
   assert.equal(fresh.countdown, 3);
   assert.deepEqual(fresh.order, []);
   assert.equal(fresh.players[1].vx, 0);
+});
+
+test('Player 2 shares the Player 1 driving assists and loses them when off', () => {
+  configureTrack('juniper');
+  const saved = { ...state.settings };
+  const idle = localPlayerTwoControls(new Set());
+  const run = (assists) => {
+    Object.assign(state.settings, assists);
+    const race = createLocalRace();
+    race.countdown = 0;
+    // Nudge Player 2 off the racing line so steering assist has work to do.
+    const p2 = race.players[1];
+    const frame = nearestDriving(p2.x, p2.y);
+    p2.x += frame.nx * frame.road * 0.5;
+    p2.y += frame.ny * frame.road * 0.5;
+    const start = { x: p2.x, y: p2.y };
+    const expected = applyDrivingAssists(idle, p2, state.settings);
+    updateLocalRace(race, 1 / 60, [null, idle]);
+    return { race, p2, start, expected };
+  };
+  try {
+    const on = run({ autoAccelerate: true, steeringAssist: true });
+    // Same helper Player 1 uses in physics `simulate`.
+    assert.equal(on.expected.throttle, 1);
+    assert.ok(on.expected.steer !== 0);
+    assert.equal(on.p2.throttle > 0, true);
+    for (let frame = 0; frame < 120; frame++)
+      updateLocalRace(on.race, 1 / 60, [null, idle]);
+    assert.ok(Math.hypot(on.p2.x - on.start.x, on.p2.y - on.start.y) > 20);
+    const after = nearestDriving(on.p2.x, on.p2.y);
+    const offset =
+      (on.p2.x - after.x) * after.nx + (on.p2.y - after.y) * after.ny;
+    const startFrame = nearestDriving(on.start.x, on.start.y);
+    const startOffset =
+      (on.start.x - startFrame.x) * startFrame.nx +
+      (on.start.y - startFrame.y) * startFrame.ny;
+    assert.ok(Math.abs(offset) < Math.abs(startOffset));
+
+    const off = run({ autoAccelerate: false, steeringAssist: false });
+    assert.deepEqual(
+      { steer: off.expected.steer, throttle: off.expected.throttle },
+      { steer: 0, throttle: 0 },
+    );
+    for (let frame = 0; frame < 120; frame++)
+      updateLocalRace(off.race, 1 / 60, [null, idle]);
+    assert.ok(Math.hypot(off.p2.x - off.start.x, off.p2.y - off.start.y) < 1);
+  } finally {
+    Object.assign(state.settings, saved);
+  }
 });

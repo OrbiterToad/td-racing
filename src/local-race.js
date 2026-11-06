@@ -1,3 +1,4 @@
+import { applyDrivingAssists } from './assists.js';
 import { GamepadInput } from './gamepad.js';
 import { VEHICLES } from './config.js';
 import { driveVehicle } from './vehicle-physics.js';
@@ -85,7 +86,12 @@ export function updateLocalRace(race, dt, controls, primary) {
     if (delta < -0.5) delta += 1;
     player.progress = n.progress;
     player.elapsed += dt;
-    driveVehicle(player, controls[index], dt, race.carSpecs[index]);
+    driveVehicle(
+      player,
+      applyDrivingAssists(controls[index], player, state.settings),
+      dt,
+      race.carSpecs[index],
+    );
     if (delta > 0 && n.progress < 0.08 && player.elapsed > 5) {
       player.lap++;
       if (player.lap > race.laps) {
