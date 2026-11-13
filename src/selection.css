@@ -1075,3 +1075,46 @@
     gap: 8px;
   }
 }
+
+.weather-choice {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  padding: 4px;
+  background: #172123ed;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: #edf0e8;
+  font-size: 12px;
+}
+.weather-choice select {
+  max-width: 100%;
+  min-height: 28px;
+  color: #edf0e8;
+  background: #182724;
+  border: 1px solid #70877a;
+  border-radius: 4px;
+}
+
+@media (max-width: 650px) {
+  .weather-choice {
+    font-size: 10px;
+  }
+  .weather-choice select {
+    font-size: 10px;
+  }
+}
+
+/* Reserve room for the control so the complete circuit remains visible. */
+.track-art:has(.weather-choice) canvas {
+  height: calc(100% - 64px);
+  align-self: flex-start;
+}
+.track-art:has(.weather-choice) .mode-banner {
+  display: none;
+}

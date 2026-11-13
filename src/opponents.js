@@ -1,3 +1,4 @@
+import { conditionFor } from './weather.js';
 import { aiDifficulty, chooseRaceLine } from './ai-racecraft.js';
 import { carImagePath } from './cars.js';
 import { CFG, PAINTS, VEHICLES } from './config.js';
@@ -166,6 +167,7 @@ export function updateOpponents(dt) {
       target = Math.max(
         12,
         opponentRace.profile[index] *
+          Math.sqrt(conditionFor(state.condition).grip) *
           rival.pace *
           0.7 *
           tuning.pace *

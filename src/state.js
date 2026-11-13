@@ -14,6 +14,8 @@ export const state = {
   pendingPlayerTwoPaint: 'blue',
   pendingPaint: 'red',
   pendingGameMode: 'trial',
+  condition: 'clear',
+  pendingCondition: 'clear',
   localMultiplayer: false,
   playerTwoCar: 'clubsport',
   playerTwoPaint: 'blue',
