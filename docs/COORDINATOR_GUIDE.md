@@ -303,3 +303,396 @@ Further info: I have merged PR #121: https://github.com/OrbiterToad/td-racing/pu
 [Agent 3] [#120 Pause restart] [ready for new task]
 Further info: PR #121 is merged at master 5555555555555555555555555555555555555555; required follow-up: none. Task complete. I am ready for a new task.
 ```
+
+## User-facing updates
+
+This section covers when and how the coordinator sends replies and proactive
+updates directly to the user. It is separate from the agent-to-coordinator
+handoff format defined in [Communication standard](#communication-standard),
+and from scheduled monitor behavior defined in `CORDINATOR_AGENT.md`.
+
+### Concise reply format
+
+Default a simple acknowledgment or status reply to **one short sentence**.
+Add a second sentence only when a material fact — a known blocker, a changed
+plan, the next required user decision — would otherwise be omitted.
+
+For multi-item summaries — open issues, the merge queue, or a full agent
+roster — present the items in one compact Markdown table with three columns:
+
+| Item | Status | Next action / blocker |
+| ---- | ------ | --------------------- |
+
+Keep each cell brief and current. Omit rows or columns that have no
+meaningful content; never fill a cell with a repeat of the previous status or
+a phrase like "no change."
+
+These rules apply only to Cordinator's replies to the user. Agent-to-agent
+and agent-to-coordinator handoffs follow the two-line `[Agent N] / Further
+info:` format, not the table format.
+
+### Proactive update triggers
+
+Send a proactive user update — without waiting for a direct question — when
+any of these conditions first occur:
+
+- A material blocker halts meaningful progress and no independent work is
+  available to continue.
+- A plan, scope, dependency, or expected timeline changes in a way the user
+  would need to know to make a decision or adjust expectations.
+- A merge decision is made or a PR merges into master.
+- A task or issue is completed and the slot is released.
+- A required user decision is identified (access, authorization, unresolved
+  scope question the coordinator cannot decide unilaterally).
+
+Remain quiet when:
+
+- A scheduled monitor finds no changed state (all checks still pending, all
+  agents still working, nothing actionable).
+- A milestone is intermediate and unremarkable (a commit pushed, formatting
+  passed) with no change to the plan or risk.
+- The user just asked a direct question and the reply itself is the update.
+
+Distinguish a requested status answer (reply directly with current
+information) from a scheduled monitor notification (send only when something
+actionable changed). A monitor that finds the same state as its last run
+sends nothing.
+
+## Authority and escalation boundaries
+
+### Standing authorization
+
+The coordinator has standing authorization to:
+
+- Work through open issues by creating them, assigning them to agents, and
+  tracking their progress.
+- Request and coordinate merges after all acceptance criteria, required
+  checks, reviews, and branch protection pass on the final PR head.
+- Make routine coordination decisions: issue labeling, agent assignment,
+  merge ordering, conflict-resolution delegation, and chat title updates.
+
+Standing authorization does not cover:
+
+- Bypassing branch protection, skipping required checks, or merging before
+  required reviews are satisfied.
+- Deciding behavioral conflicts or unresolved product questions — escalate
+  these to the user.
+- Silently substituting an unavailable tool, model, or permission with a
+  weaker alternative.
+
+### Routine vs. escalation decisions
+
+The coordinator decides without user confirmation:
+
+- Which queued issue to assign to a free slot, within the Mini-preference and
+  anti-starvation rules.
+- Merge order among ready PRs, as long as each PR satisfies protection and
+  required checks.
+- Whether a blocker is resolvable through normal coordination (conflict
+  delegation, access retry) or requires user escalation.
+- Label corrections when a scope change makes the existing label wrong.
+
+Escalate to the user when:
+
+- A required tool, model, or permission is unavailable and no equivalent
+  substitute exists — report the gap, do not silently downgrade.
+- A behavioral or product conflict arises that the coordinator cannot resolve
+  from the existing acceptance criteria.
+- An authorization question falls outside standing permission (for example,
+  force-pushing, branch deletion on a non-AI branch, or running a destructive
+  recovery action).
+- Two or more ready PRs conflict in a way that changes the intended behavior
+  of either, and the coordinator cannot determine which side should win without
+  user input.
+
+### Integration-edit exception
+
+The coordinator's general prohibition on editing agent branches has one
+exception: when the coordinator delegates conflict resolution to an
+integration agent, that agent operates on a dedicated integration branch (or
+the PR branch when explicitly scoped) to merge the conflicting sides while
+preserving both sides' intended changes. The coordinator is accountable for
+verifying the result. This exception does not authorize the coordinator to
+directly edit another agent's working branch outside a declared integration
+pass.
+
+## Preventing Big-issue starvation
+
+### Mini preference and its limit
+
+The coordinator prefers ready `Mini` issues when a slot opens and multiple
+queued issues are ready. This preference exists to keep bounded, low-risk
+work moving efficiently. It is not a rule that Big issues wait indefinitely.
+
+### Aging rule
+
+A `Big` issue becomes **age-eligible** when it has been ready to start (open,
+no unresolved dependencies, a slot was available at some point) for **three
+or more consecutive slot-opening events** in which a Mini issue was chosen
+instead. An age-eligible `Big` issue is treated as equal priority to any
+ready `Mini` issue at the next slot opening and must be assigned unless a
+concrete blocking dependency or explicit urgency justification prevents it.
+
+Record the slot-opening count for each queued `Big` issue in the coordinator
+status notes. Reset the count when the issue is assigned. If two `Big` issues
+are both age-eligible at the same slot opening, prefer the one with the
+higher issue number (older creation date) first.
+
+### Exceptions and visibility
+
+An age-eligible `Big` issue is passed over only when:
+
+- It has an unresolved dependency on another open issue or PR.
+- The user has explicitly deprioritized it.
+- A concrete urgency or time constraint makes a different issue the right
+  next pick — state the reason in the status update.
+
+Blocked or paused issues do not consume execution capacity and are kept
+visible in the queue without occupying a numbered slot. They remain eligible
+once their blocker clears.
+
+**Example walkthrough:** Suppose four Mini issues and one Big issue are
+queued, and slots open one at a time. Mini issues are assigned at openings 1,
+2, and 3; the Big issue's age count reaches 3. At opening 4, the Big issue is
+age-eligible and treated as equal to any ready Mini. If a Mini is chosen
+again, record the reason; the Big issue remains age-eligible and is assigned
+at the next available opening unless a concrete exception applies.
+
+## Continuing work while blocked
+
+When a blocker prevents a dependent action, the agent pauses **only that
+dependent action** — not the entire assignment. It identifies and continues
+any authorized work that does not depend on the blocked step, and reports the
+blocker to the coordinator promptly.
+
+### Blocker report requirements
+
+A blocker report must include:
+
+- The specific action that is blocked and why (with evidence: error text,
+  missing dependency, ambiguous acceptance criterion).
+- What was already attempted to resolve it, if anything.
+- A concrete recommendation or proposed resolution.
+- The independent work that can continue while awaiting direction.
+
+The coordinator resolves blockers by providing a decision, delegating
+access/dependency resolution, or escalating to the user. Agents do not
+silently stall, expand scope, start competing branches, or contact the user
+directly about coordination.
+
+### Escalation path
+
+The escalation order is:
+
+1. Agent reports to the coordinator with evidence and a recommendation.
+2. Coordinator resolves the blocker (decision, access fix, or delegation) or
+   escalates to the user when the blocker exceeds coordinator authority.
+3. User provides authorization or a product decision.
+4. Coordinator relays the decision to the agent.
+
+An agent that cannot reach the coordinator through the normal messaging tool
+says so explicitly in its own task chat and includes the full intended handoff
+message so the coordinator can act on it when available.
+
+## Handoff acknowledgment and delivery
+
+A message sent is not a message received. Handoffs for assignment,
+merge-readiness, and blockers require explicit acknowledgment before the
+sender can consider them delivered.
+
+### What counts as delivery
+
+A coordinator-to-agent message is delivered when the agent replies with the
+matching handoff (for example, `preflight complete` for an `assignment`).
+
+An agent-to-coordinator message is delivered when the coordinator replies
+with an acknowledgment referencing the same issue and state (for example, a
+`decision` or `changes requested` reply to a `merge request`).
+
+An answer posted in an agent's own task chat, a PR comment, or a chat title
+update is **not** a coordinator handoff. The two-line format sent through the
+chat messaging tool to `Cordinator` is required.
+
+### Retries and duplicate handling
+
+If no acknowledgment arrives within a reasonable time (a monitor cycle or
+the next natural check-in), the sender may resend the message once more,
+prefixed with `[Retry]`. On a second failure, escalate: the agent reports the
+messaging failure in its task chat; the coordinator escalates to the user.
+
+If a duplicate message is received (same issue, same state, same content),
+acknowledge it once and discard the duplicate; do not create a second
+assignment or second merge action.
+
+### Unavailable messaging
+
+When the chat messaging tool is not available:
+
+- The agent includes the intended handoff verbatim in its task chat final
+  answer, clearly labeled "Intended coordinator handoff."
+- The agent does not claim the coordinator was notified.
+- The coordinator, when it next reads the agent's chat, treats the labeled
+  handoff as the trigger for the appropriate response.
+
+## Integration ownership and push freezes
+
+### Coordinator integration authority
+
+The coordinator is accountable for getting merge conflicts resolved and
+verifying the result. It delegates conflict resolution to an agent in the PR
+branch or a dedicated integration branch, provides the preserved intent of
+both sides, and verifies the final commit before allowing the PR to proceed.
+The coordinator does not directly edit agent branches except through a
+declared integration delegation.
+
+After an integration agent pushes the resolved head, the coordinator must
+confirm that required checks pass on that new head and that reviews are still
+satisfied (or re-requested) before merging. Coordinator integration edits
+trigger the same re-check and review requirements as any other head change.
+
+### Push freezes
+
+A push freeze applies to a single named branch and a single named integration
+pass. It is never broader than that.
+
+**Initiating a freeze:** The coordinator sends the affected agent a `decision`
+message naming the branch, the frozen head SHA, the reason (active
+integration pass), and the expected duration. The agent acknowledges the
+freeze before the coordinator begins integration work.
+
+**During a freeze:** The frozen agent may continue implementation on the same
+branch as long as it does not push to `origin`. It may also sync its own
+branch from `origin/master` by rebasing or merging the default branch into
+its own branch, but it must not push the result until the freeze is lifted.
+It may not alter another agent's worktree or branch.
+
+**Lifting a freeze:** The coordinator sends a `decision` message naming the
+integration result (commit SHA) and the lifted freeze. The agent may then
+push accumulated local commits.
+
+**Interrupted freeze:** If the integration pass fails or the coordinator
+cancels it, the coordinator lifts the freeze, states the reason, and provides
+the current default-branch SHA so the affected agent can sync cleanly.
+
+### File overlap is not a blocker
+
+Agents work concurrently on the same files in isolated branches. A likely
+merge conflict is noted for integration planning and merge ordering; it does
+not delay or block an assignment. The coordinator manages sequencing at merge
+time, not at assignment time.
+
+After a pass merges, the coordinator tells all affected active agents the
+resulting `master` SHA and identifies branches that need updating. Agents
+then sync their own branches from that checkpoint and report the refreshed
+head when ready.
+
+## Task completion and non-merge paths
+
+Not every task ends with a PR merge. The coordinator uses explicit terminal
+states to close out assignments correctly.
+
+### Terminal states
+
+| State                  | When to use                                                               | PR / branch                                                          | Issue                                                  | Slot                           |
+| ---------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------ |
+| **Merged**             | PR merged into master through the protected path.                         | Closed by merge.                                                     | Close with the PR closing reference.                   | Release.                       |
+| **Canceled**           | User or coordinator explicitly cancels the assignment.                    | Close the PR; retain branch unless explicitly instructed to delete.  | Leave open or close per the user's instruction.        | Release after preserving work. |
+| **Superseded**         | Another PR or change already delivers the same outcome.                   | Close the PR with a note naming the superseding work; retain branch. | Close with a note linking the superseding issue/PR.    | Release.                       |
+| **Duplicate**          | The issue is a duplicate of an existing tracked issue.                    | Close the PR if one was opened; retain branch.                       | Close as duplicate with a link to the canonical issue. | Release.                       |
+| **Investigation only** | The task was scoped to research or analysis with no code change required. | No PR needed; push any reference notes to a branch if useful.        | Close when the investigation outcome is documented.    | Release.                       |
+
+### Branch retention
+
+By default, retain AI branches after PR closure or cancellation — do not
+delete them. This is a recommendation, not a confirmed policy: if the user
+explicitly authorizes deletion for a specific branch or class of branch,
+follow that instruction for those branches only. Never infer deletion
+authorization from a general cleanup request or from closing the PR.
+
+### Stop-work and slot release
+
+Stop-work, PR closure, branch retention or deletion, and slot release are
+separate actions:
+
+1. **Stop work** first: the agent commits any in-progress changes and stops
+   pushing new commits to the branch.
+2. **Close the PR** (if one exists) with an appropriate note.
+3. **Retain the branch** unless explicitly authorized to delete it.
+4. **Release the slot** only after steps 1–3 are confirmed and preserved work
+   is not at risk.
+
+Preserve all work that belongs to other tasks. Never delete branches, commits,
+or worktrees owned by a different assignment, even during a cancellation.
+
+## Post-merge incident response
+
+### Detection
+
+A post-merge regression is detected when any of these occur after a PR merges
+into `master`:
+
+- A required CI check fails on the new `master` head.
+- An agent or the user reports broken behavior reproducible from that head.
+- A subsequent PR that depends on the merged work fails checks for a reason
+  traceable to the merge.
+
+### Triage
+
+When a potential regression is detected, the coordinator:
+
+1. Identifies the merge commit and verifies that `master` is at the expected
+   SHA.
+2. Determines whether the failure is caused by the merged change or is a
+   pre-existing or unrelated failure (check baseline from before the merge).
+3. If caused by the merge: pauses the merge queue — no further PRs merge
+   until the incident is resolved or explicitly overridden by the user.
+
+### Revert authorization
+
+The coordinator may delegate a revert PR to an agent under these conditions:
+
+- The regression is confirmed and attributable to a specific merge commit.
+- Reverting does not create a data-loss or state-corruption risk (for
+  example, a migration that has already been applied to data outside the
+  repository).
+- The revert PR will go through the full protected path (required checks,
+  branch protection, reviews if required) — a revert does not bypass
+  protection.
+- The user has not explicitly directed a different recovery path.
+
+If any of these conditions is not met, the coordinator escalates to the user
+before acting. Standing merge authorization does not authorize unbounded
+destructive recovery.
+
+### Communication
+
+When a regression is confirmed and the queue is paused, the coordinator
+notifies the user in one message stating:
+
+- The merge commit and PR that introduced the regression.
+- The observed failure (check name or described behavior) and evidence.
+- The proposed recovery action (revert or targeted fix) and who owns it.
+- The queue pause status and which PRs are affected.
+
+Affected agent owners are told to pause pushes until the incident is
+resolved and the queue is released.
+
+### Follow-up and queue resumption
+
+After the revert or fix merges:
+
+1. The coordinator records the resulting `master` SHA and verifies the
+   required checks pass on that head.
+2. Dependent queued PRs that were rebased on the regressed `master` are
+   flagged for a sync to the new checkpoint.
+3. Affected agents are told the new `master` SHA and asked to sync and
+   re-run required checks before the next merge pass.
+4. The merge queue resumes with the updated state.
+
+**Example walkthrough:** PR #200 merges. CI then reports a failing simulation
+test on `master`. The coordinator verifies the failure is new (baseline before
+#200 was green), pauses the queue, and notifies the user. The coordinator
+delegates a revert PR (#201) to Agent 2, which goes through required checks
+and protection normally. After #201 merges, the coordinator records the new
+`master` SHA, tells all agents to sync, and resumes the queue starting with
+the next ready PR.
