@@ -17,6 +17,21 @@ everything specific to td-racing and wins where it is more specific than
   meanings and copyable message templates.
 - Node.js 24 or newer. Install dependencies with `npm ci`.
 
+## Coordinator handoffs
+
+Every agent-to-coordinator message must use this two-line structure:
+
+```text
+[Agent <number>] [#<issue> <short task>] [<state>]
+Further info: <outcome, evidence, and next action>
+```
+
+Coordinator replies use `[Coordinator]` in the first field with the same
+structure. Send handoffs directly to `Cordinator` at these milestones:
+preflight complete, meaningful progress, blocked, merge request, authorized
+merge, and ready for new task. Full state meanings and copyable templates
+are in [docs/COORDINATOR_GUIDE.md](docs/COORDINATOR_GUIDE.md).
+
 ## Required checks
 
 Branch protection requires these CI contexts, all defined in
