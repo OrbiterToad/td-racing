@@ -1,8 +1,8 @@
 import { applyDrivingAssists } from './assists.js';
 import { GamepadInput } from './gamepad.js';
-import { VEHICLES } from './config.js';
+import { PAINTS, VEHICLES } from './config.js';
 import { driveVehicle, resolveVehicleContacts } from './vehicle-physics.js';
-import { nearestDriving } from './tracks.js';
+import { nearestDriving, timingGateHalfWidth } from './tracks.js';
 import { startingGrid, state } from './state.js';
 
 const blankCar = (slot) => ({
@@ -18,7 +18,12 @@ const blankCar = (slot) => ({
   slickTime: 0,
   lap: 1,
   elapsed: 0,
-  progress: 0,
+  progress: nearestDriving(slot.x, slot.y).progress,
+  next: 1,
+  travel: 0,
+  crossedStart: false,
+  lapStart: 0,
+  bestLap: null,
   finishedAt: null,
 });
 
@@ -60,48 +65,87 @@ export function updateLocalRace(race, dt, controls, primary) {
     race.countdown = Math.max(0, race.countdown - dt);
     return;
   }
-  if (primary && race.players[0].finishedAt === null) {
-    const first = race.players[0],
-      n = nearestDriving(primary.x, primary.y);
-    let delta = n.progress - first.progress;
-    if (delta > 0.5) delta -= 1;
-    if (delta < -0.5) delta += 1;
-    first.progress = n.progress;
-    first.elapsed += dt;
-    if (delta > 0 && n.progress < 0.08 && first.elapsed > 5) {
-      first.lap++;
-      if (first.lap > race.laps) {
-        first.finishedAt = first.elapsed;
-        race.order.push(0);
-        if (race.order.length === 2) race.finished = true;
-      }
-    }
-  }
-  const index = 1;
-  if (race.players[index].finishedAt === null) {
-    const player = race.players[index];
-    const n = nearestDriving(player.x, player.y);
-    let delta = n.progress - player.progress;
-    if (delta > 0.5) delta -= 1;
-    if (delta < -0.5) delta += 1;
-    player.progress = n.progress;
-    player.elapsed += dt;
+  if (primary) updateLocalProgress(race, 0, primary, dt);
+  if (race.players[1].finishedAt === null) {
+    const player = race.players[1];
     driveVehicle(
       player,
-      applyDrivingAssists(controls[index], player, state.settings),
+      applyDrivingAssists(controls[1], player, state.settings),
       dt,
-      race.carSpecs[index],
+      race.carSpecs[1],
     );
-    if (delta > 0 && n.progress < 0.08 && player.elapsed > 5) {
+    updateLocalProgress(race, 1, player, dt);
+  }
+  if (primary) resolveLocalCollision(race, primary);
+}
+
+// A lap requires every quarter gate, enough forward travel, and an actual
+// wrap across the line. The first grid-to-line crossing only starts lap one.
+function updateLocalProgress(race, index, car, dt) {
+  const player = race.players[index];
+  if (player.finishedAt !== null) return;
+  const n = nearestDriving(car.x, car.y);
+  const previous = player.progress;
+  let delta = n.progress - previous;
+  if (delta > 0.5) delta -= 1;
+  if (delta < -0.5) delta += 1;
+  player.elapsed += dt;
+  if (Math.abs(delta) < 0.035) player.travel += delta;
+  const gate = player.next * 0.25;
+  if (
+    player.crossedStart &&
+    player.next <= 3 &&
+    previous < gate &&
+    n.progress >= gate &&
+    delta > 0 &&
+    n.distance <= timingGateHalfWidth(gate)
+  )
+    player.next++;
+  if (
+    previous > 0.93 &&
+    n.progress < 0.07 &&
+    delta > 0 &&
+    n.distance <= timingGateHalfWidth(0)
+  ) {
+    if (player.crossedStart && player.next === 4 && player.travel > 0.85) {
+      const lapTime = player.elapsed - player.lapStart;
+      player.bestLap = Math.min(player.bestLap ?? Infinity, lapTime);
       player.lap++;
       if (player.lap > race.laps) {
         player.finishedAt = player.elapsed;
         race.order.push(index);
-        if (race.order.length === 2) race.finished = true;
+        race.finished = race.players.every((p) =>
+          Number.isFinite(p.finishedAt),
+        );
       }
     }
+    player.crossedStart = true;
+    player.lapStart = player.elapsed;
+    player.next = 1;
+    player.travel = 0;
   }
-  if (primary) resolveLocalCollision(race, primary);
+  player.progress = n.progress;
+}
+
+export function localRaceComplete(race) {
+  return Boolean(
+    race?.finished && race.players.every((p) => Number.isFinite(p.finishedAt)),
+  );
+}
+
+export function localResultsSnapshot(race) {
+  return {
+    local: true,
+    finished: localRaceComplete(race),
+    totalTime: Math.max(...race.players.map((p) => p.finishedAt ?? 0)),
+    standings: race.order.map((index) => ({
+      name: `Player ${index + 1}`,
+      player: true,
+      paint: PAINTS[race.paints[index]].hex,
+      finish: race.players[index].finishedAt,
+      bestLap: race.players[index].bestLap,
+    })),
+  };
 }
 
 // Player cars use the same contact model as the car vs. AI opponents.

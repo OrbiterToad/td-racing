@@ -1,4 +1,5 @@
 import { conditionFor } from './weather.js';
+import { localResultsSnapshot } from './local-race.js';
 import { aiDifficulty, chooseRaceLine } from './ai-racecraft.js';
 import { carImagePath } from './cars.js';
 import { CFG, PAINTS, VEHICLES } from './config.js';
@@ -335,6 +336,12 @@ export function updateOpponentHUD() {
   $('session-drivers').textContent = enabled
     ? '04 DRIVERS · 03 LAPS'
     : '01 DRIVER · NO LIMITS';
+  if (state.localRace) {
+    $('session-mode').textContent = 'LOCAL SPLIT-SCREEN';
+    $('session-drivers').textContent = '02 DRIVERS · 03 LAPS';
+    syncRaceResults(localResultsSnapshot(state.localRace));
+    return;
+  }
   if (!enabled) {
     syncRaceResults({ finished: false });
     return;

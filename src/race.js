@@ -102,6 +102,7 @@ export function chooseStartingSlot(index) {
 export function startCountdown() {
   resetOpponentRace();
   race.countdown = 3;
+  if (state.localRace) state.localRace.countdown = race.countdown;
   race.goTime = 0;
   car.vx = 0;
   car.vy = 0;
