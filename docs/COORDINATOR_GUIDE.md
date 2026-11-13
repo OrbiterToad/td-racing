@@ -100,6 +100,29 @@ This preference is strictly about ordering work within the existing
 eight-agent limit. It never justifies starting a ninth agent or otherwise
 exceeding the cap to get a Mini issue moving sooner.
 
+## Before assigning: duplicate-ownership scan
+
+Before delegating any issue to an agent, the coordinator must confirm that no
+agent already owns it. Check all of the following using live data, not a cached
+roster:
+
+- **Open GitHub PRs** — search for a PR that references or is linked to the
+  issue number.
+- **Active remote branches** — look for a branch whose name or description
+  corresponds to the issue (for example `ai/<description>-<issue-number>`).
+- **Local worktrees** — inspect the repository's registered worktrees for one
+  whose branch targets the same issue.
+- **Current agent assignments** — review the active agent roster for an agent
+  already assigned to that issue.
+
+If any of these surfaces an existing owner, do not create a duplicate
+assignment. Resolve the conflict first — cancel the duplicate, coordinate a
+hand-off, or confirm the existing owner is still active — then assign only
+after the issue is confirmed unowned.
+
+A prior status report showing no owner is not sufficient. Always scan from
+current state immediately before each assignment.
+
 ## Status reports
 
 Agent status reports pair every percentage with a color marker and a ten-cell
