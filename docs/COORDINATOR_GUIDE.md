@@ -1,7 +1,9 @@
 # Coordinator guide
 
-This guide documents issue size labels, task prioritization, and standard
-communication between the coordinator and agents. It is the public
+This guide is the single authoritative source for project-specific
+coordinator and agent coordination rules in td-racing. It documents
+repository facts, issue size labels, task prioritization, and the
+communication standard between the coordinator and agents. It is the public
 repository-facing counterpart to the coordinator's private operating notes
 in `CORDINATOR_AGENT.md`; the policies described here must match that file.
 
@@ -11,6 +13,41 @@ and are not edited in this repository. Project-specific agent rules — the
 default branch, required checks, commands, and the push policy — live in
 [`AGENTS.project.md`](../AGENTS.project.md), which also documents the sync
 workflow and its drift check.
+
+## Repository-specific facts
+
+These facts are specific to td-racing and override or extend the template
+defaults. Record verified values here; do not leave stale placeholders.
+
+| Fact                   | Value                                                     |
+| ---------------------- | --------------------------------------------------------- |
+| Default branch         | `master` (protected; merge only via PR after checks pass) |
+| Coordinator chat title | `Cordinator` (spelled as-is)                              |
+| Agent chat tool        | Claude Code SDK sessions (numbered slots in the sidebar)  |
+| Node.js version        | 24 or newer; install with `npm ci`                        |
+
+### Model preferences
+
+Use a lighter, lower-cost model (e.g. Haiku) for bounded `Mini` assignments
+and a more capable model (e.g. Sonnet or Opus) for `Big` or high-uncertainty
+work. Issue size and model choice are separate decisions; reassess if scope
+changes. Confirm model availability before assigning.
+
+### Required checks
+
+Branch protection requires all five CI contexts, in the order below. Full
+details and local commands are in
+[`AGENTS.project.md`](../AGENTS.project.md).
+
+| Check                   | Local command                           |
+| ----------------------- | --------------------------------------- |
+| Formatting              | `npm run format:check`                  |
+| Lint                    | `npm run lint`                          |
+| Simulation tests        | `npm test`                              |
+| Dependency audit        | `npm audit --audit-level=high`          |
+| Build and browser tests | `npm run build && npm run test:browser` |
+
+`npm run check` runs all five in order.
 
 ## Labeling issues by size
 
