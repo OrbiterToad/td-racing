@@ -150,6 +150,24 @@ A parked implementation with an unmerged PR stays open in an unnumbered
 `Paused` chat. The issue keeps its size label while the released agent number
 is available for a separate active assignment.
 
+## Claude Code runtime
+
+When running under the Claude Code runtime (Claude as the coordinator or as
+an agent), numbered agent slots must be created as **new independent chat
+sessions** — not via the inline `Agent` tool. Each numbered slot (Agent 1,
+Agent 2, …) must appear as a separate entry in the left agent sidebar so the
+user can observe and intervene in any active slot.
+
+**How to open a session:** The user opens a new session via the `+` button in
+the agent sidebar. The coordinator then delivers the assignment by calling
+`send_message` (the `SendMessage` tool) addressed to that session.
+
+**Inline `Agent` tool scope:** The inline `Agent` tool is acceptable only for
+atomic, non-roster tasks — a single bounded operation that does not need a
+persistent slot (for example, a one-shot web search, a file look-up, or a
+quick API call). It must never be used to carry out a tracked issue assignment
+or any work that belongs to a numbered agent slot.
+
 ## Communication standard
 
 Use these two-line structures for every direct coordination message:
