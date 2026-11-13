@@ -696,3 +696,238 @@ delegates a revert PR (#201) to Agent 2, which goes through required checks
 and protection normally. After #201 merges, the coordinator records the new
 `master` SHA, tells all agents to sync, and resumes the queue starting with
 the next ready PR.
+
+## Workflow checklists
+
+Step-by-step references for recurring coordinator and agent operations. Run
+each step in order; do not skip a step because an earlier run seemed fine.
+Policy details for each step are in the sections above.
+
+---
+
+### Checklist: assigning a new task (coordinator)
+
+**Before creating or reusing an issue:**
+
+- [ ] Confirm the request calls for repository work, not just an answer.
+- [ ] Search open issues for an existing match; reuse it if the scope fits.
+- [ ] If no match: create an issue with scope, acceptance criteria, and
+      out-of-scope items. Apply exactly one size label (`Mini` or `Big`).
+
+**Before picking a slot:**
+
+- [ ] Count active agents (must be ≤ 8 before assigning).
+- [ ] Check the age count on queued `Big` issues; if any are age-eligible
+      (≥ 3 consecutive Mini picks), treat them as equal priority to ready Minis.
+- [ ] Pick the free slot with the lowest number (Agent 1 reserved for
+      instruction maintenance; Agent 2 reserved for integration).
+- [ ] Choose a model appropriate for the size: lighter model for `Mini`,
+      capable model for `Big` or high-uncertainty work.
+
+**Before sending the assignment:**
+
+- [ ] Scan open PRs, remote branches, local worktrees, and the current agent
+      roster for duplicate ownership of this issue.
+- [ ] Identify likely file overlaps with active branches (note for merge
+      sequencing — do not use as a reason to delay).
+- [ ] Confirm the issue's dependencies are resolved or note them explicitly.
+
+**Send the assignment message:**
+
+- [ ] Use the `[Coordinator] [#N task] [assignment]` format.
+- [ ] Include: scope, acceptance criteria, out-of-scope items, issue URL,
+      dependency/ownership scan result, required checks, and the instruction to
+      complete preflight in an isolated `ai/` branch.
+
+**After sending:**
+
+- [ ] Update the agent chat title to `Agent N (Mini/Big) · Working · <task>`.
+- [ ] Wait for the agent's `preflight complete` message before marking the
+      assignment delivered.
+- [ ] If no `preflight complete` arrives after one monitor cycle, retry once
+      (`[Retry]` prefix); escalate to the user if the second attempt also fails.
+- [ ] Increment the age count for every queued `Big` issue that was passed
+      over in this slot opening.
+
+---
+
+### Checklist: agent preflight (agent)
+
+- [ ] Confirm the assigned issue is open; read its scope, acceptance criteria,
+      and exclusions in full.
+- [ ] `git fetch origin master && git rev-parse origin/master` — record the
+      exact SHA.
+- [ ] Read `AGENTS.md` and `AGENTS.project.md` for required checks and
+      project rules.
+- [ ] Scan open PRs, remote branches, and local worktrees for duplicate
+      ownership of this issue or likely file conflicts.
+- [ ] Identify all required checks from CI workflow, branch protection, and
+      `AGENTS.project.md`.
+- [ ] Create an isolated worktree:
+      `git worktree add <path> -b ai/<description> origin/master`.
+- [ ] Send `preflight complete` to the coordinator with: confirmed scope, base
+      SHA, ownership/conflict scan findings, branch name, worktree path, and
+      required checks list.
+- [ ] Update the chat title to `Agent N (Mini/Big) · Working · <task>` if
+      possible.
+
+---
+
+### Checklist: reporting a blocker (agent)
+
+- [ ] Identify the exact action that is blocked (not the whole task).
+- [ ] Collect evidence: error text, missing dependency, ambiguous criterion.
+- [ ] Attempt a fix if one is safe and within scope; note what was tried.
+- [ ] Identify all independent work that can continue while waiting.
+- [ ] Update the chat title to `Agent N (Mini/Big) · Blocked · <task>`.
+- [ ] Send a `blocked` message to the coordinator with: blocked action,
+      evidence, what was attempted, recommendation, and the independent work
+      available.
+- [ ] Continue the independent work immediately; do not wait passively.
+- [ ] Do not expand scope, start competing branches, or contact the user
+      directly about coordination.
+
+**Coordinator response:**
+
+- [ ] Acknowledge the `blocked` message with a `decision` or escalation reply.
+- [ ] If resolvable: provide the decision or delegate access/dependency fix.
+- [ ] If not resolvable without user input: escalate to the user; relay the
+      decision back to the agent once received.
+- [ ] Update the agent chat title to `Blocked` if not already done.
+- [ ] Once the blocker clears: send a `decision` message and restore the
+      agent's title to `Working`.
+
+---
+
+### Checklist: merge pass (coordinator)
+
+**Before each merge in the pass:**
+
+- [ ] Refresh the PR's exact head SHA — do not rely on a previous status
+      report.
+- [ ] Verify required CI checks have all passed on that exact head (not on an
+      earlier commit).
+- [ ] Verify required reviews are satisfied and there is no blocking feedback
+      or unresolved conversation.
+- [ ] Verify the branch meets the freshness rule (no protection-required
+      rebase needed).
+- [ ] Verify mergeability (no conflicts against current `master`).
+- [ ] Confirm no new blocking review or push has arrived since the last check.
+
+**Merge or delegate:**
+
+- [ ] Merge directly, or send a `decision` message to the integration agent
+      explicitly naming the PR number, the authorized head SHA, and the agent.
+- [ ] Ask the affected agent to pause pushes to the branch during integration.
+
+**After each merge:**
+
+- [ ] Confirm the PR shows as merged; record the resulting `master` SHA.
+- [ ] Send a `merged` confirmation with the resulting `master` SHA.
+- [ ] Update affected agent chat titles.
+- [ ] Close the associated issue (or confirm the closing reference is in the
+      PR body).
+- [ ] Tell all active agents the new `master` SHA and which of their branches
+      need a sync.
+- [ ] Refresh the next PR in the pass against the new `master` before
+      deciding whether to continue the pass.
+
+---
+
+### Checklist: push freeze (coordinator)
+
+**Initiating:**
+
+- [ ] Name the exact branch to freeze and the frozen head SHA.
+- [ ] Send a `decision` message to the owner with: branch name, frozen head
+      SHA, reason, and expected duration.
+- [ ] Wait for the agent's acknowledgment before beginning integration work.
+
+**During the freeze:**
+
+- [ ] The frozen agent may work locally but must not push to `origin` on the
+      frozen branch.
+- [ ] The frozen agent may sync its own branch from `origin/master` locally
+      but must not push until the freeze lifts.
+- [ ] No other agent touches the frozen branch or its worktree.
+
+**Lifting:**
+
+- [ ] Send a `decision` message with the integration result SHA and an
+      explicit statement that the freeze is lifted.
+- [ ] The agent may then push accumulated local commits.
+
+**If the integration pass fails or is canceled:**
+
+- [ ] Lift the freeze immediately.
+- [ ] Provide the current `master` SHA so the agent can sync cleanly.
+- [ ] Record why the pass was interrupted.
+
+---
+
+### Checklist: canceling or closing without merge (coordinator)
+
+- [ ] Determine the terminal state:
+      `Canceled` / `Superseded` / `Duplicate` / `Investigation only`.
+- [ ] Tell the agent to stop pushing new commits and commit any in-progress
+      changes locally.
+- [ ] Wait for confirmation that the agent has stopped work.
+- [ ] Close the PR (if one exists) with an appropriate note naming the reason
+      and, for Superseded/Duplicate, linking the canonical or superseding work.
+- [ ] Retain the branch unless the user has explicitly authorized deletion for
+      this branch.
+- [ ] Update the issue:
+  - Canceled: leave open or close per the user's instruction.
+  - Superseded/Duplicate: close with a link to the canonical/superseding item.
+  - Investigation only: close when the investigation outcome is documented.
+- [ ] Release the agent's numbered slot only after the above steps are
+      confirmed.
+- [ ] Archive the agent's chat (Canceled/Superseded/Duplicate) or leave it
+      open for follow-up (Investigation only where the outcome is not yet
+      documented).
+- [ ] Assign a suitable queued issue to the released slot if one is ready.
+
+---
+
+### Checklist: post-merge incident response (coordinator)
+
+**Detection and triage:**
+
+- [ ] Record the `master` SHA at which the failure was first observed.
+- [ ] Identify the most recent merge commit and the PR that introduced it.
+- [ ] Check the baseline: were the same checks passing on `master` before
+      that merge?
+- [ ] If the failure pre-dates the merge: treat as a pre-existing failure;
+      do not pause the queue.
+- [ ] If caused by the merge: pause the merge queue immediately.
+
+**Communication:**
+
+- [ ] Notify the user with: the merge commit/PR, the observed failure and
+      evidence, the proposed recovery action (revert or targeted fix), the owner,
+      and which queued PRs are affected by the pause.
+- [ ] Tell all affected agents to pause pushes until the incident is resolved.
+
+**Revert or fix — before delegating:**
+
+- [ ] Confirm the regression is attributable to a specific merge commit.
+- [ ] Confirm reverting does not create data-loss or state-corruption risk.
+- [ ] Confirm the user has not directed a different recovery path.
+- [ ] If any condition above is not met: escalate to the user before acting.
+
+**Delegating the revert PR:**
+
+- [ ] Assign a revert PR to Agent 2 (integration slot) or the next available
+      slot.
+- [ ] Require the revert to go through the full protected path (required
+      checks, branch protection, reviews if required).
+
+**After the revert or fix merges:**
+
+- [ ] Record the resulting `master` SHA; verify required checks pass on it.
+- [ ] Identify queued PRs that were based on the regressed `master` and flag
+      them for a sync.
+- [ ] Tell all active agents the new `master` SHA; ask them to sync and
+      re-run required checks.
+- [ ] Resume the merge queue starting from the updated state.
+- [ ] Release the queue-pause status explicitly in a user-facing update.
