@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MAPS, MAP_SCENERY_ASSETS, SCENERY_ASSETS } from '../src/config.js';
+import {
+  MAPS,
+  MAP_SCENERY_ASSETS,
+  SCENERY_ASSETS,
+  mapBaseId,
+} from '../src/config.js';
 import { sceneryAccess, sceneryDetails, sceneryScene } from '../src/state.js';
 import {
   buildSceneryDetails,
@@ -10,12 +15,15 @@ import {
 import { configureTrack, nearest, widthAt } from '../src/tracks.js';
 
 test('every map generates its own deterministic landmarks outside racing space', () => {
-  assert.deepEqual(Object.keys(MAP_SCENERY_ASSETS), Object.keys(MAPS));
+  assert.deepEqual(
+    Object.keys(MAP_SCENERY_ASSETS),
+    Object.keys(MAPS).filter((id) => mapBaseId(MAPS[id]) === id),
+  );
   const allCustomAssets = Object.values(MAP_SCENERY_ASSETS).flat();
   assert.equal(new Set(allCustomAssets).size, allCustomAssets.length);
 
   for (const [mapId, map] of Object.entries(MAPS)) {
-    const required = MAP_SCENERY_ASSETS[mapId];
+    const required = MAP_SCENERY_ASSETS[mapBaseId(map)];
     assert.equal(required.length, 2, `${map.name} should define two landmarks`);
     assert(
       required.every((asset) => SCENERY_ASSETS.includes(asset)),

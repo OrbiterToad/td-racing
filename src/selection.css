@@ -1075,3 +1075,18 @@
     gap: 8px;
   }
 }
+
+.track-layout-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.track-layout-control select {
+  color: inherit;
+  background: #233236;
+  border: 1px solid #ffffff30;
+  border-radius: 3px;
+  padding: 3px 6px;
+  font: inherit;
+  min-height: 28px;
+}

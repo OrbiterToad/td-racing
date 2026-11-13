@@ -2106,18 +2106,19 @@ console.log(
 
 for (const id of Object.keys(MAPS)) {
   configureTrack(id);
-  if (id !== 'rallycross')
+  const baseId = MAPS[id].baseId ?? id;
+  if (baseId !== 'rallycross')
     assert(
       sceneryAccess.length >= 10,
       'Maps with homes, cabins, or cafés need access paths: ' + id,
     );
-  if (id === 'city')
+  if (baseId === 'city')
     assert(
       sceneryAccess.filter((access) => access.owner.kind === 'home').length >=
         15,
       'Suburban homes need visible driveways',
     );
-  if (id === 'city' || id === 'coast')
+  if (baseId === 'city' || baseId === 'coast')
     assert(
       sceneryAccess.some((access) => access.owner.kind === 'cafe-terrace'),
       'Cafés need a pedestrian approach',

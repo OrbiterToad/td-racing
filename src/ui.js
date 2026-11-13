@@ -1,7 +1,7 @@
 import { updateOpponentHUD } from './opponents.js';
 import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
 import { coast, paintCoastGround } from './coast.js';
-import { MAPS, PAINTS, VEHICLES } from './config.js';
+import { MAPS, PAINTS, VEHICLES, mapBaseId } from './config.js';
 import { ghostStatus, liveGhostDelta } from './ghost.js';
 import { lapCoachingDelta } from './lap-coaching.js';
 import { earnedMedalFor, medalTargetsFor } from './medals.js';
@@ -123,14 +123,19 @@ function modeIcon(id) {
 }
 
 function clubRaceAvailable() {
-  return state.pendingTrack === 'juniper' && state.pendingCar === 'clubsport';
+  return (
+    mapBaseId(MAPS[state.pendingTrack]) === 'juniper' &&
+    state.pendingCar === 'clubsport'
+  );
 }
 
 function pickerChoices() {
   return state.pickerMode === 'modes'
     ? GAME_MODES
     : state.pickerMode === 'tracks'
-      ? MAPS
+      ? Object.fromEntries(
+          Object.entries(MAPS).filter(([id, map]) => id === mapBaseId(map)),
+        )
       : VEHICLES;
 }
 
@@ -186,6 +191,7 @@ export function initPicker() {
     closePicker();
   });
   $('selection-dialog').addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'SELECT' && e.key !== 'Escape') return;
     if (e.target.closest('.swatches')) return;
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
       e.preventDefault();
@@ -266,7 +272,10 @@ export function closePicker(resume = false) {
 function selectChoice(id) {
   if (state.pickerMode === 'modes' && id === 'race' && !clubRaceAvailable())
     return;
-  state[pendingChoiceKey()] = id;
+  if (state.pickerMode === 'tracks') {
+    const variant = MAPS[state.pendingTrack].variant;
+    state.pendingTrack = variant === 'forward' ? id : `${id}:${variant}`;
+  } else state[pendingChoiceKey()] = id;
   renderPicker();
 }
 
@@ -275,7 +284,11 @@ export function stepSelection(direction) {
     (id) =>
       state.pickerMode !== 'modes' || id !== 'race' || clubRaceAvailable(),
   );
-  const current = ids.indexOf(state[pendingChoiceKey()]);
+  const current = ids.indexOf(
+    state.pickerMode === 'tracks'
+      ? mapBaseId(MAPS[state.pendingTrack])
+      : state[pendingChoiceKey()],
+  );
   const focused = document.activeElement.id;
   selectChoice(ids[(current + direction + ids.length) % ids.length]);
   if (focused === 'picker-prev' || focused === 'picker-next')
@@ -293,8 +306,12 @@ export function renderPicker() {
   if (modes && state.pendingGameMode === 'race' && !clubRaceAvailable())
     state.pendingGameMode = 'trial';
   const choices = Object.values(pickerChoices());
-  const selectedId = state[pendingChoiceKey()];
-  const selected = pickerChoices()[selectedId];
+  const selectedId = tracks
+    ? mapBaseId(MAPS[state.pendingTrack])
+    : state[pendingChoiceKey()];
+  const selected = tracks
+    ? MAPS[state.pendingTrack]
+    : pickerChoices()[selectedId];
   const vehicle = VEHICLES[state.pendingCar];
   $('selection-dialog').dataset.mode = state.pickerMode;
   $('selection-dialog').dataset.track = tracks ? selectedId : '';
@@ -410,8 +427,8 @@ export function renderPicker() {
     <div class="selection-feature" style="--card-accent:${tracks ? selected.accent : '#d5f578'}">
       <div class="feature-art ${tracks || modes ? 'track-art' : 'car-platform'}">${art}<span class="feature-watermark" aria-hidden="true">${modes ? 'RACE DAY' : tracks ? 'CIRCUIT' : 'GARAGE'}</span></div>
       <div class="feature-copy" aria-live="polite" aria-atomic="true">
-        <span class="choice-tag">${tracks ? selected.label : selected.tag}</span>
-        <h3>${selected.name}</h3>
+        ${tracks ? `<label class="choice-tag track-layout-control">Layout <select id="track-layout" aria-label="Circuit layout">${['forward', 'reverse', 'mirrored'].map((variant) => `<option value="${variant}" ${selected.variant === variant ? 'selected' : ''}>${variant[0].toUpperCase() + variant.slice(1)}</option>`).join('')}</select></label>` : `<span class="choice-tag">${selected.tag}</span>`}
+        <h3>${tracks ? MAPS[selectedId].name : selected.name}</h3>
         <p>${selected.description}</p>${details}
       </div>
     </div>
@@ -436,6 +453,14 @@ export function renderPicker() {
       $('selected-preview'),
       modes ? MAPS[state.pendingTrack] : selected,
     );
+  if ($('track-layout'))
+    $('track-layout').onchange = (event) => {
+      const variant = event.target.value;
+      state.pendingTrack =
+        variant === 'forward' ? selectedId : `${selectedId}:${variant}`;
+      renderPicker();
+      $('track-layout').focus();
+    };
   for (const button of document.querySelectorAll('[data-choice]')) {
     button.onclick = () => {
       selectChoice(button.dataset.choice);
@@ -552,19 +577,19 @@ function paintTrackPreview(canvas, map) {
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.fillStyle =
     map.previewColor ||
-    (map.id === 'city'
+    (mapBaseId(map) === 'city'
       ? '#687d75'
-      : map.id === 'coast'
+      : mapBaseId(map) === 'coast'
         ? '#287f92'
-        : map.id === 'amazonas'
+        : mapBaseId(map) === 'amazonas'
           ? '#214735'
-          : map.id === 'canyon'
+          : mapBaseId(map) === 'canyon'
             ? '#694a37'
-            : map.id === 'alpine'
+            : mapBaseId(map) === 'alpine'
               ? '#52686e'
-              : map.id === 'rallycross'
+              : mapBaseId(map) === 'rallycross'
                 ? '#5b5b3e'
-                : map.id === 'drift'
+                : mapBaseId(map) === 'drift'
                   ? '#1b4654'
                   : '#354b3d');
   c.fillRect(0, 0, canvas.width, canvas.height);
@@ -572,23 +597,23 @@ function paintTrackPreview(canvas, map) {
   c.translate(offsetX, offsetY);
   c.scale(scaleToFit, scaleToFit);
   const rand = seededRandom(
-    map.id === 'canyon'
+    mapBaseId(map) === 'canyon'
       ? 513
-      : map.id === 'alpine'
+      : mapBaseId(map) === 'alpine'
         ? 719
-        : map.id === 'drift'
+        : mapBaseId(map) === 'drift'
           ? 774
-          : map.id === 'summit'
+          : mapBaseId(map) === 'summit'
             ? 941
             : 318,
   );
   for (let i = 0; i < 24; i++) {
     c.fillStyle =
-      map.id === 'canyon'
+      mapBaseId(map) === 'canyon'
         ? '#bf80572b'
-        : map.id === 'alpine'
+        : mapBaseId(map) === 'alpine'
           ? '#d6ebe324'
-          : map.id === 'summit'
+          : mapBaseId(map) === 'summit'
             ? '#f4d4a21b'
             : '#a5c78516';
     c.beginPath();
@@ -607,14 +632,14 @@ function paintTrackPreview(canvas, map) {
   c.translate(240, 135);
   c.scale(scale, scale);
   c.translate(-(left + right) / 2, -(top + bottom) / 2);
-  if (map.id === 'city')
+  if (mapBaseId(map) === 'city')
     paintCityGround(c, {
       x: left - 600,
       y: top - 600,
       width: right - left + 1200,
       height: bottom - top + 1200,
     });
-  if (map.id === 'coast') {
+  if (mapBaseId(map) === 'coast') {
     paintCoastGround(
       c,
       {
@@ -634,17 +659,17 @@ function paintTrackPreview(canvas, map) {
     c.arc(coast.lighthouse.x, coast.lighthouse.y, 20, 0, Math.PI * 2);
     c.fill();
   }
-  if (map.id === 'amazonas') paintAmazonRiver(c, false);
+  if (mapBaseId(map) === 'amazonas') paintAmazonRiver(c, false);
   ribbon(c, '#12202166', 20 / scale, points);
   ribbon(c, map.accent, 9 / scale, points);
   ribbon(c, '#243435', 5 / scale, points);
-  if (map.id === 'amazonas') {
+  if (mapBaseId(map) === 'amazonas') {
     c.save();
     c.globalAlpha = 0.8;
     paintAmazonRiver(c, false);
     c.restore();
   }
-  if (map.id === 'rallycross') {
+  if (mapBaseId(map) === 'rallycross') {
     c.strokeStyle = '#d1a873';
     c.lineWidth = 5 / scale;
     for (let i = 0; i < points.length; i++) {
@@ -815,7 +840,7 @@ export function updateHUD() {
   );
   const status =
     car.surface === 'PIT LANE'
-      ? state.activeMap.id === 'city'
+      ? mapBaseId(state.activeMap) === 'city'
         ? 'SERVICE ROAD'
         : 'PIT LANE · PADDOCK ACCESS'
       : car.surface === 'FORD'

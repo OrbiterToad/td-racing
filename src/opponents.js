@@ -1,5 +1,5 @@
 import { carImagePath, configureCar, loadCarArt } from './cars.js';
-import { CFG, PAINTS } from './config.js';
+import { CFG, PAINTS, mapBaseId } from './config.js';
 import { clamp } from './math.js';
 import { inWorldView, roundedRect } from './renderer.js';
 import { syncRaceResults } from './results.js';
@@ -29,7 +29,10 @@ export function toggleOpponentRace() {
     configureCar('clubsport', state.paint);
     loadCarArt();
     syncCarHUD();
-    changeTrack('juniper', false);
+    changeTrack(
+      mapBaseId(state.activeMap) === 'juniper' ? state.activeMap.id : 'juniper',
+      false,
+    );
     notify('CLUB RACE · Three laps · Full contact');
   } else {
     changeTrack(state.activeMap.id, false);
