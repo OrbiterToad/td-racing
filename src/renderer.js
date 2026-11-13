@@ -1,3 +1,4 @@
+import { drawWeather } from './weather.js';
 import { drawOpponents } from './opponents.js';
 import { updateAudio } from './audio.js';
 import { drawCoastWaves } from './coast.js';
@@ -364,6 +365,18 @@ function drawWorldPass(c) {
     drawCoastWaves(c);
     drawRiverCurrent(c);
   }
+  drawWeather(
+    c,
+    state.condition,
+    {
+      x: camera.x - view.width / camera.zoom,
+      y: camera.y - view.height / camera.zoom,
+      width: (view.width * 2) / camera.zoom,
+      height: (view.height * 2) / camera.zoom,
+    },
+    millis() / 1000,
+    state.settings.reducedMotion,
+  );
   drawSkidmarks(c);
   drawStartingGridSelection(c);
   drawSkillTrialMarkers(c);

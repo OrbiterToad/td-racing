@@ -1,3 +1,4 @@
+import { CONDITIONS, conditionFor } from './weather.js';
 import { AI_DIFFICULTIES } from './ai-racecraft.js';
 import { updateOpponentHUD } from './opponents.js';
 import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
@@ -229,6 +230,7 @@ export function openPicker(mode) {
   state.pendingPaint = state.paint;
   state.pendingDifficulty = opponentRace.difficulty;
   state.pendingGrid = opponentRace.grid;
+  state.pendingCondition = state.condition;
   state.pendingPlayerTwoCar = state.playerTwoCar;
   state.pendingPlayerTwoPaint = state.playerTwoPaint;
   state.pickerWasPaused = state.paused;
@@ -410,7 +412,18 @@ export function renderPicker() {
       : `<div class="car-stats">${['PACE', 'HANDLING', 'OFF ROAD'].map((label, i) => `<span>${label}<i><b style="width:${selected.bars[i] * 100}%"></b></i></span>`).join('')}</div>`;
   $('picker-content').innerHTML = `
     <div class="selection-feature" style="--card-accent:${tracks ? selected.accent : '#d5f578'}">
-      <div class="feature-art ${tracks || modes ? 'track-art' : 'car-platform'}">${art}<span class="feature-watermark" aria-hidden="true">${modes ? 'RACE DAY' : tracks ? 'CIRCUIT' : 'GARAGE'}</span></div>
+      <div class="feature-art ${tracks || modes ? 'track-art' : 'car-platform'}">${art}${
+        modes
+          ? `<label class="weather-choice" for="race-condition">Weather <select id="race-condition">${Object.entries(
+              CONDITIONS,
+            )
+              .map(
+                ([id, setting]) =>
+                  `<option value="${id}" ${state.pendingCondition === id ? 'selected' : ''}>${setting.name} · ${Math.round(setting.grip * 100)}% grip</option>`,
+              )
+              .join('')}</select></label>`
+          : ''
+      }<span class="feature-watermark" aria-hidden="true">${modes ? 'RACE DAY' : tracks ? 'CIRCUIT' : 'GARAGE'}</span></div>
       <div class="feature-copy" aria-live="polite" aria-atomic="true">
         <span class="choice-tag">${tracks ? selected.label : selected.tag}</span>
         <h3>${selected.name}</h3>
@@ -438,6 +451,10 @@ export function renderPicker() {
       $('selected-preview'),
       modes ? MAPS[state.pendingTrack] : selected,
     );
+  if ($('race-condition'))
+    $('race-condition').onchange = (event) => {
+      state.pendingCondition = event.target.value;
+    };
   if ($('ai-grid'))
     $('ai-grid').onchange = (event) => {
       state.pendingGrid = event.target.value;
@@ -471,6 +488,10 @@ export function applyPicker() {
     $('picker-apply').focus();
     return;
   }
+  if (startingSession)
+    state.condition = Object.hasOwn(CONDITIONS, state.pendingCondition)
+      ? state.pendingCondition
+      : 'clear';
   if (state.selectingSession || state.pickerMode === 'garage') {
     const changed = state.pendingCar !== state.activeCar.id;
     configureCar(state.pendingCar, state.pendingPaint);
@@ -804,7 +825,19 @@ export function updateHUD() {
       : car.slip > 35 && car.surface === 'ASPHALT'
         ? 'SLIDING'
         : car.surface;
-  $('surface').textContent = '●  ' + surfaceLabel;
+  $('surface').textContent =
+    '●  ' +
+    conditionFor(state.condition).name.toUpperCase() +
+    ' · ' +
+    surfaceLabel;
+  $('weather-status').textContent = conditionFor(
+    state.condition,
+  ).name.toUpperCase();
+  $('weather-surface').textContent = conditionFor(state.condition).surface;
+  $('grip-label').textContent =
+    state.condition === 'clear'
+      ? state.activeMap.gripLabel
+      : Math.round(conditionFor(state.condition).grip * 100) + '% OF DRY';
   $('surface').style.color =
     car.surface === 'ICE'
       ? '#c0f0ff'
@@ -849,7 +882,8 @@ export function updateHUD() {
                       : car.surface +
                         ' · ' +
                         (race.started ? 'ON TRACK' : 'READY');
-  $('grip-status').textContent = status;
+  $('grip-status').textContent =
+    conditionFor(state.condition).name.toUpperCase() + ' · ' + status;
   $('grip-status').style.color = $('surface').style.color;
   const delta = race.invalid
     ? null

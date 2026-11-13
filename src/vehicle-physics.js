@@ -1,3 +1,4 @@
+import { conditionFor } from './weather.js';
 import { clamp, lerpTo } from './math.js';
 import { amazonRiverFrame } from './jungle.js';
 import { state } from './state.js';
@@ -70,6 +71,7 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
         clamp(Math.abs(forward) / 160, 0, 1) *
         clamp(Math.abs(vehicle.steer) * 2, 0, 1),
     grip =
+      conditionFor(state.condition).grip *
       baseGrip *
       spec.grip *
       oilGrip *
@@ -86,6 +88,7 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
     acceleration +=
       forward > 8 ? -spec.brakes : -95 * (1 - clamp(-forward / 115, 0, 1));
   if (hand && Math.abs(forward) > 2) acceleration -= Math.sign(forward) * 105;
+  acceleration *= conditionFor(state.condition).grip;
   if (surface === 'ICE') acceleration *= 0.3;
   if (surface === 'OIL') acceleration *= 0.55;
   acceleration -= forward * 0.12 + forward * Math.abs(forward) * spec.drag;
@@ -140,6 +143,7 @@ export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
   return {
     ...barrier,
     braking,
+    grip,
     forward,
     hand,
     loose,
