@@ -1,0 +1,45 @@
+# AI racing
+
+Club races support every car and circuit. Select **Club race** in session setup,
+then choose **AI difficulty** and **Opponent cars**. The default is **Normal**
+and **Same as player**, preserving the original driver pace factors (Alex 0.98,
+Blair 0.91, Casey 0.84). **Mixed grid** cycles through the supported car roster
+starting with the player's car. Rivals use their own car artwork, dimensions,
+steering, grip, power and brakes, including during vehicle contact.
+
+| Difficulty | Target pace multiplier | Brake threshold above target | Maximum lane change per second |
+| ---------- | ---------------------- | ---------------------------- | ------------------------------ |
+| Easy       | 0.80                   | 2                            | 12                             |
+| Normal     | 1.00                   | 5                            | 18                             |
+| Hard       | 1.12                   | 8                            | 24                             |
+
+Targets retain curvature and slippery-patch preview with backward braking
+propagation. Slippery-patch targets are capped at 125 (previously 155) to keep
+different grid slots and car footprints on the road. Lower-grip cars get lower
+targets; Clubsport and Drift Spec use 0.85, Sprint uses 0.75, and Offroad uses
+0.9 as safety factors. Slow-yaw cars use 0.45
+and a gentler lateral correction. City targets use 0.9 for slow-yaw cars and 0.6
+otherwise. Cars with standard yaw response brake proactively within three speed
+units of the target in bends or while recovering from a slippery patch; the
+table threshold applies otherwise. Targets stay above the low-speed control
+deadband. Summit uses 20-unit curvature samples, a 0.6 speed margin and geometric
+lookahead steering to negotiate its tight chicane. City and Drift also use
+geometric lookahead for their closely linked turns. These are controller choices; all cars still
+use the shared vehicle physics and collision solver.
+
+On gentle bends or straights, a faster approaching driver can choose a clear
+passing lane. A driver approached from behind can choose a clear inside line
+while the approaching car is still more than 65 track units away. Tight bends,
+narrow roads, blocked lanes and cars already alongside cause a fallback to the
+driver's default line. Changes are rate limited, leave room for vehicle widths,
+and use local traffic information rather than random decisions or rubber banding.
+
+Settings apply on starting a session and survive race restarts. No saved settings
+migration is needed. Difficulty and grid choices are session settings.
+
+`tests/ai-racecraft.test.mjs` covers deterministic decisions and safe fallbacks.
+`tests/ai.test.mjs` enumerates the current car, track and difficulty catalogs, so
+roster additions automatically enter three-lap completion and route/progress
+coverage at every difficulty, using the production 120 Hz fixed simulation
+step. A separate regression rejects progress jumps on unevenly spaced segments.
+The collision regression suite continues to exercise the shared solver.

@@ -201,7 +201,7 @@ test.describe('touch selection', () => {
       .getByRole('button', { name: 'Choose Summit Grand Prix', exact: true })
       .tap();
     await page.locator('#picker-apply').tap();
-    await expect(page.locator('[data-choice="race"]')).toBeDisabled();
+    await expect(page.locator('[data-choice="race"]')).toBeEnabled();
     await page.locator('[data-choice="slalom"]').tap();
     await expect(page.locator('[data-choice="slalom"]')).toHaveAttribute(
       'aria-pressed',
