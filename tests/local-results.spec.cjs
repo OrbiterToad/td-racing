@@ -119,7 +119,14 @@ for (const first of [0, 1]) {
           r.top >= 0 &&
           r.right <= innerWidth &&
           r.bottom <= innerHeight &&
-          dialog.scrollHeight <= dialog.clientHeight + 1
+          dialog.scrollHeight <= dialog.clientHeight + 1 &&
+          [...dialog.querySelectorAll('.rr-row')].every((row) => {
+            const bounds = row.getBoundingClientRect();
+            const footer = dialog
+              .querySelector('.rr-actions')
+              .getBoundingClientRect();
+            return bounds.top >= r.top && bounds.bottom <= footer.top;
+          })
         );
       });
       expect(fits).toBe(true);

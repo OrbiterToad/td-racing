@@ -100,6 +100,8 @@ function ensureDialog() {
       grid-template-columns: 1.05fr 1fr 1fr;
       gap: 10px;
     }
+    #race-results[data-local="true"] .rr-frame { grid-template-rows: auto auto auto auto; }
+    #race-results[data-local="true"] .rr-actions { position: static; height: auto; padding: 0; background: transparent; z-index: auto; }
     #race-results .rr-local-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     #race-results [hidden] { display: none !important; }
     #race-results .rr-driver-name { margin: 0 0 8px; font-size: 16px; }
@@ -319,6 +321,7 @@ export function syncRaceResults({
   if (!model.position) return;
   const view = ensureDialog();
   view.dataset.finish = finishKey;
+  view.dataset.local = String(local);
   view.querySelector('.rr-kicker').textContent = local
     ? 'APEX / LOCAL SPLIT-SCREEN'
     : 'APEX / CLUB RACE';
