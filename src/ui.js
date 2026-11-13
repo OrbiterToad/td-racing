@@ -936,6 +936,7 @@ export function updateHUD() {
   $('ghost-delta').textContent = formatDelta(ghostDelta);
   $('ghost-delta').style.color =
     ghostDelta === null ? '#9eb0a4' : ghostDelta <= 0 ? '#d5f578' : '#f0a28a';
+  $('start-countdown').hidden = !!state.localRace;
   $('start-countdown').textContent =
     race.countdown > 0
       ? String(Math.ceil(race.countdown))

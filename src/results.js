@@ -8,12 +8,18 @@ export function configureRaceResultsActions(nextActions) {
   actions = { ...actions, ...nextActions };
 }
 
-export function buildRaceResultsModel({ standings, totalTime, bestLap }) {
+export function buildRaceResultsModel({
+  standings,
+  totalTime,
+  bestLap,
+  local = false,
+}) {
   const rows = standings.map((entry, index) => {
     const finished = Number.isFinite(entry.finish);
     return {
       position: index + 1,
-      name: entry.player ? 'You' : entry.name,
+      name: local ? entry.name : entry.player ? 'You' : entry.name,
+      bestLap: entry.bestLap,
       player: Boolean(entry.player),
       paint: entry.paint,
       finished,
@@ -94,6 +100,13 @@ function ensureDialog() {
       grid-template-columns: 1.05fr 1fr 1fr;
       gap: 10px;
     }
+    #race-results[data-local="true"] .rr-frame { grid-template-rows: auto auto auto auto; }
+    #race-results[data-local="true"] .rr-actions { position: static; height: auto; padding: 0; background: transparent; z-index: auto; }
+    #race-results .rr-local-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    #race-results [hidden] { display: none !important; }
+    #race-results .rr-driver-name { margin: 0 0 8px; font-size: 16px; }
+    #race-results .rr-driver-detail { margin: 8px 0 0; color: #cbd4cf; font-size: 12px; }
+    #race-results .rr-local-summary .rr-stat { border-top: 3px solid var(--rr-paint); }
     #race-results .rr-stat {
       min-width: 0;
       padding: 14px 16px 12px;
@@ -225,6 +238,7 @@ function ensureDialog() {
         <span class="rr-flag" aria-hidden="true">▦ &nbsp; RACE COMPLETE</span>
       </header>
       <p id="race-results-description" class="sr-only">Final race position and driver standings.</p>
+      <section class="rr-local-summary" aria-label="Local player results" hidden></section>
       <section class="rr-summary" aria-label="Your race result">
         <div class="rr-stat"><span class="rr-label">Finishing position</span><strong class="rr-value" data-result="position"></strong></div>
         <div class="rr-stat"><span class="rr-label">Total race time</span><strong class="rr-value" data-result="time"></strong></div>
@@ -286,7 +300,13 @@ function dismiss() {
   dismissedFinish = finish ?? dismissedFinish;
 }
 
-export function syncRaceResults({ finished, totalTime, bestLap, standings }) {
+export function syncRaceResults({
+  finished,
+  totalTime,
+  bestLap,
+  standings,
+  local = false,
+}) {
   if (!finished || !Number.isFinite(totalTime)) {
     if (!finished) dismissedFinish = null;
     if (dialog?.open) dialog.close();
@@ -297,10 +317,41 @@ export function syncRaceResults({ finished, totalTime, bestLap, standings }) {
   const finishKey = String(totalTime);
   if (dismissedFinish === finishKey) return;
 
-  const model = buildRaceResultsModel({ standings, totalTime, bestLap });
+  const model = buildRaceResultsModel({ standings, totalTime, bestLap, local });
   if (!model.position) return;
   const view = ensureDialog();
   view.dataset.finish = finishKey;
+  view.dataset.local = String(local);
+  view.querySelector('.rr-kicker').textContent = local
+    ? 'APEX / LOCAL SPLIT-SCREEN'
+    : 'APEX / CLUB RACE';
+  view.querySelector('.rr-summary').hidden = local;
+  const localSummary = view.querySelector('.rr-local-summary');
+  localSummary.hidden = !local;
+  localSummary.replaceChildren();
+  if (local) {
+    for (const row of [...model.rows].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    )) {
+      const card = document.createElement('article');
+      card.className = 'rr-stat';
+      card.style.setProperty('--rr-paint', row.paint);
+      const name = document.createElement('h2');
+      name.className = 'rr-driver-name';
+      name.textContent = row.name;
+      const position = document.createElement('strong');
+      position.className = 'rr-value';
+      position.textContent = 'P' + row.position + ' / ' + model.rows.length;
+      const time = document.createElement('p');
+      time.className = 'rr-driver-detail';
+      time.textContent = 'Finish · ' + formatTime(row.time);
+      const lap = document.createElement('p');
+      lap.className = 'rr-driver-detail';
+      lap.textContent = 'Best lap · ' + formatTime(row.bestLap);
+      card.append(name, position, time, lap);
+      localSummary.append(card);
+    }
+  }
   view.querySelector('[data-result="position"]').textContent =
     'P' + model.position + ' / ' + model.rows.length;
   view.querySelector('[data-result="time"]').textContent = formatTime(

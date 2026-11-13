@@ -27,7 +27,7 @@ import { nearest, patchFrame, widthAt, withinPitDistance } from './tracks.js';
 import { drawCityTraffic } from './traffic.js';
 import { restartRun } from './race.js';
 import { rewind } from './rewind.js';
-import { localRaceResults, pollSecondPlayer } from './local-race.js';
+import { pollSecondPlayer } from './local-race.js';
 import { handleGamepadAction } from './tutorial.js';
 import { drawSkillTrialMarkers } from './skill-trials.js';
 import {
@@ -517,19 +517,6 @@ function drawLocalSplitScreen(c) {
       c.font = 'bold 48px Arial';
       c.fillText(String(Math.ceil(race.countdown)), cx, height / 2 + 16);
     }
-  if (race.finished) {
-    c.fillStyle = '#08120dee';
-    c.fillRect(width / 2 - 170, height / 2 - 54, 340, 108);
-    c.fillStyle = '#f4f1e8';
-    c.font = 'bold 20px Arial';
-    c.fillText('RACE RESULTS', width / 2, height / 2 - 14);
-    c.font = '15px Arial';
-    c.fillText(
-      localRaceResults(race).join('     '),
-      width / 2,
-      height / 2 + 20,
-    );
-  }
   c.restore();
 }
 
