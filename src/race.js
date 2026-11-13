@@ -1,3 +1,4 @@
+import { completeCareerEvent } from './progression.js';
 import { resetOpponentRace } from './opponents.js';
 import { CFG } from './config.js';
 import {
@@ -180,6 +181,10 @@ export function updateRace(dt, n) {
       if (opponentRace.enabled && race.lap > opponentRace.laps) {
         opponentRace.playerFinish = opponentRace.elapsed - dt + dt * fraction;
         opponentRace.finished = true;
+        completeCareerEvent(state.activeMap.id, state.activeCar.id, {
+          valid: resultEligible(state.rewindUsed),
+          time: opponentRace.playerFinish,
+        });
         car.vx = 0;
         car.vy = 0;
         car.yaw = 0;
