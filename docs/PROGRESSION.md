@@ -23,7 +23,7 @@ Malformed JSON or an unsupported document is preserved and blocks updates;
 the Settings career section explains the reset recovery path. Legacy keys
 are never reimported while a canonical save exists, including after reset.
 
-Settings → Reset progression requires a confirmation describing the affected
+Settings → Career → Reset progression requires a confirmation describing the affected
 data. Cancel makes no change. Confirm writes an initial career document;
 settings, leaderboard entries, personal bests and ghosts are retained.
 Storage access/quota failures never crash the game; a failed reset reports
