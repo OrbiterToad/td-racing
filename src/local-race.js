@@ -1,11 +1,7 @@
 import { applyDrivingAssists } from './assists.js';
 import { GamepadInput } from './gamepad.js';
 import { VEHICLES } from './config.js';
-import {
-  driveVehicle,
-  resolveVehicleBarrier,
-  resolveVehicleCollision,
-} from './vehicle-physics.js';
+import { driveVehicle, resolveVehicleContacts } from './vehicle-physics.js';
 import { nearestDriving } from './tracks.js';
 import { startingGrid, state } from './state.js';
 
@@ -112,12 +108,10 @@ export function updateLocalRace(race, dt, controls, primary) {
 export function resolveLocalCollision(race, primary) {
   const second = race.players[1],
     [specA, specB] = race.carSpecs;
-  const overlap = resolveVehicleCollision(primary, second, specA, specB);
-  if (overlap > 0) {
-    resolveVehicleBarrier(primary, specA);
-    resolveVehicleBarrier(second, specB);
-  }
-  return overlap;
+  return resolveVehicleContacts([
+    { vehicle: primary, spec: specA },
+    { vehicle: second, spec: specB },
+  ]);
 }
 
 export function localRaceResults(race) {

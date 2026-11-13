@@ -13,6 +13,7 @@ import { configureTrack, nearestDriving, pointOnTrack } from '../src/tracks.js';
 import {
   driveVehicle,
   resolveVehicleCollision,
+  resolveVehicleContacts,
 } from '../src/vehicle-physics.js';
 
 const spec = VEHICLES.clubsport;
@@ -384,4 +385,184 @@ test('recovery after an impact stops the player, clears transient slip, and perm
   for (let i = 0; i < 120; i++) simulate(dt);
   assert(speed(car) > 10, 'Recovery must leave the controls usable');
   finite(car);
+});
+
+// Check penetration independently of the solver, using all four SAT axes.
+function penetration(a, b, specA, specB) {
+  let depth = Infinity;
+  for (const angle of [
+    a.angle,
+    a.angle + Math.PI / 2,
+    b.angle,
+    b.angle + Math.PI / 2,
+  ]) {
+    const x = Math.cos(angle),
+      y = Math.sin(angle);
+    const radius = (body, spec) =>
+      (Math.abs(Math.cos(body.angle - angle)) * spec.length) / 2 +
+      (Math.abs(Math.sin(body.angle - angle)) * spec.width) / 2;
+    depth = Math.min(
+      depth,
+      radius(a, specA) +
+        radius(b, specB) -
+        Math.abs((b.x - a.x) * x + (b.y - a.y) * y),
+    );
+  }
+  return Math.max(0, depth);
+}
+
+for (const specA of Object.values(VEHICLES)) {
+  for (const velocity of [5, 180, 1250]) {
+    for (const heading of [0, Math.PI / 6, Math.PI / 2]) {
+      test(`${specA.id} contact at speed ${velocity}, angle ${heading} stays bounded`, () => {
+        const specB = VEHICLES.formula;
+        const a = vehicle(0, 0, 0, velocity, velocity / 5);
+        const b = vehicle((specA.length + specB.width) / 2 - 2, 0, heading);
+        const initial = energy([a, b]);
+        resolveVehicleCollision(a, b, specA, specB);
+        assert(b.vx > 0 && a.vx < velocity, 'Contact must transfer momentum');
+        assert(penetration(a, b, specA, specB) < 1e-7);
+        assert(energy([a, b]) <= initial + 1e-7);
+        near(a.vx + b.vx, velocity, 'Horizontal momentum');
+        near(a.vy + b.vy, velocity / 5, 'Vertical momentum');
+        assert.equal(a.yaw + b.yaw, 0, 'Contact cannot create spin');
+        [a, b].forEach(finite);
+      });
+    }
+  }
+}
+
+for (const heading of [0, Math.PI / 4, Math.PI / 2]) {
+  test(`swept boxes catch a complete crossing at angle ${heading}`, () => {
+    const specA = VEHICLES.clubsport,
+      specB = VEHICLES.formula;
+    const startA = { x: -90, y: 0 },
+      startB = { x: 0, y: 0 };
+    const a = vehicle(90, 0, 0, 1250),
+      b = vehicle(0, 0, heading);
+    const initial = energy([a, b]);
+    assert.equal(
+      penetration(a, b, specA, specB),
+      0,
+      'Endpoints alone miss this contact',
+    );
+    resolveVehicleCollision(a, b, specA, specB, startA, startB);
+    assert(a.x < b.x, 'Cars must retain their pre-impact order');
+    assert(penetration(a, b, specA, specB) < 1e-7);
+    assert(a.vx < 1250 && b.vx > 0);
+    assert(energy([a, b]) <= initial + 1e-7);
+  });
+}
+
+test('swept glancing close pass does not collide with a car outside its path', () => {
+  const a = vehicle(90, spec.width + 1, 0, 1250),
+    b = vehicle();
+  const initial = globalThis.structuredClone([a, b]);
+  resolveVehicleCollision(a, b, spec, spec, { x: -90, y: a.y }, { x: 0, y: 0 });
+  assert.deepEqual([a, b], initial);
+});
+
+test('shared race solver consumes drive motion to prevent tunneling into an unmoved car', () => {
+  const a = onTrack(500, 0, 1250),
+    b = onTrack(570);
+  const start = globalThis.structuredClone(a);
+  driveVehicle(a, idle, 0.12, VEHICLES.formula);
+  const axis = { x: Math.cos(start.angle), y: Math.sin(start.angle) };
+  assert(
+    (a.x - b.x) * axis.x + (a.y - b.y) * axis.y > 0,
+    'Fixture crosses the other car',
+  );
+  resolveVehicleContacts([
+    { vehicle: a, spec: VEHICLES.formula },
+    { vehicle: b, spec },
+  ]);
+  assert((b.x - a.x) * axis.x + (b.y - a.y) * axis.y > 0);
+  assert(speed(b) > 0);
+  const resolved = globalThis.structuredClone([a, b]);
+  resolveVehicleContacts([
+    { vehicle: a, spec: VEHICLES.formula },
+    { vehicle: b, spec },
+  ]);
+  assert.deepEqual([a, b], resolved, 'Old sweeps must not replay');
+});
+
+test('simultaneous mixed-size pile-up separates deterministically and can drive away', () => {
+  function run() {
+    const specs = [
+      VEHICLES.clubsport,
+      VEHICLES.muscle,
+      VEHICLES.formula,
+      VEHICLES.rally,
+    ];
+    const bodies = specs.map((_, i) => onTrack(500 + i * 35, 0, (3 - i) * 180));
+    const entries = bodies.map((vehicle, i) => ({ vehicle, spec: specs[i] }));
+    const initial = energy(bodies);
+    resolveVehicleContacts(entries);
+    for (let i = 0; i < bodies.length; i++)
+      for (let j = i + 1; j < bodies.length; j++)
+        assert(penetration(bodies[i], bodies[j], specs[i], specs[j]) < 1e-5);
+    assert(energy(bodies) <= initial + 1e-7);
+    const front = bodies.at(-1),
+      start = { x: front.x, y: front.y };
+    for (let step = 0; step < 120; step++) {
+      entries.forEach(({ vehicle, spec }) =>
+        driveVehicle(vehicle, { ...idle, throttle: 1 }, dt, spec),
+      );
+      resolveVehicleContacts(entries);
+      bodies.forEach(finite);
+    }
+    assert(
+      Math.hypot(front.x - start.x, front.y - start.y) > 40,
+      'Cars can continue driving',
+    );
+    return bodies;
+  }
+  assert.deepEqual(run(), run(), 'Repeated simulations must match exactly');
+});
+
+test('three stationary cars squeezed against a rail separate without jitter or spin', () => {
+  const p = nearestDriving(car.x, car.y);
+  const outside = p.wall - 6 - spec.width / 2;
+  const bodies = [0, 1, 2].map((i) =>
+    onTrack(500, outside - i * (spec.width - 5)),
+  );
+  const entries = bodies.map((vehicle) => ({ vehicle, spec }));
+  resolveVehicleContacts(entries);
+  for (let i = 0; i < bodies.length; i++) {
+    withinBarriers(bodies[i]);
+    assert.equal(speed(bodies[i]) + bodies[i].yaw, 0);
+    for (let j = i + 1; j < bodies.length; j++)
+      assert(penetration(bodies[i], bodies[j], spec, spec) < 1e-5);
+  }
+  const settled = globalThis.structuredClone(bodies);
+  for (let i = 0; i < 120; i++) resolveVehicleContacts(entries);
+  bodies.forEach((body, i) => {
+    assert(Math.hypot(body.x - settled[i].x, body.y - settled[i].y) < 1e-5);
+    withinBarriers(body);
+  });
+});
+
+test('low-speed bumper contact settles without rebound', () => {
+  const a = vehicle(0, 0, 0, 5),
+    b = vehicle(spec.length - 1);
+  resolveVehicleCollision(a, b, spec, spec);
+  near(a.vx, 2.5, 'Striker settles to shared speed');
+  near(b.vx, 2.5, 'Struck car settles to shared speed');
+});
+
+test('opposing high-speed cars cannot swap sides during a swept head-on impact', () => {
+  const a = vehicle(70, 0, 0, 1250),
+    b = vehicle(-70, 0, Math.PI, -1250);
+  const initial = energy([a, b]);
+  resolveVehicleCollision(
+    a,
+    b,
+    VEHICLES.formula,
+    spec,
+    { x: -70, y: 0 },
+    { x: 70, y: 0 },
+  );
+  assert(b.x - a.x >= (VEHICLES.formula.length + spec.length) / 2 - 1e-7);
+  assert(energy([a, b]) <= initial);
+  near(a.vx + b.vx, 0, 'Head-on impact conserves momentum');
 });

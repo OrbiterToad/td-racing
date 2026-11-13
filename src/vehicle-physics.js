@@ -4,10 +4,14 @@ import { amazonRiverFrame } from './jungle.js';
 import { state } from './state.js';
 import { nearestDriving, surfaceAt } from './tracks.js';
 
+// Per-step motion stays outside persistent car/rewind state.
+const motion = new WeakMap();
+
 const OFFROAD = ['GRASS', 'GRAVEL', 'SAND', 'SAND PATCH', 'SNOW'];
 
 // Player and race opponents use this same force, grip, steering, and wall model.
 export function driveVehicle(vehicle, controls, dt, spec = state.activeCar) {
+  motion.set(vehicle, { x: vehicle.x, y: vehicle.y });
   const n = nearestDriving(vehicle.x, vehicle.y),
     surface = surfaceAt(n, vehicle.x, vehicle.y),
     gas = controls.throttle > 0,
@@ -182,7 +186,56 @@ export function resolveVehicleBarrier(vehicle, spec = state.activeCar) {
   return { after, ax, ay, impact };
 }
 
-export function resolveVehicleCollision(a, b, specA, specB) {
+// Sweep the relative translation through the same oriented-box separating axes
+// used for overlap. Steering changes heading only slightly per fixed step; use
+// the current footprint, without adding collision torque to the steering model.
+function sweptContact(a, b, specA, specB, startA, startB, axes) {
+  if (!startA || !startB) return null;
+  const dx = startB.x - startA.x,
+    dy = startB.y - startA.y;
+  const mx = b.x - a.x - dx,
+    my = b.y - a.y - dy;
+  let enter = -Infinity,
+    exit = Infinity,
+    nx = 0,
+    ny = 0;
+  for (const [x, y] of axes) {
+    const radius = support(a, specA, x, y) + support(b, specB, x, y);
+    const distance = dx * x + dy * y,
+      travel = mx * x + my * y;
+    if (Math.abs(travel) < 1e-10) {
+      if (Math.abs(distance) >= radius) return null;
+      continue;
+    }
+    const t1 = (-radius - distance) / travel;
+    const t2 = (radius - distance) / travel;
+    const near = Math.min(t1, t2),
+      far = Math.max(t1, t2);
+    if (near > enter) {
+      enter = near;
+      nx = x * (travel < 0 ? 1 : -1);
+      ny = y * (travel < 0 ? 1 : -1);
+    }
+    exit = Math.min(exit, far);
+    if (enter >= exit) return null;
+  }
+  // An initial overlap belongs to the positional solver, not the sweep.
+  if (enter < 0 || enter > 1 || exit < 0) return null;
+  return { nx, ny, depth: Math.max(0, -(mx * nx + my * ny) * (1 - enter)) };
+}
+
+function support(vehicle, spec, x, y) {
+  return (
+    (Math.abs(x * Math.cos(vehicle.angle) + y * Math.sin(vehicle.angle)) *
+      spec.length) /
+      2 +
+    (Math.abs(-x * Math.sin(vehicle.angle) + y * Math.cos(vehicle.angle)) *
+      spec.width) /
+      2
+  );
+}
+
+export function resolveVehicleCollision(a, b, specA, specB, startA, startB) {
   const axes = [
     [Math.cos(a.angle), Math.sin(a.angle)],
     [-Math.sin(a.angle), Math.cos(a.angle)],
@@ -194,33 +247,34 @@ export function resolveVehicleCollision(a, b, specA, specB) {
     normalY = 0;
   const dx = b.x - a.x,
     dy = b.y - a.y;
-  for (const [axisX, axisY] of axes) {
-    const project = (vehicle, spec, x, y) =>
-      (Math.abs(x * Math.cos(vehicle.angle) + y * Math.sin(vehicle.angle)) *
-        spec.length) /
-        2 +
-      (Math.abs(-x * Math.sin(vehicle.angle) + y * Math.cos(vehicle.angle)) *
-        spec.width) /
-        2;
-    const overlap =
-      project(a, specA, axisX, axisY) +
-      project(b, specB, axisX, axisY) -
-      Math.abs(dx * axisX + dy * axisY);
-    if (overlap <= 0) return 0;
-    if (overlap < smallest) {
-      smallest = overlap;
-      const sign = dx * axisX + dy * axisY < 0 ? -1 : 1;
-      normalX = axisX * sign;
-      normalY = axisY * sign;
+  const swept = sweptContact(a, b, specA, specB, startA, startB, axes);
+  if (swept) {
+    smallest = swept.depth;
+    normalX = swept.nx;
+    normalY = swept.ny;
+  } else
+    for (const [axisX, axisY] of axes) {
+      const overlap =
+        support(a, specA, axisX, axisY) +
+        support(b, specB, axisX, axisY) -
+        Math.abs(dx * axisX + dy * axisY);
+      if (overlap <= 1e-9) return 0;
+      if (overlap < smallest) {
+        smallest = overlap;
+        const sign = dx * axisX + dy * axisY < 0 ? -1 : 1;
+        normalX = axisX * sign;
+        normalY = axisY * sign;
+      }
     }
-  }
   a.x -= normalX * (smallest / 2);
   a.y -= normalY * (smallest / 2);
   b.x += normalX * (smallest / 2);
   b.y += normalY * (smallest / 2);
   const relativeSpeed = (b.vx - a.vx) * normalX + (b.vy - a.vy) * normalY;
   if (relativeSpeed < 0) {
-    const impulse = (-(1 + 0.18) * relativeSpeed) / 2;
+    // Low-speed rubbing should settle, rather than bounce at every step.
+    const restitution = relativeSpeed < -20 ? 0.12 : 0;
+    const impulse = (-(1 + restitution) * relativeSpeed) / 2;
     a.vx -= impulse * normalX;
     a.vy -= impulse * normalY;
     b.vx += impulse * normalX;
@@ -229,4 +283,49 @@ export function resolveVehicleCollision(a, b, specA, specB) {
     b.yaw *= 0.82;
   }
   return smallest;
+}
+
+// Revisit every contact after neighboring cars and rails move it. The fixed
+// iteration budget and alternating traversal are deterministic, including piles
+// against a rail. Equal effective masses preserve the existing arcade handling.
+export function resolveVehicleContacts(vehicles) {
+  const starts = new Map(
+    vehicles.map(({ vehicle }) => [
+      vehicle,
+      motion.get(vehicle) || { x: vehicle.x, y: vehicle.y },
+    ]),
+  );
+  let maximum = 0;
+  for (let pass = 0; pass < 64; pass++) {
+    let overlap = 0;
+    const ordered = pass % 2 ? [...vehicles].reverse() : vehicles;
+    for (let i = 0; i < ordered.length; i++) {
+      for (let j = i + 1; j < ordered.length; j++) {
+        const a = ordered[i],
+          b = ordered[j];
+        overlap = Math.max(
+          overlap,
+          resolveVehicleCollision(
+            a.vehicle,
+            b.vehicle,
+            a.spec,
+            b.spec,
+            pass === 0 ? starts.get(a.vehicle) : null,
+            pass === 0 ? starts.get(b.vehicle) : null,
+          ),
+        );
+      }
+    }
+    let barrier = 0;
+    for (const { vehicle, spec } of vehicles) {
+      const x = vehicle.x,
+        y = vehicle.y;
+      resolveVehicleBarrier(vehicle, spec);
+      barrier = Math.max(barrier, Math.hypot(vehicle.x - x, vehicle.y - y));
+    }
+    maximum = Math.max(maximum, overlap);
+    if (overlap < 1e-7 && barrier < 1e-7) break;
+  }
+  for (const { vehicle } of vehicles) motion.delete(vehicle);
+  return maximum;
 }
