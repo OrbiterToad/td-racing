@@ -1,3 +1,4 @@
+import { AI_DIFFICULTIES } from './ai-racecraft.js';
 import { updateOpponentHUD } from './opponents.js';
 import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
 import { coast, paintCoastGround } from './coast.js';
@@ -92,7 +93,7 @@ const GAME_MODES = {
     name: 'Club race',
     tag: '4 DRIVERS / 3 LAPS',
     description:
-      'Line up against Alex, Blair and Casey. Three laps, fixed opponent pace, and full vehicle contact.',
+      'Line up against Alex, Blair and Casey. Three laps, varied opponents, and full vehicle contact.',
   },
   local: {
     id: 'local',
@@ -122,13 +123,6 @@ function modeIcon(id) {
   return `<svg class="mode-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${MODE_ICON_PATHS[id]}</svg>`;
 }
 
-function clubRaceAvailable() {
-  return (
-    mapBaseId(MAPS[state.pendingTrack]) === 'juniper' &&
-    state.pendingCar === 'clubsport'
-  );
-}
-
 function pickerChoices() {
   return state.pickerMode === 'modes'
     ? GAME_MODES
@@ -150,7 +144,6 @@ function wizardSteps() {
 
 function navigateWizardStep(mode) {
   if (!state.selectingSession || !wizardSteps().includes(mode)) return;
-  if (mode === 'modes' && !clubRaceAvailable()) state.pendingGameMode = 'trial';
   state.pickerMode = mode;
   renderPicker();
   $('picker-apply').focus();
@@ -237,6 +230,8 @@ export function openPicker(mode) {
   state.pendingTrack = state.activeMap.id;
   state.pendingCar = state.activeCar.id;
   state.pendingPaint = state.paint;
+  state.pendingDifficulty = opponentRace.difficulty;
+  state.pendingGrid = opponentRace.grid;
   state.pendingPlayerTwoCar = state.playerTwoCar;
   state.pendingPlayerTwoPaint = state.playerTwoPaint;
   state.pickerWasPaused = state.paused;
@@ -270,8 +265,6 @@ export function closePicker(resume = false) {
 }
 
 function selectChoice(id) {
-  if (state.pickerMode === 'modes' && id === 'race' && !clubRaceAvailable())
-    return;
   if (state.pickerMode === 'tracks') {
     const variant = MAPS[state.pendingTrack].variant;
     state.pendingTrack = variant === 'forward' ? id : `${id}:${variant}`;
@@ -280,10 +273,7 @@ function selectChoice(id) {
 }
 
 export function stepSelection(direction) {
-  const ids = Object.keys(pickerChoices()).filter(
-    (id) =>
-      state.pickerMode !== 'modes' || id !== 'race' || clubRaceAvailable(),
-  );
+  const ids = Object.keys(pickerChoices());
   const current = ids.indexOf(
     state.pickerMode === 'tracks'
       ? mapBaseId(MAPS[state.pendingTrack])
@@ -303,8 +293,6 @@ export function renderPicker() {
   const paintKey = playerTwo ? 'pendingPlayerTwoPaint' : 'pendingPaint';
   const pendingPaint = state[paintKey];
   const localNext = modes && state.pendingGameMode === 'local';
-  if (modes && state.pendingGameMode === 'race' && !clubRaceAvailable())
-    state.pendingGameMode = 'trial';
   const choices = Object.values(pickerChoices());
   const selectedId = tracks
     ? mapBaseId(MAPS[state.pendingTrack])
@@ -416,9 +404,20 @@ export function renderPicker() {
     ? SKILL_TRIALS[selectedId]
       ? `<div class="mode-summary"><span>${vehicle.name} / ${MAPS[state.pendingTrack].name}</span><span>LOCAL SKILL PROGRESS / ${readSkillProgress()[selectedId]?.completions || 0} COMPLETED · BEST ${readSkillProgress()[selectedId]?.best ?? '—'}%</span></div>`
       : `<div class="mode-summary"><span>CAR / <b>${vehicle.name}</b></span><span>CIRCUIT / <b>${MAPS[state.pendingTrack].name}</b></span><span>${selectedId === 'race' ? 'THREE LAPS · FULL CONTACT' : selectedId === 'local' ? 'THREE LAPS · TWO LOCAL DRIVERS' : 'UNLIMITED LAPS · SAVED BEST TIMES & GHOSTS'}</span>${
-          selectedId === 'local'
-            ? `<span class="player-two-summary">PLAYER 2 / <b>${VEHICLES[state.pendingPlayerTwoCar].name} · ${PAINTS[state.pendingPlayerTwoPaint].name}</b></span>`
-            : ''
+          selectedId === 'race'
+            ? `<label for="ai-difficulty">AI difficulty <select id="ai-difficulty" aria-label="AI difficulty">${Object.entries(
+                AI_DIFFICULTIES,
+              )
+                .map(
+                  ([id, setting]) =>
+                    `<option value="${id}" ${state.pendingDifficulty === id ? 'selected' : ''}>${setting.name}</option>`,
+                )
+                .join(
+                  '',
+                )}</select></label><label for="ai-grid">Opponent cars <select id="ai-grid" aria-label="Opponent cars"><option value="matched" ${state.pendingGrid === 'matched' ? 'selected' : ''}>Same as player</option><option value="mixed" ${state.pendingGrid === 'mixed' ? 'selected' : ''}>Mixed grid</option></select></label>`
+            : selectedId === 'local'
+              ? `<span class="player-two-summary">PLAYER 2 / <b>${VEHICLES[state.pendingPlayerTwoCar].name} · ${PAINTS[state.pendingPlayerTwoPaint].name}</b></span>`
+              : ''
         }</div>`
     : tracks
       ? `<div class="feature-record"><span>PERSONAL BEST / ${vehicle.name.toUpperCase()}</span><strong>${formatTime(best)}</strong></div>${medalDetails}<span class="feature-condition">${selected.temperature} / ${selected.gripLabel}</span>`
@@ -433,7 +432,7 @@ export function renderPicker() {
       </div>
     </div>
     <div class="choice-rail" aria-label="${modes ? 'Game modes' : tracks ? 'Circuits' : 'Cars'}" style="--choice-count:${choices.length}">
-      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''} ${modes && item.id === 'race' && !clubRaceAvailable() ? 'disabled' : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? modeIcon(item.id) : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? (clubRaceAvailable() ? 'Alex, Blair & Casey / 3 laps' : 'Requires Juniper + Clubsport R') : item.id === 'local' ? '2 players / split screen' : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? renderUiIcon('check', { size: 15 }) : ''}</span></button>`).join('')}
+      ${choices.map((item, i) => `<button class="choice-tile ${item.id === selectedId ? 'selected' : ''} ${modes ? 'mode-tile' : ''}" data-choice="${item.id}" aria-label="Choose ${item.name}" aria-pressed="${item.id === selectedId}" ${modes ? `aria-describedby="mode-note-${item.id}"` : ''}><span class="tile-number">${String(i + 1).padStart(2, '0')}</span>${modes ? modeIcon(item.id) : tracks ? `<span class="tile-biome" style="--card-accent:${item.accent}">●</span>` : `<img src="${carImagePath(item.id, pendingPaint)}" alt="">`}<strong>${item.name}</strong>${modes ? `<span class="mode-note" id="mode-note-${item.id}">${item.id === 'trial' ? 'Solo / any car & circuit' : item.id === 'race' ? 'Alex, Blair & Casey / 3 laps' : item.id === 'local' ? '2 players / split screen' : `${item.tag} / ${readSkillProgress()[item.id]?.completions || 0} complete`}</span>` : ''}<span class="tile-check" aria-hidden="true">${item.id === selectedId ? renderUiIcon('check', { size: 15 }) : ''}</span></button>`).join('')}
 
     </div>
     ${
@@ -460,6 +459,14 @@ export function renderPicker() {
         variant === 'forward' ? selectedId : `${selectedId}:${variant}`;
       renderPicker();
       $('track-layout').focus();
+    };
+  if ($('ai-grid'))
+    $('ai-grid').onchange = (event) => {
+      state.pendingGrid = event.target.value;
+    };
+  if ($('ai-difficulty'))
+    $('ai-difficulty').onchange = (event) => {
+      state.pendingDifficulty = event.target.value;
     };
   for (const button of document.querySelectorAll('[data-choice]')) {
     button.onclick = () => {
@@ -518,9 +525,11 @@ export function applyPicker() {
     state.selectingSession ||
     (state.pickerMode === 'tracks' && state.pendingTrack !== state.activeMap.id)
   ) {
+    if (state.selectingSession) opponentRace.grid = state.pendingGrid;
     if (state.selectingSession)
-      opponentRace.enabled =
-        state.pendingGameMode === 'race' && clubRaceAvailable();
+      opponentRace.difficulty = state.pendingDifficulty;
+    if (state.selectingSession)
+      opponentRace.enabled = state.pendingGameMode === 'race';
     if (state.selectingSession)
       state.localMultiplayer = state.pendingGameMode === 'local';
     changeTrack(state.pendingTrack, false);
