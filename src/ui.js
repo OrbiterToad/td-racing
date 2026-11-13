@@ -1,4 +1,11 @@
 import { CONDITIONS, conditionFor } from './weather.js';
+import {
+  fetchLeaderboard,
+  loadDisplayName,
+  saveDisplayName,
+  submitEntry,
+  validateDisplayName,
+} from './leaderboard.js';
 import { AI_DIFFICULTIES } from './ai-racecraft.js';
 import { updateOpponentHUD } from './opponents.js';
 import { bestKeyFor, carImagePath, configureCar, loadCarArt } from './cars.js';
@@ -717,6 +724,7 @@ export function setPaused(value, moveFocus = true) {
   keys.clear();
   state.accumulator = 0;
   $('pause-screen').classList.toggle('open', state.paused);
+  updateLeaderboardButton();
   setButtonContent(
     'pause',
     state.paused ? 'play' : 'pause',
@@ -946,4 +954,132 @@ export function updateHUD() {
   $('sector-status').textContent = timing.best.length
     ? 'Comparing with your best lap sectors.'
     : 'Complete a clean lap to set sector references.';
+}
+
+// ---------------------------------------------------------------------------
+// Leaderboard UI
+// ---------------------------------------------------------------------------
+
+export function updateLeaderboardButton() {
+  const btn = $('pause-leaderboard');
+  if (!btn) return;
+  btn.hidden = opponentRace.enabled;
+}
+
+function renderLeaderboardList(entries, loading) {
+  const list = $('leaderboard-list');
+  if (!list) return;
+  if (loading) {
+    list.innerHTML = '<p class="leaderboard-empty">Loading…</p>';
+    return;
+  }
+  if (!entries || entries.length === 0) {
+    list.innerHTML =
+      '<p class="leaderboard-empty">No times recorded yet. Be the first!</p>';
+    return;
+  }
+  list.innerHTML = entries
+    .map(
+      (e, i) =>
+        `<div class="leaderboard-row" role="listitem">` +
+        `<span class="leaderboard-rank">${String(i + 1).padStart(2, '0')}</span>` +
+        `<span class="leaderboard-name">${escapeHtml(e.name)}</span>` +
+        `<span class="leaderboard-time">${formatTime(e.time)}</span>` +
+        `</div>`,
+    )
+    .join('');
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export function initLeaderboard() {
+  const dialog = $('leaderboard-dialog');
+  const closeBtn = $('leaderboard-close');
+  const submitForm = $('leaderboard-submit-form');
+  const nameInput = $('leaderboard-name');
+  const submitBtn = $('leaderboard-submit-btn');
+  const pauses = $('pause-leaderboard');
+
+  if (!dialog) return;
+
+  closeBtn?.addEventListener('click', () => dialog.close());
+
+  dialog.addEventListener('close', () => {
+    $('leaderboard-submit-status').textContent = '';
+    $('leaderboard-submit-status').className = '';
+  });
+
+  nameInput?.addEventListener('input', () => {
+    submitBtn.disabled =
+      !validateDisplayName(nameInput.value) || race.best === null;
+  });
+
+  submitForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    if (!validateDisplayName(name) || race.best === null) return;
+    saveDisplayName(name);
+    submitBtn.disabled = true;
+    const status = $('leaderboard-submit-status');
+    status.textContent = 'Submitting…';
+    status.className = '';
+    const result = await submitEntry(
+      state.activeMap.id,
+      state.activeCar.id,
+      race.best,
+      name,
+    );
+    if (result.ok) {
+      status.textContent = `Submitted! You are ranked #${result.rank}${result.local ? ' (local)' : ''}.`;
+      status.className = 'ok';
+      await refreshLeaderboard(state.activeMap.id, state.activeCar.id);
+    } else {
+      status.textContent = `Could not submit: ${result.error}`;
+      status.className = 'err';
+      submitBtn.disabled = false;
+    }
+  });
+
+  pauses?.addEventListener('click', () => openLeaderboard());
+}
+
+async function refreshLeaderboard(trackId, carId) {
+  renderLeaderboardList(null, true);
+  const result = await fetchLeaderboard(trackId, carId);
+  renderLeaderboardList(result.ok ? result.entries : [], false);
+}
+
+export async function openLeaderboard() {
+  const dialog = $('leaderboard-dialog');
+  if (!dialog) return;
+
+  const trackId = state.activeMap.id;
+  const carId = state.activeCar.id;
+
+  $('leaderboard-pairing').textContent =
+    `${MAPS[trackId]?.name ?? trackId} · ${VEHICLES[carId]?.name ?? carId}`;
+
+  const nameInput = $('leaderboard-name');
+  const savedName = loadDisplayName();
+  if (nameInput && savedName) nameInput.value = savedName;
+
+  const submitBtn = $('leaderboard-submit-btn');
+  if (submitBtn)
+    submitBtn.disabled =
+      race.best === null || !validateDisplayName(nameInput?.value ?? '');
+
+  const bestLabel = $('leaderboard-best-label');
+  if (bestLabel)
+    bestLabel.textContent =
+      race.best !== null ? `YOUR BEST: ${formatTime(race.best)}` : '';
+
+  renderLeaderboardList(null, true);
+  dialog.showModal();
+  await refreshLeaderboard(trackId, carId);
 }

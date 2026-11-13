@@ -30,6 +30,7 @@ import { GamepadInput } from './gamepad.js';
 import { loadTrafficArt } from './traffic.js';
 import {
   $,
+  initLeaderboard,
   initPicker,
   notify,
   openSessionSetup,
@@ -182,6 +183,7 @@ export function initializeGame() {
   } catch (_) {}
   initModalKeyboard();
   initPicker();
+  initLeaderboard();
   initTouchControls();
   openSessionSetup();
   state.pendingTrack = initial;

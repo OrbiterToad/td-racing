@@ -1018,6 +1018,131 @@
     </style>
     <link rel="stylesheet" href="./src/selection.css" />
     <link rel="stylesheet" href="src/tutorial.css" />
+    <style>
+      #leaderboard-dialog {
+        background: #161e21;
+        color: #dce8d6;
+        border: 1px solid #ffffff20;
+        border-radius: 10px;
+        padding: 0;
+        max-width: 380px;
+        width: 92vw;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      #leaderboard-dialog::backdrop {
+        background: #000000b0;
+      }
+      .leaderboard-box {
+        padding: 24px 20px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .leaderboard-box .eyebrow {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        color: #9eb0a4;
+        margin-bottom: 2px;
+      }
+      .leaderboard-box h2 {
+        margin: 0 0 2px;
+        font-size: 20px;
+        color: var(--lime);
+      }
+      #leaderboard-pairing {
+        font-size: 11px;
+        color: #9eb0a4;
+        margin: 0 0 4px;
+      }
+      #leaderboard-list {
+        min-height: 60px;
+      }
+      .leaderboard-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 5px 0;
+        border-bottom: 1px solid #ffffff10;
+        font-size: 13px;
+      }
+      .leaderboard-row:last-child {
+        border-bottom: none;
+      }
+      .leaderboard-rank {
+        font-size: 10px;
+        color: #9eb0a4;
+        min-width: 22px;
+        margin-right: 8px;
+      }
+      .leaderboard-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .leaderboard-time {
+        font-variant-numeric: tabular-nums;
+        color: var(--lime);
+        margin-left: 10px;
+        flex-shrink: 0;
+      }
+      .leaderboard-empty {
+        font-size: 12px;
+        color: #9eb0a4;
+        padding: 8px 0;
+      }
+      #leaderboard-submit-form {
+        border-top: 1px solid #ffffff20;
+        padding-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #leaderboard-submit-form label {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        color: #9eb0a4;
+      }
+      #leaderboard-name {
+        background: #0d1518;
+        color: #dce8d6;
+        border: 1px solid #ffffff30;
+        border-radius: 5px;
+        padding: 7px 10px;
+        font-size: 14px;
+        width: 100%;
+        box-sizing: border-box;
+        font-family: inherit;
+      }
+      #leaderboard-name:focus {
+        outline: 2px solid var(--lime);
+        outline-offset: 1px;
+      }
+      #leaderboard-submit-status {
+        font-size: 11px;
+        color: #9eb0a4;
+        min-height: 1em;
+        margin: 0;
+      }
+      #leaderboard-submit-status.ok {
+        color: var(--lime);
+      }
+      #leaderboard-submit-status.err {
+        color: #f08080;
+      }
+      .leaderboard-best-time {
+        font-size: 11px;
+        color: #9eb0a4;
+      }
+      .leaderboard-best-time b {
+        color: var(--lime);
+        font-variant-numeric: tabular-nums;
+      }
+      #leaderboard-close {
+        align-self: flex-start;
+      }
+    </style>
   </head>
   <body class="starting">
     <header>
@@ -1214,6 +1339,14 @@
             ⚙ SETTINGS
           </button>
           <button class="pause-restart" id="pause-restart">RESTART RUN</button>
+          <button
+            class="secondary-settings"
+            id="pause-leaderboard"
+            aria-haspopup="dialog"
+            hidden
+          >
+            🏆 LEADERBOARD
+          </button>
           <button class="primary" id="resume">BACK ON TRACK</button>
           <button class="guide-link" id="tutorial-help">
             HELP / DRIVING GUIDE
@@ -1594,6 +1727,35 @@
             LET’S DRIVE →
           </button>
         </nav>
+      </div>
+    </dialog>
+    <dialog id="leaderboard-dialog" aria-labelledby="leaderboard-title">
+      <div class="leaderboard-box">
+        <div class="eyebrow">TIME TRIAL RANKINGS</div>
+        <h2 id="leaderboard-title">Leaderboard</h2>
+        <p id="leaderboard-pairing"></p>
+        <div id="leaderboard-list" role="list" aria-label="Rankings"></div>
+        <form id="leaderboard-submit-form" method="dialog" novalidate>
+          <label for="leaderboard-name">YOUR NAME</label>
+          <input
+            type="text"
+            id="leaderboard-name"
+            maxlength="24"
+            placeholder="Display name"
+            autocomplete="nickname"
+          />
+          <p class="leaderboard-best-time" id="leaderboard-best-label"></p>
+          <button
+            type="submit"
+            id="leaderboard-submit-btn"
+            class="primary"
+            disabled
+          >
+            SUBMIT YOUR BEST TIME
+          </button>
+          <p id="leaderboard-submit-status" role="status"></p>
+        </form>
+        <button id="leaderboard-close">CLOSE</button>
       </div>
     </dialog>
     <footer>
