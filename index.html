@@ -474,23 +474,37 @@
         display: flex;
       }
       .pause-box {
-        padding: 32px;
-        width: 330px;
+        box-sizing: border-box;
+        width: min(420px, calc(100% - 24px));
+        max-height: calc(100% - 24px);
+        overflow-y: auto;
+        padding: clamp(20px, 5vw, 32px);
         background: #182123;
         border: 1px solid #ffffff22;
         border-radius: 8px;
       }
       .pause-box h2 {
         font:
-          700 48px 'Barlow Condensed',
+          700 42px 'Barlow Condensed',
           Impact,
           sans-serif;
-        margin: 8px 0;
+        margin: 8px 0 4px;
       }
       .pause-box p {
         font-size: 12px;
         color: #acbcb1;
         line-height: 1.7;
+      }
+      .pause-box .pause-summary {
+        margin: 0 0 8px;
+      }
+      .pause-box > button {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 52px;
+        margin: 10px 0 0;
+        padding: 0 18px;
       }
       .primary {
         background: var(--lime);
@@ -503,10 +517,6 @@
         margin-top: 14px;
       }
       .pause-restart {
-        display: block;
-        width: 100%;
-        margin-top: 10px;
-        padding: 10px 25px;
         border: 1px solid #ffffff30;
         border-radius: 4px;
         background: #ffffff08;
@@ -699,11 +709,10 @@
       }
       .pause-box {
         width: min(460px, calc(100vw - 32px));
-        padding: 36px;
+        max-height: calc(100% - 24px);
+        padding: clamp(20px, 5vw, 36px);
       }
       .pause-box .primary {
-        width: 100%;
-        min-height: 60px;
         font-size: 16px;
       }
       body.starting > header,
@@ -1195,20 +1204,7 @@
         <div class="pause-box">
           <div class="eyebrow">TAKE A BREATHER</div>
           <h2 id="pause-title">In the pits.</h2>
-          <p>
-            W / S · Accelerate & brake<br />A / D · Steer &nbsp; Space ·
-            Handbrake<br />R · Recover car &nbsp; N · Restart<br />Esc ·
-            Pause<br />Complete a clean lap to set your best time.
-          </p>
-          <p id="split-controls" hidden>
-            Split screen · Player 1 (left) · W A S D, Space handbrake<br />Player
-            2 (right) · Arrow keys, Right Shift handbrake, or a second gamepad
-          </p>
-          <p>
-            Left stick · Steer &nbsp; RT / LT · Throttle / brake<br />LB / RB ·
-            Handbrake &nbsp; A / B · Select / back<br />Y · Restart &nbsp; Start
-            · Pause
-          </p>
+          <p class="pause-summary">Your race is paused.</p>
           <button
             class="secondary-settings"
             id="settings-pause"

@@ -201,7 +201,6 @@ export function syncControlHints() {
   const split = !!state.localRace;
   $('drive-hint').hidden = split;
   $('split-hint').hidden = !split;
-  $('split-controls').hidden = !split;
 }
 
 export function syncCarHUD() {
