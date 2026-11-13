@@ -1998,7 +1998,7 @@ for (const id of Object.keys(MAPS)) {
   }
 }
 console.log(
-  'PASS: 48 local scenery models, unique catalog, themed paddock bays/control buildings/equipment, safe footprints and service-lane clearance on every map.',
+  `PASS: ${SCENERY_ASSETS.length} local scenery models, unique catalog, themed paddock bays/control buildings/equipment, safe footprints and service-lane clearance on every map.`,
 );
 
 // Independent scatter passes used to put logs and foliage over roofs. All

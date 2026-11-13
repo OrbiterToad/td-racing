@@ -32,7 +32,7 @@ export function toggleOpponentRace() {
     notify('CLUB RACE · Three laps · Full contact');
   } else {
     changeTrack(state.activeMap.id, false);
-    notify('TIME TRIAL · Find your next personal best');
+    notify('TIME TRIAL · PERSONAL BEST AVAILABLE');
   }
 }
 

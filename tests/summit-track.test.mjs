@@ -5,9 +5,12 @@ import { CFG, MAPS, VEHICLES } from '../src/config.js';
 import { startingGrid, state, track } from '../src/state.js';
 import {
   configureTrack,
+  nearest,
   nearestDriving,
   pointOnTrack,
+  sampleCurve,
   timingGateHalfWidth,
+  widthAt,
 } from '../src/tracks.js';
 
 test('Summit Grand Prix builds a wide, complete route for every car', () => {
@@ -31,6 +34,24 @@ test('Summit Grand Prix builds a wide, complete route for every car', () => {
   assert.equal(startingGrid.length, 6);
   assert.ok(timingGateHalfWidth(0) > CFG.runoff);
 
+  const chicane = sampleCurve(map.points).slice(16 * 40, 21 * 40);
+  const turnDirections = [];
+  for (let i = 0; i < chicane.length; i++) {
+    const previous = chicane[(i + chicane.length - 1) % chicane.length];
+    const current = chicane[i];
+    const next = chicane[(i + 1) % chicane.length];
+    const cross =
+      (current.x - previous.x) * (next.y - current.y) -
+      (current.y - previous.y) * (next.x - current.x);
+    if (Math.abs(cross) < 1e-5) continue;
+    const direction = Math.sign(cross);
+    if (turnDirections.at(-1) !== direction) turnDirections.push(direction);
+  }
+  assert.ok(
+    turnDirections.length >= 4,
+    'the infield chicane links several direction changes',
+  );
+
   for (const carId of Object.keys(VEHICLES)) {
     assert.equal(configureCar(carId), true);
     for (const progress of [0, 0.25, 0.5, 0.75]) {
@@ -43,5 +64,29 @@ test('Summit Grand Prix builds a wide, complete route for every car', () => {
   }
 
   configureCar(originalCar);
+  configureTrack(originalTrack);
+});
+
+// Rails are painted at the wall offset from the centerline; on tight bends or
+// where two parts of the circuit run close together that offset can fold back
+// across the asphalt. Every rail point must sit on the collision boundary.
+test('barrier rails follow the road edge without crossing the circuit', () => {
+  const originalTrack = state.activeMap.id;
+  for (const id of Object.keys(MAPS)) {
+    assert.equal(configureTrack(id), true);
+    for (const side of [-1, 1])
+      for (let i = 0; i < track.length; i++) {
+        const p = track[i],
+          wall = widthAt('wall', i / track.length),
+          x = p.x + p.nx * wall * side,
+          y = p.y + p.ny * wall * side,
+          n = nearest(x, y);
+        assert.ok(
+          n.distance > wall - 3,
+          `${id} rail ${side} at sample ${i} lies ${Math.round(wall - n.distance)}px inside the corridor`,
+        );
+        assert.ok(n.distance > widthAt('runoff', n.progress));
+      }
+  }
   configureTrack(originalTrack);
 });
