@@ -1,3 +1,4 @@
+import { loadProgression, saveSkillResult } from './progression.js';
 import { car, race, skillTrial, state, track } from './state.js';
 import { nearestDriving, widthAt } from './tracks.js';
 import { $, setPaused } from './ui.js';
@@ -39,33 +40,13 @@ export const SKILL_TRIALS = {
   },
 };
 
-const STORAGE_KEY = 'apex-skill-trials-v1';
 const BRAKING_TARGET_KMH = 120;
 const SPEED_TO_KMH = 0.46;
 const BRAKING_TARGET_SPEED = BRAKING_TARGET_KMH / SPEED_TO_KMH;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 export function readSkillProgress() {
-  try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return value && typeof value === 'object' ? value : {};
-  } catch (_) {
-    return {};
-  }
-}
-
-function saveResult(id, score, complete) {
-  const progress = readSkillProgress();
-  const previous = progress[id] || { attempts: 0, completions: 0, best: null };
-  progress[id] = {
-    attempts: previous.attempts + 1,
-    completions: previous.completions + (complete ? 1 : 0),
-    best: previous.best === null ? score : Math.max(previous.best, score),
-  };
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  } catch (_) {}
-  return progress[id];
+  return loadProgression().progress.skills;
 }
 
 function dialog() {
@@ -119,7 +100,11 @@ function showIntro() {
 
 function showResult(complete, message) {
   skillTrial.active = false;
-  const record = saveResult(skillTrial.id, skillTrial.score, complete),
+  const record = saveSkillResult(skillTrial.id, skillTrial.score, complete) ?? {
+      attempts: 1,
+      completions: complete ? 1 : 0,
+      best: skillTrial.score,
+    },
     trial = SKILL_TRIALS[skillTrial.id],
     node = dialog();
   node.dataset.phase = 'result';
@@ -130,7 +115,7 @@ function showResult(complete, message) {
   node.querySelector('#skill-trial-copy').textContent =
     `${message} SCORE ${Math.round(skillTrial.score)} / 100 · BEST ${record.best}% · ${record.completions} COMPLETED`;
   node.querySelector('#skill-trial-stats').textContent =
-    `ATTEMPTS ${record.attempts} · PROGRESS SAVED ON THIS DEVICE`;
+    `ATTEMPTS ${record.attempts} · ${record.saved ? 'PROGRESS SAVED ON THIS DEVICE' : 'PROGRESS COULD NOT BE SAVED'}`;
   node.querySelector('#skill-trial-secondary').textContent = 'CHOOSE ANOTHER';
   node.querySelector('#skill-trial-secondary').onclick = () => {
     node.close();

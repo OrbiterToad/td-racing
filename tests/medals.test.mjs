@@ -1,3 +1,4 @@
+import { PROGRESSION_KEY } from '../src/progression.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MAPS, VEHICLES } from '../src/config.js';
@@ -103,7 +104,7 @@ test('earned medals persist, improve monotonically, and stay isolated by pairing
   });
 
   const reloaded = new MemoryStorage();
-  reloaded.setItem(MEDAL_KEY, storage.getItem(MEDAL_KEY));
+  reloaded.setItem(PROGRESSION_KEY, storage.getItem(PROGRESSION_KEY));
   assert.equal(earnedMedalFor('juniper', 'clubsport', reloaded), 'gold');
   assert.equal(earnedMedalFor('juniper', 'formula', reloaded), 'gold');
   assert.equal(readMedals(reloaded)['juniper:rally'], undefined);
