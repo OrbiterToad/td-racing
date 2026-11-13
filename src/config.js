@@ -69,6 +69,8 @@ export const neonHarborDriftParkPoints = [
 
 // Summit GP pairs a full-throttle start straight with two fast direction
 // changes, a slow 180-degree braking corner, and a linked infield chicane.
+// Bends stay wide enough for the wall offset, so barriers never fold back
+// across the asphalt or into a neighbouring part of the circuit.
 export const summitPoints = [
   [-1800, 950],
   [-1050, 950],
@@ -87,12 +89,11 @@ export const summitPoints = [
   [285, 90],
   [100, -170],
   [165, -470],
-  [440, -630],
-  [560, -760],
-  [760, -500],
-  [760, -555],
-  [950, -760],
-  [930, -1110],
+  [480, -710],
+  [810, -500],
+  [1100, -690],
+  [1050, -1080],
+  [700, -1170],
   [650, -1430],
   [120, -1570],
   [-470, -1480],
@@ -100,7 +101,7 @@ export const summitPoints = [
   [-1510, -920],
   [-1780, -480],
   [-1840, 20],
-  [-1740, 520],
+  [-1840, 420],
 ];
 
 export const MAPS = {
@@ -108,7 +109,6 @@ export const MAPS = {
     id: 'juniper',
     name: 'Juniper Raceway',
     label: 'WOODLAND / TECHNICAL',
-    subtitle: 'Commit to the esses. Watch for oil.',
     description:
       'Deep esses, green woodland, and three oil slicks before demanding corners.',
     temperature: '24°C',
@@ -150,7 +150,6 @@ export const MAPS = {
     id: 'canyon',
     name: 'Desert Canyon',
     label: 'DESERT / EXPERT',
-    subtitle: 'Read the rock. Earn the exit.',
     description:
       'Tight sandstone passes, sharper bends, and four sand drifts across the asphalt.',
     temperature: '38°C',
@@ -219,7 +218,6 @@ export const MAPS = {
     id: 'alpine',
     name: 'Alpine Pass',
     label: 'ALPINE / SWITCHBACKS',
-    subtitle: 'Climb the hairpins. Respect the ice.',
     description:
       'Linked mountain hairpins, winding ledge roads, and just three isolated ice patches.',
     temperature: '−4°C',
@@ -277,7 +275,6 @@ export const MAPS = {
     id: 'amazonas',
     name: 'Amazonas',
     label: 'JUNGLE / TIGHT & TWISTY',
-    subtitle: 'Follow the river. Dodge the coconuts.',
     description:
       'Tight jungle bends and two shallow river fords. Dodge the monkey’s coconuts.',
     temperature: '31°C',
@@ -325,7 +322,6 @@ export const MAPS = {
     id: 'coast',
     name: 'Costa Azul',
     label: 'COAST / SEASIDE RHYTHM',
-    subtitle: 'Chase the waves. Link the curves.',
     description:
       'Lighthouse bends, village hairpins and beachside esses. Two small sand drifts; a marina pit lane.',
     temperature: '27°C',
@@ -391,7 +387,6 @@ export const MAPS = {
     id: 'city',
     name: 'City Streets',
     label: 'CITY / DOWNTOWN + SUBURBS',
-    subtitle: 'Square up downtown. Watch for traffic.',
     description:
       'Existing city streets: tight downtown turns, wavy suburbs and occasional everyday traffic.',
     temperature: '22°C',
@@ -426,7 +421,6 @@ export const MAPS = {
     id: 'rallycross',
     name: 'Ridgeway Rallycross',
     label: 'RALLYCROSS / MIXED SURFACE',
-    subtitle: 'Grip, slide, grip. Find the rhythm.',
     description:
       'Packed dirt, fast asphalt, and a technical infield. Built for the Offroad.',
     temperature: '19°C',
@@ -461,7 +455,6 @@ export const MAPS = {
     id: 'drift',
     name: 'Neon Harbor Drift Park',
     label: 'HARBOR / LINKED DRIFT',
-    subtitle: 'Link rounded dockside corners in the drift coupe.',
     description:
       'Tight rounded left-right transitions and open runoff built for connected slides.',
     temperature: '18°C',
@@ -478,7 +471,6 @@ export const MAPS = {
     id: 'summit',
     name: 'Summit Grand Prix',
     label: 'SUMMIT / HIGH SPEED',
-    subtitle: 'Build speed. Brake late. Hit every apex.',
     description:
       'A full-throttle mountain straight, fast sweepers, a heavy-braking hairpin and a technical chicane.',
     temperature: '18°C',
@@ -675,6 +667,24 @@ export const PAINTS = {
 };
 
 export const SCENERY_ASSETS = [
+  'alpine-cable-station',
+  'alpine-snow-gate',
+  'amazonas-canopy-bridge',
+  'amazonas-river-shrine',
+  'canyon-rock-arch',
+  'canyon-water-pump',
+  'city-clock-tower',
+  'city-tram-stop',
+  'coast-lifeguard-tower',
+  'coast-marina-crane',
+  'drift-harbor-gantry',
+  'drift-neon-pylons',
+  'juniper-canopy-lookout',
+  'juniper-trail-gate',
+  'rallycross-timing-tower',
+  'rallycross-tyre-stack',
+  'summit-grandstand',
+  'summit-mountain-tunnel',
   'cafe-terrace',
   'control-room',
   'control-room-snow',
@@ -724,6 +734,18 @@ export const SCENERY_ASSETS = [
   'water-tank',
   'wood-crates',
 ];
+
+export const MAP_SCENERY_ASSETS = {
+  juniper: ['juniper-canopy-lookout', 'juniper-trail-gate'],
+  canyon: ['canyon-rock-arch', 'canyon-water-pump'],
+  alpine: ['alpine-cable-station', 'alpine-snow-gate'],
+  amazonas: ['amazonas-canopy-bridge', 'amazonas-river-shrine'],
+  coast: ['coast-lifeguard-tower', 'coast-marina-crane'],
+  city: ['city-clock-tower', 'city-tram-stop'],
+  rallycross: ['rallycross-timing-tower', 'rallycross-tyre-stack'],
+  drift: ['drift-harbor-gantry', 'drift-neon-pylons'],
+  summit: ['summit-grandstand', 'summit-mountain-tunnel'],
+};
 
 // Place large sites first, then details, then trees. Every object reserves its
 // complete rotated sprite footprint, including the shadow, before anything draws.

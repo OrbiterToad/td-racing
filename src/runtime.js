@@ -2,7 +2,7 @@ import { initModalKeyboard } from './accessibility.js';
 import { toggleOpponentRace } from './opponents.js';
 import { toggleSound } from './audio.js';
 import { configureCar, loadCarArt, readBest } from './cars.js';
-import { MAPS, mapBaseId } from './config.js';
+import { MAPS, PAINTS, VEHICLES, mapBaseId } from './config.js';
 import { drawMinimap } from './minimap.js';
 import {
   beginLap,
@@ -34,15 +34,27 @@ import {
   notify,
   openSessionSetup,
   setPaused,
+  syncControlHints,
+  syncTrackChoiceButton,
   updateHUD,
 } from './ui.js';
 import { buildWorld } from './world.js';
 import { initTouchControls } from './touch-controls.js';
 import { prepareRewindSession, rewind } from './rewind.js';
+import { createLocalRace } from './local-race.js';
 
 export function changeTrack(id, announce = true) {
   if (!configureTrack(id)) return;
   const baseId = mapBaseId(state.activeMap);
+  state.localRace = state.localMultiplayer
+    ? createLocalRace(
+        state.activeCar,
+        VEHICLES[state.playerTwoCar],
+        state.paint,
+        state.playerTwoPaint,
+      )
+    : null;
+  syncControlHints();
   prepareRewindSession(id, state.activeCar.id);
   keys.clear();
   skidmarks.length = 0;
@@ -80,10 +92,10 @@ export function changeTrack(id, announce = true) {
   camera.x = car.x;
   camera.y = car.y;
   camera.zoom = desiredZoom();
-  $('open-tracks').textContent = state.activeMap.name + ' ▾';
+  syncTrackChoiceButton();
   $('track-label').textContent = state.activeMap.label;
   $('track-title').textContent = state.activeMap.name;
-  $('track-subtitle').textContent = state.activeMap.subtitle;
+  $('track-subtitle').textContent = state.activeMap.description;
   $('temperature').textContent = state.activeMap.temperature;
   $('grip-label').textContent = state.activeMap.gripLabel;
   document.documentElement.style.setProperty('--lime', state.activeMap.accent);
@@ -98,7 +110,9 @@ export function changeTrack(id, announce = true) {
             ? '#288f9c'
             : baseId === 'city'
               ? '#929b98'
-              : '#8ba274';
+              : baseId === 'drift'
+                ? '#152e3a'
+                : '#8ba274';
   $('hint').style.opacity = '1';
   $('hint').textContent =
     baseId === 'city'
@@ -113,7 +127,9 @@ export function changeTrack(id, announce = true) {
               ? 'W to drive · Three ice patches. Ease off and keep steering smooth.'
               : baseId === 'rallycross'
                 ? 'W to drive · Dirt needs a slide. Asphalt needs a clean exit.'
-                : 'W to drive · Find your apex. Avoid the dark oil slicks.';
+                : baseId === 'drift'
+                  ? 'W to drive · Use the wide runoff to link controlled slides.'
+                  : 'W to drive · Avoid the dark oil slicks.';
   try {
     localStorage.setItem('apex-selected-track', id);
   } catch (_) {}
@@ -145,6 +161,12 @@ export function setup() {
   try {
     const saved = JSON.parse(localStorage.getItem('apex-garage'));
     if (saved) configureCar(saved.car, saved.paint);
+  } catch (_) {}
+  try {
+    const second = JSON.parse(localStorage.getItem('apex-player-two'));
+    if (Object.hasOwn(VEHICLES, second?.car)) state.playerTwoCar = second.car;
+    if (Object.hasOwn(PAINTS, second?.paint))
+      state.playerTwoPaint = second.paint;
   } catch (_) {}
   loadCarArt();
   noLoop();

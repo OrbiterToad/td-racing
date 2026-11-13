@@ -22,6 +22,7 @@ import {
   paintCanyonMesas,
   paintCityGround,
   paintCityRoadMarkings,
+  paintDriftGround,
   paintRallyRoad,
   paintSurfacePatches,
 } from './terrain.js';
@@ -86,9 +87,13 @@ export function buildWorld() {
           ? i % 2
             ? '#315e40'
             : '#204832'
-          : i % 2
-            ? '#91a97c'
-            : '#849d6e';
+          : drift
+            ? i % 2
+              ? '#1b4654'
+              : '#123542'
+            : i % 2
+              ? '#91a97c'
+              : '#849d6e';
     c.beginPath();
     c.ellipse(
       rand() * w + state.worldBounds.x,
@@ -122,6 +127,8 @@ export function buildWorld() {
   if (amazon) paintAmazonRiver(c);
   if (desert) paintCanyonMesas(c, rand, w, h);
   if (alpine) paintAlpineRidges(c, rand, w, h);
+  if (drift) paintDriftGround(c, state.worldBounds, rand);
+  if (alpine || summit) paintAlpineRidges(c, rand, w, h);
   paintSceneryGround(c);
   if (urban) {
     c.fillStyle = '#e5e8d2';
@@ -139,7 +146,9 @@ export function buildWorld() {
           ? '#bead85'
           : urban
             ? '#727f7b'
-            : '#71895e',
+            : summit
+              ? '#65735f'
+              : '#71895e',
     (p) => widthAt('wall', p) * 2 + 25,
   );
   ribbon(
@@ -152,7 +161,9 @@ export function buildWorld() {
           ? '#e1cf9f'
           : urban
             ? '#b2bab0'
-            : '#a3ac87',
+            : summit
+              ? '#b9b59c'
+              : '#a3ac87',
     (p) => widthAt('wall', p) * 2,
   );
   for (const [from, to] of [
@@ -163,7 +174,7 @@ export function buildWorld() {
       Math.floor(from * track.length),
       Math.ceil(to * track.length),
     );
-    if (!desert && !alpine && !seaside && !urban) {
+    if (!desert && !alpine && !seaside && !urban && !drift) {
       c.beginPath();
       section.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
       c.strokeStyle = '#cbb88f';
@@ -204,12 +215,20 @@ export function buildWorld() {
   }
   ribbon(
     c,
-    desert ? '#a28c74' : alpine ? '#95a8ae' : urban ? '#abb4aa' : '#757e76',
+    desert
+      ? '#a28c74'
+      : alpine
+        ? '#95a8ae'
+        : urban
+          ? '#abb4aa'
+          : summit
+            ? '#c0b9a0'
+            : '#757e76',
     (p) => widthAt('runoff', p) * 2,
   );
   ribbon(
     c,
-    desert ? '#8c8170' : alpine ? '#81969c' : '#6a746e',
+    desert ? '#8c8170' : alpine ? '#81969c' : summit ? '#6d766e' : '#6a746e',
     (p) => widthAt('road', p) * 2 + 24,
   );
   ribbon(

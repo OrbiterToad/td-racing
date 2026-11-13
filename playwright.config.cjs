@@ -8,6 +8,9 @@ module.exports = defineConfig({
   testMatch: '**/*.spec.cjs',
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // Tests are independent, so CI shards can split files by test. One worker
+  // per process keeps timing-sensitive tests (e.g. the gamepad wizard) stable.
+  fullyParallel: true,
   workers: 1,
   timeout: 60_000,
   expect: { timeout: 15_000 },

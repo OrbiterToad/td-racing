@@ -1,5 +1,11 @@
 import { coast, coastLandDistance, paintCoastBuilding } from './coast.js';
-import { MAPS, SCENERY_ASSETS, SCENERY_LAYERS, mapBaseId } from './config.js';
+import {
+  MAPS,
+  mapBaseId,
+  MAP_SCENERY_ASSETS,
+  SCENERY_ASSETS,
+  SCENERY_LAYERS,
+} from './config.js';
 import { amazonRiverDistance, monkeyPosition } from './jungle.js';
 import { clamp, lerpTo, seededRandom } from './math.js';
 import { roundedRect } from './renderer.js';
@@ -22,6 +28,8 @@ import {
   paintDesertProp,
 } from './terrain.js';
 import { nearest, pointOnTrack, widthAt, withinPitDistance } from './tracks.js';
+
+const MAP_SCENERY_ASSET_SET = new Set(Object.values(MAP_SCENERY_ASSETS).flat());
 
 export function loadSceneryAssets() {
   if (sceneryAssetState.promise) return sceneryAssetState.promise;
@@ -404,6 +412,7 @@ export function buildSceneryBuildings() {
 }
 
 export function sceneryDetailLayer(kind) {
+  if (MAP_SCENERY_ASSET_SET.has(kind)) return SCENERY_LAYERS.structures;
   if (
     [
       'fern',
@@ -446,6 +455,7 @@ export function buildSceneryDetails() {
     ),
     kinds = {
       juniper: [
+        ...MAP_SCENERY_ASSETS.juniper,
         'rock-moss',
         'log',
         'fern',
@@ -457,6 +467,7 @@ export function buildSceneryDetails() {
         'spectator-stand',
       ],
       canyon: [
+        ...MAP_SCENERY_ASSETS.canyon,
         'rock',
         'cactus',
         'drygrass',
@@ -465,6 +476,7 @@ export function buildSceneryDetails() {
         'service-transporter',
       ],
       alpine: [
+        ...MAP_SCENERY_ASSETS.alpine,
         'rock',
         'pine',
         'snowdrift',
@@ -472,35 +484,50 @@ export function buildSceneryDetails() {
         'shed-garden',
         'spectator-stand',
       ],
-      amazonas: ['fern', 'flowers', 'log', 'rock-moss', 'hut', 'picnic'],
+      amazonas: [
+        ...MAP_SCENERY_ASSETS.amazonas,
+        'fern',
+        'flowers',
+        'log',
+        'rock-moss',
+        'hut',
+        'picnic',
+      ],
       rallycross: [
+        ...MAP_SCENERY_ASSETS.rallycross,
         'tires',
         'canopy',
         'service-transporter',
         'rock',
         'tool-trolley',
         'spectator-stand',
-        'cabin',
       ],
       drift: [
+        ...MAP_SCENERY_ASSETS.drift,
         'tires',
         'canopy',
         'service-transporter',
-        'rock',
         'tool-trolley',
         'spectator-stand',
+        'rock',
         'cafe-terrace',
         'shed-garden',
       ],
       summit: [
+        ...MAP_SCENERY_ASSETS.summit,
         'rock',
         'pine',
-        'snowdrift',
+        'spectator-stand',
         'cabin',
         'shed-garden',
-        'spectator-stand',
+        'greenhouse',
+        'canopy',
+        'service-transporter',
+        'tires',
+        'drygrass',
       ],
       coast: [
+        ...MAP_SCENERY_ASSETS.coast,
         'umbrella',
         'flowers',
         'rock',
@@ -510,6 +537,7 @@ export function buildSceneryDetails() {
         'garden-bed',
       ],
       city: [
+        ...MAP_SCENERY_ASSETS.city,
         'citybuilding',
         'streetlamp',
         'parking',
@@ -777,6 +805,7 @@ export function buildSceneryTrees() {
       key = keys[Math.floor(rand() * keys.length)],
       angle = rand() * Math.PI * 2;
     if (id === 'city' && y < -100) continue;
+    if (id === 'drift' && y < -1700) continue;
     if (id === 'amazonas' && Math.abs(x + 500) < 180 && Math.abs(y + 220) < 110)
       continue;
     reserveScenery(
@@ -893,7 +922,9 @@ export function paintSceneryRock(c, size, rand) {
 export function paintSceneryDetails(c, props = sceneryDetails) {
   for (const prop of props) {
     const { x, y, size, angle, kind } = prop,
-      rand = seededRandom(prop.seed);
+      rand = seededRandom(prop.seed),
+      customAsset =
+        MAP_SCENERY_ASSETS[mapBaseId(state.activeMap)]?.includes(kind);
     c.save();
     c.translate(x, y);
     c.rotate(angle);
@@ -928,6 +959,13 @@ export function paintSceneryDetails(c, props = sceneryDetails) {
                 : kind === 'bench'
                   ? 'park-bench'
                   : null;
+    if (
+      customAsset &&
+      drawSceneryAsset(c, kind, 0, 0, size * 1.9, size * 1.65)
+    ) {
+      c.restore();
+      continue;
+    }
     if (asset && drawSceneryAsset(c, asset, 0, 0, size * 1.6, size * 1.4)) {
       c.restore();
       continue;
