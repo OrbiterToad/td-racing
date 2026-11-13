@@ -198,6 +198,14 @@ Merge readiness — the exact request phrase remains in the details:
 Further info: I want to merge PR #<number>: <URL>. Tested head: <SHA>; current base origin/master: <SHA>; local validation: <results>; required CI checks: <each result or pending/unknown>; review: <approvals/requests/blocking feedback>; freshness/mergeability: <verified state or unknown>; dependencies/conflicts: <findings>. Next: coordinator to review readiness and set merge order.
 ```
 
+Merge readiness is bound to an exact commit. The `tested head` SHA must be the
+precise commit on which the required checks were run. A prior passing status
+does not carry forward: if the branch is rebased, amended, or its head changes
+for any reason after a merge request is submitted, that status is stale and the
+merge request is no longer valid. The agent must re-run the required checks on
+the new head and send a new merge request with the updated SHA before the
+coordinator will act on it.
+
 If GitHub access prevents PR creation or updates, use `blocked` instead,
 with the pushed branch, exact head/base SHAs, local check results, access
 error, and a request for coordinator action. Do not invent a PR or CI result.

@@ -44,6 +44,12 @@ For browser tests, pick a free port with `PLAYWRIGHT_PORT` (default `4173`),
 keep the same command session, and poll it to completion. Never stop a
 preview server owned by another worktree.
 
+Merge readiness is bound to an exact commit SHA. If the branch is rebased,
+amended, or otherwise updated after a merge request is submitted, that
+request's tested head is stale. Re-run the required checks on the new head
+and send a new merge request with the updated SHA; a prior passing status does
+not carry forward to a different head.
+
 ## Staying in sync with the template
 
 - `.agent-template.json` lists the synced files and the template ref.
