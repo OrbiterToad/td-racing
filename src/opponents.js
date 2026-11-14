@@ -2,7 +2,7 @@ import { conditionFor } from './weather.js';
 import { localResultsSnapshot } from './local-race.js';
 import { aiDifficulty, chooseRaceLine } from './ai-racecraft.js';
 import { carImagePath } from './cars.js';
-import { CFG, PAINTS, VEHICLES } from './config.js';
+import { CFG, PAINTS, VEHICLES, mapBaseId } from './config.js';
 import { clamp } from './math.js';
 import { inWorldView, roundedRect } from './renderer.js';
 import { syncRaceResults } from './results.js';
@@ -44,7 +44,7 @@ export function resetOpponentRace() {
     profile: [],
   });
   if (!opponentRace.enabled) return;
-  const sampleRadius = state.activeMap.id === 'summit' ? 10 : 40;
+  const sampleRadius = mapBaseId(state.activeMap) === 'summit' ? 10 : 40;
   const count = Math.ceil(track.totalLength / (sampleRadius * 2));
   opponentRace.spacing = track.totalLength / count;
   // Set safe target speeds for each corner, then let the shared car physics
@@ -169,17 +169,17 @@ export function updateOpponents(dt) {
           0.7 *
           tuning.pace *
           Math.min(1, Math.sqrt(vehicle.grip)) *
-          (state.activeMap.id === 'summit' ? 0.6 : 1) *
+          (mapBaseId(state.activeMap) === 'summit' ? 0.6 : 1) *
           (VEHICLE_PACE[vehicle.id] || 1) *
           (vehicle.yawResponse ? 0.45 : 1) *
-          (state.activeMap.id === 'city'
+          (mapBaseId(state.activeMap) === 'city'
             ? vehicle.yawResponse
               ? 0.9
               : 0.6
             : 1),
       ),
       lookAhead =
-        state.activeMap.id === 'summit'
+        mapBaseId(state.activeMap) === 'summit'
           ? clamp(70 + rival.speed * 0.2, 70, 110)
           : clamp(70 + rival.speed * 0.12, 70, 130),
       ahead = pointOnTrack(currentS + lookAhead),
