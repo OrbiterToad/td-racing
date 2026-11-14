@@ -522,7 +522,7 @@ concrete blocking dependency or explicit urgency justification prevents it.
 Record the slot-opening count for each queued `Big` issue in the coordinator
 status notes. Reset the count when the issue is assigned. If two `Big` issues
 are both age-eligible at the same slot opening, prefer the one with the
-higher issue number (older creation date) first.
+earlier creation date first; use the lower issue number as a tie-break.
 
 ### Exceptions and visibility
 
@@ -582,9 +582,38 @@ message so the coordinator can act on it when available.
 
 ## Handoff acknowledgment and delivery
 
-A message sent is not a message received. Handoffs for assignment,
-merge-readiness, and blockers require explicit acknowledgment before the
-sender can consider them delivered.
+A message sent is not a message received. Handoffs for assignments, blockers, merge readiness, and integration require
+explicit acknowledgment before the sender can consider them delivered.
+
+### Assignment and revision matching
+
+Each handoff identifies the tracked issue and the coordinator-provided
+assignment ID in `Further info:`. Reuse that ID for retries and follow-up
+messages; a released slot reused for another assignment does not reuse the
+old assignment ID. This matching requirement does not implement or replace
+the durable assignment registry tracked in #108.
+
+Include the revisions relevant to the handoff:
+
+- **Assignment:** the fetched base SHA; the agent's preflight acknowledgment
+  repeats the assignment ID, base SHA, branch, and worktree.
+- **Blocker:** the affected branch and current head/base SHAs when the blocker
+  concerns repository state; otherwise explicitly state that revisions do
+  not apply. The coordinator acknowledges the same assignment and blocker.
+- **Merge readiness:** the exact tested head and current base SHAs. The
+  coordinator's reply repeats the assignment ID and those revisions; a reply
+  about a previous head does not acknowledge readiness of a new head.
+- **Integration:** the branch and frozen head SHA in the freeze and its
+  acknowledgment; the resulting head and current base SHAs in the release
+  and its acknowledgment. If the expected head differs, report the mismatch
+  and resolve it before taking the dependent integration or push action.
+
+For example, an acknowledgment can retain the standard header and say:
+
+```text
+[Coordinator] [#110 Handoff delivery] [decision]
+Further info: Assignment policy-110-pass-1 acknowledged at head 2222222222222222222222222222222222222222 and base 1111111111111111111111111111111111111111. Next: retain this head while I verify merge readiness.
+```
 
 ### What counts as delivery
 
@@ -689,11 +718,15 @@ states to close out assignments correctly.
 
 ### Branch retention
 
-By default, retain AI branches after PR closure or cancellation — do not
-delete them. This is a recommendation, not a confirmed policy: if the user
-explicitly authorizes deletion for a specific branch or class of branch,
-follow that instruction for those branches only. Never infer deletion
-authorization from a general cleanup request or from closing the PR.
+The default branch-retention policy is **pending a user decision** (#118).
+Retention is recommended, but is not a confirmed default. The retention
+steps in the terminal-state table and checklists preserve work while that
+decision is pending; they do not resolve this acceptance criterion or
+establish a permanent policy. Do not delete a branch without applicable
+explicit authorization. If the user authorizes deletion for a specific
+branch or class of branch, follow that instruction for those branches only.
+Never infer deletion authorization from a general cleanup request or from
+closing the PR.
 
 ### Stop-work and slot release
 
