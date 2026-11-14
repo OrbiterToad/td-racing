@@ -178,13 +178,26 @@ test('AGENTS.project.md names exactly five required check categories', () => {
   }
 });
 
-// Depends on PR #171 (issue #164) being merged first; promoted to executable then.
-test.todo(
-  'COORDINATOR_GUIDE.md Claude Code runtime section states new chat sessions are required ' +
-    'for numbered slots and scopes the inline Agent tool to atomic non-roster tasks — ' +
-    'expected: guide contains "new independent chat sessions" and "inline `Agent` tool" with ' +
-    'explicit scope restriction (depends on PR #171 / issue #164)',
-);
+test('Claude Code runtime requires independent numbered sessions and bounds inline Agent tasks', () => {
+  const guide = readDoc('docs/COORDINATOR_GUIDE.md');
+  const section = guide.match(
+    /## Claude Code runtime[^\n]*\n([\s\S]*?)(?=\n## |$)/i,
+  );
+  assert.ok(section, 'Claude Code runtime section missing');
+  const content = section[1].replace(/\*\*/g, '').replace(/\s+/g, ' ');
+  assert.ok(
+    content.includes(
+      'numbered agent slots must be created as new independent chat sessions',
+    ),
+  );
+  assert.ok(content.includes('not via the inline `Agent` tool'));
+  assert.ok(content.includes('acceptable only for atomic, non-roster tasks'));
+  assert.ok(
+    content.includes(
+      'must never be used to carry out a tracked issue assignment',
+    ),
+  );
+});
 
 // ---------------------------------------------------------------------------
 // EXECUTABLE: progress bar formula
