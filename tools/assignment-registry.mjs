@@ -167,6 +167,23 @@ export function validateRegistry(registry) {
         observation.status === 'unknown' || observation.checkedAt !== null,
         'Observation needs timestamp',
       );
+      requireValue(
+        observation.checkedAt === null ||
+          observation.checkedAt <= registry.updatedAt,
+        'Observation cannot be in the future',
+      );
+      requireValue(
+        observation.status !== 'unknown' ||
+          (observation.checkedAt === null &&
+            observation.head === null &&
+            observation.base === null),
+        'Unknown observation cannot claim verified facts',
+      );
+      requireValue(
+        source !== 'chat' ||
+          (observation.head === null && observation.base === null),
+        'Chat observation cannot claim Git revisions',
+      );
       for (const name of ['head', 'base']) {
         requireValue(
           observation[name] === null ||
@@ -214,8 +231,12 @@ export async function writeRegistry(path, proposed, expectedRevision) {
     const next = structuredClone(proposed);
     next.revision = previous ? previous.revision + 1 : 0;
     next.updatedAt = new Date().toISOString();
-    validateRegistry({ ...next, updatedAt: proposed.updatedAt });
+    validateRegistry(next);
     if (previous) {
+      requireValue(
+        next.updatedAt >= previous.updatedAt,
+        'Registry clock moved backwards',
+      );
       requireValue(
         next.repository === previous.repository,
         'Cannot change repository',

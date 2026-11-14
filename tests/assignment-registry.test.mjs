@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 import { test } from 'node:test';
-import { URL } from 'node:url';
+import { fileURLToPath, URL } from 'node:url';
 import {
   discoverCoordinator,
   readRegistry,
@@ -301,4 +301,58 @@ test('state transitions preserve pending work and terminal history', async (t) =
     writeRegistry(path, saved, 2),
     /Invalid assignment transition/,
   );
+});
+
+test('CLI initializes, updates with CAS, and reads from a separate process', async (t) => {
+  const path = await storage(t);
+  const cwd = join(path, 'repo');
+  execFileSync('git', ['init', cwd], { stdio: 'ignore' });
+  const tool = fileURLToPath(
+    new URL('../tools/assignment-registry.mjs', import.meta.url),
+  );
+  const run = (...args) =>
+    execFileSync(process.execPath, [tool, ...args], {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  const initial = JSON.parse(
+    run('init', 'example/racing', 'coordinator-original', 'local'),
+  );
+  initial.assignments.push(assignment(10));
+  const candidate = join(path, 'candidate.json');
+  await writeFile(candidate, JSON.stringify(initial), { mode: 0o600 });
+  const updated = JSON.parse(run('update', candidate, '0'));
+  assert.equal(updated.revision, 1);
+  assert.deepEqual(JSON.parse(run('show')), updated);
+  assert.throws(() => run('update', candidate, '0'), /Stale registry revision/);
+  await writeFile(candidate, '{invalid-synthetic-private-content');
+  try {
+    run('update', candidate, '1');
+    assert.fail('Malformed JSON must fail');
+  } catch (error) {
+    assert.equal(error.stderr.trim(), 'Invalid registry JSON');
+    assert.ok(!error.stderr.includes('synthetic-private-content'));
+  }
+});
+
+test('unavailable source keeps prior revisions without claiming current verification', async (t) => {
+  const path = await storage(t);
+  const initial = registry();
+  initial.assignments[0].verified.github = {
+    status: 'verified',
+    checkedAt: epoch,
+    head: 'a'.repeat(40),
+    base: 'b'.repeat(40),
+  };
+  let saved = await writeRegistry(path, initial, null);
+  saved.assignments[0].verified.github.status = 'unavailable';
+  saved.assignments[0].verified.github.checkedAt = new Date().toISOString();
+  saved = await writeRegistry(path, saved, 0);
+  const observation = (await readRegistry(path)).assignments[0].verified.github;
+  assert.equal(observation.status, 'unavailable');
+  assert.equal(observation.head, 'a'.repeat(40));
+  assert.equal(observation.base, 'b'.repeat(40));
+  saved.assignments[0].verified.github.checkedAt = '9999-01-01T00:00:00.000Z';
+  await assert.rejects(writeRegistry(path, saved, 1), /future/);
 });
