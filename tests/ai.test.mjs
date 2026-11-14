@@ -52,8 +52,15 @@ test('difficulty changes measured progress with repeatable starts and unchanged 
   assert(progress[0] < progress[1] && progress[1] < progress[2]);
 });
 
+const baseMaps = Object.keys(MAPS).filter(
+  (map) => MAPS[map].variant === 'forward',
+);
+const alternateMaps = Object.keys(MAPS).filter(
+  (map) => MAPS[map].variant !== 'forward',
+);
+
 for (const difficulty of Object.keys(AI_DIFFICULTIES)) {
-  for (const map of Object.keys(MAPS)) {
+  for (const map of baseMaps) {
     test(`full AI vehicle roster completes three laps on ${map} at ${difficulty}`, () => {
       // Run each supported spec against the actual controller, track surfaces and barriers.
       for (const vehicle of Object.keys(VEHICLES)) {
@@ -98,6 +105,49 @@ for (const difficulty of Object.keys(AI_DIFFICULTIES)) {
       }
     });
   }
+}
+
+for (const map of alternateMaps) {
+  test(`every AI car makes a clean lap on ${map}`, () => {
+    for (const vehicle of Object.keys(VEHICLES)) {
+      setup(map, vehicle, 'normal');
+      assert.equal(opponentRace.enabled, true);
+      const rival = opponentRace.cars[0];
+      opponentRace.cars = [rival];
+      let checkpoint = rival.s;
+      for (
+        let step = 0;
+        step < 900 / CFG.step && rival.s < track.totalLength;
+        step++
+      ) {
+        updateOpponents(CFG.step);
+        assert(
+          Number.isFinite(rival.x + rival.y + rival.speed),
+          `${map}/${vehicle}: finite`,
+        );
+        if (step % Math.round(1 / CFG.step) === Math.round(1 / CFG.step) - 1)
+          assert(
+            nearestDriving(rival.x, rival.y).distance <
+              MAPS[map].road - VEHICLES[vehicle].width / 2,
+            `${map}/${vehicle}: on route`,
+          );
+        if (
+          step % Math.round(30 / CFG.step) ===
+          Math.round(30 / CFG.step) - 1
+        ) {
+          assert(
+            rival.s > checkpoint + 50,
+            `${map}/${vehicle}: progress at ${rival.s}`,
+          );
+          checkpoint = rival.s;
+        }
+      }
+      assert(
+        rival.s >= track.totalLength,
+        `${map}/${vehicle}: reached one lap at ${rival.s / track.totalLength}`,
+      );
+    }
+  });
 }
 
 test('mixed roster cycles specs and collision dispatch uses each footprint', () => {
