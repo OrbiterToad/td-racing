@@ -1,5 +1,5 @@
 import { paintCoastGround, paintCoastLandmarks } from './coast.js';
-import { CFG } from './config.js';
+import { CFG, mapBaseId } from './config.js';
 import { paintAmazonFords, paintAmazonRiver } from './jungle.js';
 import { seededRandom } from './math.js';
 import {
@@ -33,13 +33,13 @@ export function buildWorld() {
   state.worldCanvas.width = state.worldBounds.width;
   state.worldCanvas.height = state.worldBounds.height;
   state.worldCtx = state.worldCanvas.getContext('2d');
-  const desert = state.activeMap.id === 'canyon',
-    alpine = state.activeMap.id === 'alpine',
-    amazon = state.activeMap.id === 'amazonas',
-    seaside = state.activeMap.id === 'coast',
-    urban = state.activeMap.id === 'city',
-    drift = state.activeMap.id === 'drift',
-    summit = state.activeMap.id === 'summit',
+  const desert = mapBaseId(state.activeMap) === 'canyon',
+    alpine = mapBaseId(state.activeMap) === 'alpine',
+    amazon = mapBaseId(state.activeMap) === 'amazonas',
+    seaside = mapBaseId(state.activeMap) === 'coast',
+    urban = mapBaseId(state.activeMap) === 'city',
+    drift = mapBaseId(state.activeMap) === 'drift',
+    summit = mapBaseId(state.activeMap) === 'summit',
     c = state.worldCtx,
     rand = seededRandom(
       desert
@@ -254,7 +254,7 @@ export function buildWorld() {
     c.fillRect(p.x + p.nx * offset, p.y + p.ny * offset, 1.2, 1.2);
   }
   c.restore();
-  if (state.activeMap.id === 'rallycross') paintRallyRoad(c, rand);
+  if (mapBaseId(state.activeMap) === 'rallycross') paintRallyRoad(c, rand);
   // Continue the pit asphalt across the main circuit's verge at both merges.
   paintPitConnections(c);
   if (urban) paintCityRoadMarkings(c);
