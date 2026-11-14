@@ -81,6 +81,42 @@ test('guide works on a small screen and with keyboard controls', async ({
     .toBe('dismissed');
 });
 
+test('pause actions align on small screens and controls remain in the guide', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 520 });
+  await page.goto('./');
+  await startSession(page);
+  await page.locator('#tutorial-skip').click();
+  await page.locator('#pause').click();
+
+  const panel = page.locator('.pause-box');
+  await expect(panel).toContainText('Your race is paused.');
+  await expect(panel).not.toContainText('W / S');
+  await expect(panel).not.toContainText('Left stick');
+  await expect(panel).not.toContainText('Split screen');
+
+  const buttons = page.locator(
+    '#settings-pause, #pause-restart, #resume, #tutorial-help',
+  );
+  const dimensions = await buttons.evaluateAll((items) =>
+    items.map((item) => {
+      const { width, height } = item.getBoundingClientRect();
+      return { width, height };
+    }),
+  );
+  expect(dimensions).toHaveLength(4);
+  for (const size of dimensions) {
+    expect(size.width).toBeCloseTo(dimensions[0].width, 0);
+    expect(size.height).toBeCloseTo(dimensions[0].height, 0);
+    expect(size.height).toBeGreaterThanOrEqual(52);
+  }
+
+  await page.locator('#tutorial-help').click();
+  await expect(page.locator('#tutorial-heading')).toHaveText('Get moving');
+  await expect(page.locator('#tutorial-dialog')).toContainText('accelerate');
+});
+
 test('unavailable local storage does not block the guide', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));

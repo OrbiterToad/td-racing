@@ -1,6 +1,13 @@
 import { MAPS, VEHICLES } from './config.js';
 
-export const MEDAL_KEY = 'apex-medals-v1';
+import {
+  LEGACY_MEDAL_KEY,
+  loadProgression,
+  saveMedal,
+  progressionStorage,
+} from './progression.js';
+
+export const MEDAL_KEY = LEGACY_MEDAL_KEY;
 export const MEDALS = ['bronze', 'silver', 'gold'];
 
 // Bronze lap targets (seconds) are tuned per circuit. Car adjustments reflect
@@ -71,31 +78,8 @@ export function medalForTime(time, targets) {
   return null;
 }
 
-function resolveStorage(storage) {
-  if (storage !== undefined) return storage;
-  try {
-    return globalThis.localStorage;
-  } catch (_) {
-    return undefined;
-  }
-}
-
 export function readMedals(storage) {
-  storage = resolveStorage(storage);
-  try {
-    const saved = JSON.parse(storage?.getItem(MEDAL_KEY) ?? '{}');
-    if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return {};
-    return Object.fromEntries(
-      Object.entries(saved).filter(
-        ([key, medal]) =>
-          MEDALS.includes(medal) &&
-          key.split(':').length === 2 &&
-          medalTargetsFor(...key.split(':')),
-      ),
-    );
-  } catch (_) {
-    return {};
-  }
+  return loadProgression(storage).progress.medals;
 }
 
 export function earnedMedalFor(trackId, carId, storage) {
@@ -105,7 +89,7 @@ export function earnedMedalFor(trackId, carId, storage) {
 
 export function awardMedal(trackId, carId, lapTime, options = {}) {
   const { valid = false, timeTrial = false } = options;
-  const storage = resolveStorage(options.storage);
+  const storage = progressionStorage(options.storage);
   const targets = medalTargetsFor(trackId, carId);
   if (!targets || !valid || !timeTrial) return null;
   const achieved = medalForTime(lapTime, targets);
@@ -115,12 +99,7 @@ export function awardMedal(trackId, carId, lapTime, options = {}) {
   const saved = readMedals(storage);
   const previous = saved[key] ?? null;
   if (MEDALS.indexOf(achieved) > MEDALS.indexOf(previous)) {
-    saved[key] = achieved;
-    try {
-      storage?.setItem(MEDAL_KEY, JSON.stringify(saved));
-    } catch (_) {
-      // The current lap still earns its medal if storage is unavailable.
-    }
+    saveMedal(trackId, carId, achieved, storage);
     return { medal: achieved, previous, improved: true };
   }
   return { medal: previous, previous, improved: false };

@@ -1,3 +1,4 @@
+import { loadProgression, resetProgression } from './progression.js';
 import {
   setSoundEnabled,
   setMasterVolume,
@@ -216,6 +217,17 @@ function exportLapGhostFile() {
   }
 }
 
+function syncProgressionUI() {
+  const { progress, status } = loadProgression();
+  $('progression-status').textContent = ['invalid', 'unsupported'].includes(
+    status,
+  )
+    ? 'Career save cannot be read. It is preserved until you deliberately reset it.'
+    : status === 'unavailable'
+      ? 'Browser storage is unavailable. Progress may not survive a reload.'
+      : `${Object.keys(progress.medals).length} medals · ${Object.keys(progress.events).length} club events · ${Object.values(progress.skills).reduce((total, record) => total + record.completions, 0)} skill trials completed. Saved on this device.`;
+}
+
 export function openSettings(trigger = document.activeElement) {
   const dialog = $('settings-dialog');
   if (dialog.open) return;
@@ -224,8 +236,11 @@ export function openSettings(trigger = document.activeElement) {
   setPaused(true);
   $('settings-list').hidden = false;
   $('ghost-transfer-panel').hidden = true;
+  $('progression-panel').hidden = true;
+  $('settings-career').textContent = 'CAREER';
   $('settings-ghost-tools').textContent = 'LAP GHOSTS';
   updateSettingsUI();
+  syncProgressionUI();
   syncGhostTransferUI();
   dialog.showModal();
   $('settings-volume').focus();
@@ -277,10 +292,32 @@ export function initSettings() {
       openSettings(event.currentTarget),
     );
   }
+  syncProgressionUI();
+  $('progression-reset').addEventListener('click', () => {
+    const confirmed = window.confirm(
+      'Reset career progression? This clears medals, completed club events and skill-trial progress on this device. All currently available cars and tracks remain available. Personal bests, ghosts, settings and leaderboards are kept. This cannot be undone.',
+    );
+    if (!confirmed) return;
+    if (resetProgression('RESET PROGRESSION')) syncProgressionUI();
+    else
+      $('progression-status').textContent =
+        'Reset could not be saved. Browser storage is unavailable.';
+  });
   $('settings-close').addEventListener('click', closeSettings);
   $('settings-done').addEventListener('click', closeSettings);
   $('settings-sound').addEventListener('click', toggleSound);
+  $('settings-career').addEventListener('click', (event) => {
+    const show = $('progression-panel').hidden;
+    $('progression-panel').hidden = !show;
+    $('settings-list').hidden = show;
+    $('ghost-transfer-panel').hidden = true;
+    $('settings-ghost-tools').textContent = 'LAP GHOSTS';
+    event.currentTarget.textContent = show ? 'SETTINGS' : 'CAREER';
+    syncProgressionUI();
+  });
   $('settings-ghost-tools').addEventListener('click', (event) => {
+    $('progression-panel').hidden = true;
+    $('settings-career').textContent = 'CAREER';
     const showingGhostTools = $('ghost-transfer-panel').hidden;
     $('settings-list').hidden = showingGhostTools;
     $('ghost-transfer-panel').hidden = !showingGhostTools;

@@ -1,0 +1,4 @@
+interface:
+  display_name: 'GitHub API'
+  short_description: 'Inspect GitHub state and make authorized updates'
+  default_prompt: 'Use $github-api to inspect the exact PR head, checks, reviews, and branch rules.'

@@ -7,6 +7,8 @@ import { GamepadInput } from '../src/gamepad.js';
 import {
   createLocalRace,
   localRaceResults,
+  localRaceComplete,
+  localResultsSnapshot,
   localPlayerOneKeys,
   localPlayerTwoControls,
   pollSecondPlayer,
@@ -65,40 +67,101 @@ test('second controller is reserved for Player 2', () => {
   assert.equal(controls.throttle, 1);
 });
 
-test('three-lap finish order records both finish times and reset creates a fresh grid', () => {
+const idle = { steer: 0, throttle: 0, brake: 0, handbrake: 0 };
+
+function movePlayer(race, index, point) {
+  const player = race.players[index];
+  Object.assign(player, { x: point.x, y: point.y, vx: 0, vy: 0 });
+  updateLocalRace(race, 1 / 60, [idle, idle], index === 0 ? player : null);
+}
+
+function finishPlayer(race, index) {
+  // Grid to start line arms lap one; three full forward circuits finish it.
+  movePlayer(race, index, track[0]);
+  for (let lap = 0; lap < race.laps; lap++) {
+    for (const point of track) movePlayer(race, index, point);
+    movePlayer(race, index, track[0]);
+  }
+}
+
+test('near-line movement, shortcuts, reverse crossings and the initial crossing cannot finish a local race', () => {
   configureTrack('juniper');
   const race = createLocalRace();
   race.countdown = 0;
-  const linePoint = track[5];
-  const p1 = race.players[0],
-    p2 = race.players[1];
-  Object.assign(p1, {
-    x: linePoint.x,
-    y: linePoint.y,
-    progress: 0.99,
-    elapsed: 20,
-    lap: 3,
+  for (let frame = 0; frame < 600; frame++)
+    movePlayer(race, 0, track[frame % 6]);
+  assert.equal(race.players[0].lap, 1);
+  assert.equal(race.players[0].finishedAt, null);
+  // Repeated forward/backward line crossings without the sectors are not laps.
+  for (let i = 0; i < 5; i++) {
+    movePlayer(race, 0, track[track.length - 2]);
+    movePlayer(race, 0, track[0]);
+  }
+  assert.equal(race.players[0].lap, 1);
+  assert.equal(localRaceComplete(race), false);
+  assert.deepEqual(race.order, []);
+});
+
+test('a circuit that misses an ordered checkpoint does not count as a lap', () => {
+  configureTrack('juniper');
+  const race = createLocalRace();
+  race.countdown = 0;
+  movePlayer(race, 0, track[0]);
+  for (const point of track) {
+    const n = nearestDriving(point.x, point.y);
+    movePlayer(
+      race,
+      0,
+      n.progress > 0.23 && n.progress < 0.27
+        ? { x: point.x + n.nx * 400, y: point.y + n.ny * 400 }
+        : point,
+    );
+  }
+  movePlayer(race, 0, track[0]);
+  assert.equal(race.players[0].lap, 1);
+  assert.equal(race.players[0].finishedAt, null);
+});
+
+for (const first of [0, 1]) {
+  test(`local results wait for both genuine finishes, Player ${first + 1} first`, () => {
+    configureTrack('juniper');
+    const race = createLocalRace();
+    race.countdown = 0;
+    finishPlayer(race, first);
+    assert.deepEqual(race.order, [first]);
+    assert.equal(race.finished, false);
+    assert.equal(localResultsSnapshot(race).finished, false);
+    assert.equal(race.players[1 - first].finishedAt, null);
+    finishPlayer(race, 1 - first);
+    assert.deepEqual(race.order, [first, 1 - first]);
+    assert.equal(localRaceComplete(race), true);
+    const snapshot = localResultsSnapshot(race);
+    assert.equal(snapshot.finished, true);
+    assert.deepEqual(
+      snapshot.standings.map((row) => row.name),
+      [`Player ${first + 1}`, `Player ${2 - first}`],
+    );
+    assert.ok(
+      snapshot.standings.every((row) => row.finish > 0 && row.bestLap > 0),
+    );
+    assert.equal(localRaceResults(race).length, 2);
+    const saved = JSON.stringify(race.players);
+    updateLocalRace(race, 1, [idle, idle], race.players[0]);
+    assert.equal(JSON.stringify(race.players), saved);
+    const fresh = createLocalRace();
+    assert.equal(fresh.countdown, 3);
+    assert.deepEqual(fresh.order, []);
+    assert.equal(localRaceComplete(fresh), false);
+    assert.equal(fresh.players[1].vx, 0);
   });
-  Object.assign(p2, {
-    x: linePoint.x,
-    y: linePoint.y,
-    progress: 0.99,
-    elapsed: 22,
-    lap: 3,
-  });
-  updateLocalRace(race, 1 / 60, [{}, {}], p1);
-  assert.deepEqual(race.order, [0, 1]);
-  assert.equal(race.finished, true);
-  assert.ok(p1.finishedAt > 20);
-  assert.ok(p2.finishedAt > p1.finishedAt);
-  assert.deepEqual(localRaceResults(race), [
-    `1. PLAYER 1 · ${p1.finishedAt.toFixed(2)}s`,
-    `2. PLAYER 2 · ${p2.finishedAt.toFixed(2)}s`,
-  ]);
-  const fresh = createLocalRace();
-  assert.equal(fresh.countdown, 3);
-  assert.deepEqual(fresh.order, []);
-  assert.equal(fresh.players[1].vx, 0);
+}
+
+test('a stale finished flag cannot present results for an unfinished local player', () => {
+  configureTrack('juniper');
+  const race = createLocalRace();
+  race.finished = true;
+  race.players[0].finishedAt = 20;
+  assert.equal(localResultsSnapshot(race).finished, false);
 });
 
 test('Player 2 shares the Player 1 driving assists and loses them when off', () => {

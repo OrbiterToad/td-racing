@@ -35,4 +35,10 @@ touch **↶ 5s** button to flash back up to five seconds. Using flashback marks 
 track/car session as practice only, so its laps cannot set a personal best or
 save a lap ghost. Club races do not offer flashback.
 
+On the game mode screen, choose **Clear**, **Rain**, or **Snow**. Conditions stay
+fixed for the session. Rain provides 72% of dry grip and snow 46%, reducing
+traction for cornering, acceleration, and braking for both players and AI.
+AI drivers slow their target pace accordingly. The race surface readout shows
+the condition; reduced motion keeps the surface tint and freezes precipitation.
+
 See [ASSETS.txt](ASSETS.txt) for asset credits and licenses.

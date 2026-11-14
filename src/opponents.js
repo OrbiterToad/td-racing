@@ -1,3 +1,5 @@
+import { conditionFor } from './weather.js';
+import { localResultsSnapshot } from './local-race.js';
 import { aiDifficulty, chooseRaceLine } from './ai-racecraft.js';
 import { carImagePath } from './cars.js';
 import { CFG, PAINTS, VEHICLES, mapBaseId } from './config.js';
@@ -14,11 +16,7 @@ import {
   track,
 } from './state.js';
 import { nearestDriving, pointOnTrack } from './tracks.js';
-import {
-  driveVehicle,
-  resolveVehicleBarrier,
-  resolveVehicleCollision,
-} from './vehicle-physics.js';
+import { driveVehicle, resolveVehicleContacts } from './vehicle-physics.js';
 import { $, formatTime, notify } from './ui.js';
 
 export { opponentRace };
@@ -166,6 +164,7 @@ export function updateOpponents(dt) {
       target = Math.max(
         12,
         opponentRace.profile[index] *
+          Math.sqrt(conditionFor(state.condition).grip) *
           rival.pace *
           0.7 *
           tuning.pace *
@@ -298,16 +297,7 @@ export function resolveOpponentCollisions() {
       spec: VEHICLES[vehicle.vehicleId] || state.activeCar,
     })),
   ];
-  for (let i = 0; i < vehicles.length; i++)
-    for (let j = i + 1; j < vehicles.length; j++)
-      resolveVehicleCollision(
-        vehicles[i].vehicle,
-        vehicles[j].vehicle,
-        vehicles[i].spec,
-        vehicles[j].spec,
-      );
-  for (const { vehicle, spec } of vehicles)
-    resolveVehicleBarrier(vehicle, spec);
+  resolveVehicleContacts(vehicles);
 }
 
 export function opponentStandings() {
@@ -346,6 +336,12 @@ export function updateOpponentHUD() {
   $('session-drivers').textContent = enabled
     ? '04 DRIVERS · 03 LAPS'
     : '01 DRIVER · NO LIMITS';
+  if (state.localRace) {
+    $('session-mode').textContent = 'LOCAL SPLIT-SCREEN';
+    $('session-drivers').textContent = '02 DRIVERS · 03 LAPS';
+    syncRaceResults(localResultsSnapshot(state.localRace));
+    return;
+  }
   if (!enabled) {
     syncRaceResults({ finished: false });
     return;

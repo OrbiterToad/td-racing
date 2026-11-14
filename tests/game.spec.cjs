@@ -826,14 +826,14 @@ test('skill trials explain the selected event and start outside time-trial recor
       active: skillTrial.active,
       id: skillTrial.id,
       ordinaryBest: localStorage.getItem(state.BEST_KEY),
-      skillBest: localStorage.getItem('apex-skill-trials-v1'),
+      skillBest: JSON.parse(localStorage.getItem('apex-career')).skills,
     };
   });
   expect(session).toEqual({
     active: true,
     id: 'slalom',
     ordinaryBest: null,
-    skillBest: null,
+    skillBest: {},
   });
 });
 
@@ -898,10 +898,12 @@ test('braking trial requires its advertised 120 km/h target and supports quick r
     return {
       active: skillTrial.active,
       id: skillTrial.id,
-      progress: JSON.parse(localStorage.getItem('apex-skill-trials-v1')),
+      saveVersion: JSON.parse(localStorage.getItem('apex-career')).version,
+      progress: JSON.parse(localStorage.getItem('apex-career')).skills,
     };
   });
   expect(retry.active).toBe(true);
   expect(retry.id).toBe('braking');
+  expect(retry.saveVersion).toBe(1);
   expect(retry.progress.braking).toMatchObject({ attempts: 1, completions: 1 });
 });
