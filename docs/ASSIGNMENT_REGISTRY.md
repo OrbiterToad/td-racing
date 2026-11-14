@@ -117,7 +117,7 @@ status to `unavailable`. A past SHA with non-verified status proves nothing.
 
 The tool validates shapes, lease uniqueness/range, and allowed transitions.
 The coordinator verifies transition evidence; the tool does not authenticate
-GitHub facts, enforce slot 1's scope, send messages, or merge. Creating a
+GitHub facts, enforce the reserved owner's scope, send messages, or merge. Creating a
 reconstructed record in an advanced state requires live evidence, not an
 assumption that omitted intermediate events happened.
 
