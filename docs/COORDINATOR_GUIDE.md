@@ -14,6 +14,12 @@ default branch, required checks, commands, and the push policy — live in
 [`AGENTS.project.md`](../AGENTS.project.md), which also documents the sync
 workflow and its drift check.
 
+The [durable assignment registry](ASSIGNMENT_REGISTRY.md) specifies storage,
+record ownership, coordinator discovery by stable chat ID, execution leases,
+and reconciliation against live GitHub, chat, and worktree evidence. Read and
+reconcile it on startup and before assigning or resuming work; chat titles
+alone do not establish ownership or available execution capacity.
+
 ## Repository-specific facts
 
 These facts are specific to td-racing and override or extend the template
