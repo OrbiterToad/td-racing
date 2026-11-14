@@ -1,7 +1,9 @@
 # Coordinator guide
 
-This guide documents issue size labels, task prioritization, and standard
-communication between the coordinator and agents. It is the public
+This guide is the single authoritative source for project-specific
+coordinator and agent coordination rules in td-racing. It documents
+repository facts, issue size labels, task prioritization, and the
+communication standard between the coordinator and agents. It is the public
 repository-facing counterpart to the coordinator's private operating notes
 in `CORDINATOR_AGENT.md`; the policies described here must match that file.
 
@@ -11,6 +13,41 @@ and are not edited in this repository. Project-specific agent rules — the
 default branch, required checks, commands, and the push policy — live in
 [`AGENTS.project.md`](../AGENTS.project.md), which also documents the sync
 workflow and its drift check.
+
+## Repository-specific facts
+
+These facts are specific to td-racing and override or extend the template
+defaults. Record verified values here; do not leave stale placeholders.
+
+| Fact                   | Value                                                     |
+| ---------------------- | --------------------------------------------------------- |
+| Default branch         | `master` (protected; merge only via PR after checks pass) |
+| Coordinator chat title | `Cordinator` (spelled as-is)                              |
+| Agent chat tool        | Claude Code SDK sessions (numbered slots in the sidebar)  |
+| Node.js version        | 24 or newer; install with `npm ci`                        |
+
+### Model preferences
+
+Use a lighter, lower-cost model (e.g. Haiku) for bounded `Mini` assignments
+and a more capable model (e.g. Sonnet or Opus) for `Big` or high-uncertainty
+work. Issue size and model choice are separate decisions; reassess if scope
+changes. Confirm model availability before assigning.
+
+### Required checks
+
+Branch protection requires all five CI contexts, in the order below. Full
+details and local commands are in
+[`AGENTS.project.md`](../AGENTS.project.md).
+
+| Check                   | Local command                           |
+| ----------------------- | --------------------------------------- |
+| Formatting              | `npm run format:check`                  |
+| Lint                    | `npm run lint`                          |
+| Simulation tests        | `npm test`                              |
+| Dependency audit        | `npm audit --audit-level=high`          |
+| Build and browser tests | `npm run build && npm run test:browser` |
+
+`npm run check` runs all five in order.
 
 ## Labeling issues by size
 
@@ -63,6 +100,29 @@ This preference is strictly about ordering work within the existing
 eight-agent limit. It never justifies starting a ninth agent or otherwise
 exceeding the cap to get a Mini issue moving sooner.
 
+## Before assigning: duplicate-ownership scan
+
+Before delegating any issue to an agent, the coordinator must confirm that no
+agent already owns it. Check all of the following using live data, not a cached
+roster:
+
+- **Open GitHub PRs** — search for a PR that references or is linked to the
+  issue number.
+- **Active remote branches** — look for a branch whose name or description
+  corresponds to the issue (for example `ai/<description>-<issue-number>`).
+- **Local worktrees** — inspect the repository's registered worktrees for one
+  whose branch targets the same issue.
+- **Current agent assignments** — review the active agent roster for an agent
+  already assigned to that issue.
+
+If any of these surfaces an existing owner, do not create a duplicate
+assignment. Resolve the conflict first — cancel the duplicate, coordinate a
+hand-off, or confirm the existing owner is still active — then assign only
+after the issue is confirmed unowned.
+
+A prior status report showing no owner is not sufficient. Always scan from
+current state immediately before each assignment.
+
 ## Status reports
 
 Agent status reports pair every percentage with a color marker and a ten-cell
@@ -89,6 +149,24 @@ A parked implementation with an unmerged PR stays open in an unnumbered
 `Waiting for PR` chat. A blocked assignment may be retained in an unnumbered
 `Paused` chat. The issue keeps its size label while the released agent number
 is available for a separate active assignment.
+
+## Claude Code runtime
+
+When running under the Claude Code runtime (Claude as the coordinator or as
+an agent), numbered agent slots must be created as **new independent chat
+sessions** — not via the inline `Agent` tool. Each numbered slot (Agent 1,
+Agent 2, …) must appear as a separate entry in the left agent sidebar so the
+user can observe and intervene in any active slot.
+
+**How to open a session:** The user opens a new session via the `+` button in
+the agent sidebar. The coordinator then delivers the assignment by calling
+`send_message` (the `SendMessage` tool) addressed to that session.
+
+**Inline `Agent` tool scope:** The inline `Agent` tool is acceptable only for
+atomic, non-roster tasks — a single bounded operation that does not need a
+persistent slot (for example, a one-shot web search, a file look-up, or a
+quick API call). It must never be used to carry out a tracked issue assignment
+or any work that belongs to a numbered agent slot.
 
 ## Communication standard
 
@@ -197,6 +275,14 @@ Merge readiness — the exact request phrase remains in the details:
 [Agent <number>] [#<issue> <short task>] [merge request]
 Further info: I want to merge PR #<number>: <URL>. Tested head: <SHA>; current base origin/master: <SHA>; local validation: <results>; required CI checks: <each result or pending/unknown>; review: <approvals/requests/blocking feedback>; freshness/mergeability: <verified state or unknown>; dependencies/conflicts: <findings>. Next: coordinator to review readiness and set merge order.
 ```
+
+Merge readiness is bound to an exact commit. The `tested head` SHA must be the
+precise commit on which the required checks were run. A prior passing status
+does not carry forward: if the branch is rebased, amended, or its head changes
+for any reason after a merge request is submitted, that status is stale and the
+merge request is no longer valid. The agent must re-run the required checks on
+the new head and send a new merge request with the updated SHA before the
+coordinator will act on it.
 
 If GitHub access prevents PR creation or updates, use `blocked` instead,
 with the pushed branch, exact head/base SHAs, local check results, access

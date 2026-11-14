@@ -17,6 +17,21 @@ everything specific to td-racing and wins where it is more specific than
   meanings and copyable message templates.
 - Node.js 24 or newer. Install dependencies with `npm ci`.
 
+## Coordinator handoffs
+
+Every agent-to-coordinator message must use this two-line structure:
+
+```text
+[Agent <number>] [#<issue> <short task>] [<state>]
+Further info: <outcome, evidence, and next action>
+```
+
+Coordinator replies use `[Coordinator]` in the first field with the same
+structure. Send handoffs directly to `Cordinator` at these milestones:
+preflight complete, meaningful progress, blocked, merge request, authorized
+merge, and ready for new task. Full state meanings and copyable templates
+are in [docs/COORDINATOR_GUIDE.md](docs/COORDINATOR_GUIDE.md).
+
 ## Required checks
 
 Branch protection requires these CI contexts, all defined in
@@ -43,6 +58,12 @@ head.
 For browser tests, pick a free port with `PLAYWRIGHT_PORT` (default `4173`),
 keep the same command session, and poll it to completion. Never stop a
 preview server owned by another worktree.
+
+Merge readiness is bound to an exact commit SHA. If the branch is rebased,
+amended, or otherwise updated after a merge request is submitted, that
+request's tested head is stale. Re-run the required checks on the new head
+and send a new merge request with the updated SHA; a prior passing status does
+not carry forward to a different head.
 
 ## Staying in sync with the template
 

@@ -1,4 +1,4 @@
-import { CFG } from './config.js';
+import { CFG, mapBaseId } from './config.js';
 import { lerpTo, seededRandom } from './math.js';
 import { burst } from './physics.js';
 import { inWorldView, path, roundedRect } from './renderer.js';
@@ -66,7 +66,7 @@ export function paintAmazonFords(c) {
 }
 
 export function drawRiverCurrent(c) {
-  if (state.activeMap.id !== 'amazonas') return;
+  if (mapBaseId(state.activeMap) !== 'amazonas') return;
   c.save();
   c.lineCap = 'round';
   c.lineWidth = 1.7;
@@ -263,7 +263,7 @@ export function monkeyPosition() {
 
 export function updateJungle(dt) {
   car.coconutSlip = Math.max(0, (car.coconutSlip || 0) - dt);
-  if (state.activeMap.id !== 'amazonas') return;
+  if (mapBaseId(state.activeMap) !== 'amazonas') return;
   jungle.flowTime += dt;
   jungle.cooldown = Math.max(0, jungle.cooldown - dt);
   jungle.throwTime = Math.max(0, jungle.throwTime - dt);
@@ -314,7 +314,7 @@ export function updateJungle(dt) {
 }
 
 export function drawJungle(c) {
-  if (state.activeMap.id !== 'amazonas') return;
+  if (mapBaseId(state.activeMap) !== 'amazonas') return;
   const m = monkeyPosition();
   if (inWorldView(m.x, m.y, 140)) {
     c.save();
