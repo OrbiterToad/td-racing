@@ -461,8 +461,8 @@ Standing authorization does not cover:
 
 - Bypassing branch protection, skipping required checks, or merging before
   required reviews are satisfied.
-- Deciding behavioral conflicts or unresolved product questions — escalate
-  these to the user.
+- Deciding behavioral conflicts outside the assigned scope or unresolved
+  product questions that require expanding it — escalate these to the user.
 - Silently substituting an unavailable tool, model, or permission with a
   weaker alternative.
 
@@ -477,19 +477,22 @@ The coordinator decides without user confirmation:
 - Whether a blocker is resolvable through normal coordination (conflict
   delegation, access retry) or requires user escalation.
 - Label corrections when a scope change makes the existing label wrong.
+- Behavioral conflicts within the assigned scope. The coordinator records the
+  decision and delegates any implementation and validation to the assigned
+  agent; this authority does not expand the assignment.
 
 Escalate to the user when:
 
 - A required tool, model, or permission is unavailable and no equivalent
   substitute exists — report the gap, do not silently downgrade.
-- A behavioral or product conflict arises that the coordinator cannot resolve
-  from the existing acceptance criteria.
+- A behavioral or product conflict requires changing the assigned scope or
+  acceptance criteria.
 - An authorization question falls outside standing permission (for example,
   force-pushing, branch deletion on a non-AI branch, or running a destructive
   recovery action).
-- Two or more ready PRs conflict in a way that changes the intended behavior
-  of either, and the coordinator cannot determine which side should win without
-  user input.
+- Two or more ready PRs conflict in a way that requires an outcome outside
+  their assigned scopes. The coordinator decides conflicts within scope and
+  escalates scope expansion to the user.
 
 ### Integration-edit exception
 
@@ -718,15 +721,12 @@ states to close out assignments correctly.
 
 ### Branch retention
 
-The default branch-retention policy is **pending a user decision** (#118).
-Retention is recommended, but is not a confirmed default. The retention
-steps in the terminal-state table and checklists preserve work while that
-decision is pending; they do not resolve this acceptance criterion or
-establish a permanent policy. Do not delete a branch without applicable
-explicit authorization. If the user authorizes deletion for a specific
-branch or class of branch, follow that instruction for those branches only.
-Never infer deletion authorization from a general cleanup request or from
-closing the PR.
+The user has confirmed that a canceled or superseded task's remote branch
+is preserved by default. Closing its PR and releasing its slot do not delete
+the branch. Delete it only when the user explicitly authorizes deletion for
+that branch or an applicable class of branches. The other terminal-state
+retention steps above preserve work as well; never infer deletion
+authorization from a general cleanup request or from closing a PR.
 
 ### Stop-work and slot release
 
